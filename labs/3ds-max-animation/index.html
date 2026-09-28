@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#262a2f">
+  <meta name="description" content="Animate a bouncing ball in a 3ds Max-inspired workspace with Time Slider, Track Bar, Auto Key, Set Key and Track View Curve Editor.">
+  <title>3ds Max Animation Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=3">
+  <link rel="stylesheet" href="../../lab-brief.css?v=3">
+  <script type="module" src="../../lab-brief.js?v=3"></script>
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">3D SOFTWARE / 3DS MAX</span><strong>Animation Lab</strong></div><a class="home-link" href="../../#max">3ds Max labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Time it. Squash it. <span>Give it weight.</span></h1>
+        <p>The bouncing ball, one principle at a time. Move its helpers in the <strong>Viewport</strong>, create keys with <strong>Auto Key</strong> or <strong>Set Keys</strong>, then shape movement in <strong>Track View – Curve Editor</strong> and adjust timing in the <strong>Track Bar</strong> or <strong>Dope Sheet</strong>.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="max-workspace" id="workspace" aria-label="3ds Max-inspired animation workspace">
+      <div class="max-main-toolbar" aria-label="3ds Max animation toolbar">
+        <span class="max-menu-brand">3DS MAX <small>ANIMATION</small></span>
+        <span class="max-tool-sep" aria-hidden="true"></span>
+        <button type="button" id="move-tool" title="Select and Move (W)">✥ <span>Select and Move</span></button>
+        <button type="button" id="rotate-tool" title="Select and Rotate (E)">⟳ <span>Select and Rotate</span></button>
+        <button type="button" id="reset-control" title="Reset the selected helper">↺ <span>Reset helper</span></button>
+        <span class="max-toolbar-note">Select a helper in the viewport, then move or rotate it.</span>
+      </div>
+      <div class="anim-editors">
+        <section class="editor" aria-label="3ds Max Viewport">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z M2 5l6 3.5L14 5 M8 8.5v6" fill="none" stroke="currentColor"/></svg>Viewport</span><span class="mode-pill" title="3ds Max perspective viewport">[ Perspective ] [ Standard ] [ Edged Faces ]</span>
+            <div class="view-toggles">
+              <label class="live-toggle" title="Show the lab's helper controls"><input type="checkbox" id="t-ctrls" checked><span class="switch" aria-hidden="true"></span>Helpers</label>
+              <label class="live-toggle" title="In 3ds Max: right-click the object and choose Show Motion Paths"><input type="checkbox" id="t-path" checked><span class="switch" aria-hidden="true"></span>Motion Paths</label>
+              <label class="live-toggle" title="Lab view: the ball at every other frame"><input type="checkbox" id="t-ghosts"><span class="switch" aria-hidden="true"></span>Ghosts</label>
+              <label class="live-toggle" id="ref-toggle" title="A real ball simulated with physics"><input type="checkbox" id="t-ref"><span class="switch" aria-hidden="true"></span>Reference</label>
+            </div>
+          </div>
+          <div class="view-host" id="view-host"><canvas id="view" aria-label="The bouncing ball and its helper controls in 3D"></canvas><div class="view-overlay" id="view-overlay"></div><div class="op-readout" id="view-readout" hidden></div><span class="graph-hint">Click helper · W Move · E Rotate · Set Keys · MMB orbit</span></div>
+        </section>
+
+        <section class="editor" aria-label="Track View Curve Editor">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 13C5 13 5 3 8 3s3 10 6.5 10" fill="none" stroke="currentColor"/><circle cx="8" cy="3" r="1.4" fill="currentColor"/></svg>Track View – Curve Editor</span><span class="editor-role">POSITION / ROTATION CONTROLLERS</span>
+            <div class="menubar">
+              <button type="button" class="menu-button" data-menu="view" aria-haspopup="menu">View</button>
+              <button type="button" class="menu-button" data-menu="select" aria-haspopup="menu">Select</button>
+              <button type="button" class="menu-button" data-menu="key" aria-haspopup="menu">Keys</button>
+            </div>
+          </div>
+          <div class="max-curve-toolbar" aria-label="Curve Editor key tools"><button type="button" id="add-track-key">Add Key</button><span class="max-tool-sep" aria-hidden="true"></span><button type="button" id="curve-smooth">Smooth curve</button><button type="button" id="curve-linear">Linear curve</button><button type="button" id="curve-step">Step curve</button><span class="max-tool-sep" aria-hidden="true"></span><button type="button" id="tangent-linear">Linear tangent</button><button type="button" id="tangent-spline">Spline tangent</button></div>
+          <div class="graph-body">
+            <div class="channels" id="channels" aria-label="Controller Window"></div>
+            <div class="graph-host" id="graph-host"><canvas id="graph" aria-label="Curve Editor Key Window"></canvas><span class="graph-hint">Key Window · drag keys and tangent handles · wheel zoom · MMB pan</span></div>
+            <aside class="sidebar" id="sidebar" aria-label="Selected key and controller values"></aside>
+          </div>
+        </section>
+      </div>
+
+      <section class="editor timeline" id="bottom-editor" aria-label="Time Slider, Track Bar and Dope Sheet">
+        <div class="editor-header">
+          <label class="editor-type editor-switch" title="Time Slider or Track View Dope Sheet"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8h13M4 5v6M8 4v8M12 5v6" fill="none" stroke="currentColor"/></svg><select id="bottom-type" aria-label="Time Slider or Dope Sheet" data-no-i18n><option value="timeline">Time Slider / Track Bar</option><option value="dopesheet">Track View – Dope Sheet</option></select></label>
+          <div class="play-controls">
+            <button type="button" id="b-start" title="Jump to start (Shift ←)">⏮</button>
+            <button type="button" id="b-prevkey" title="Previous keyframe (↓)">◆◂</button>
+            <button type="button" id="b-play" title="Play (Space)" aria-pressed="false">▶</button>
+            <button type="button" id="b-nextkey" title="Next keyframe (↑)">▸◆</button>
+            <button type="button" id="b-end" title="Jump to end (Shift →)">⏭</button>
+          </div>
+          <label class="frame-field">Frame <input type="number" id="f-cur" class="current" min="0" max="250" value="1"></label>
+          <label class="frame-field">Start <input type="number" id="f-start" min="0" max="249" value="1"></label>
+          <label class="frame-field">End <input type="number" id="f-end" min="2" max="250" value="72"></label>
+          <span class="fps">24 fps · <span id="time-sec">0.00 s</span></span>
+        </div>
+        <div class="timeline-host" id="timeline-host"><canvas id="timeline" aria-label="Track Bar or Dope Sheet with animation keys"></canvas></div>
+        <div class="max-key-controls" aria-label="3ds Max keying controls"><button type="button" id="auto-key" aria-pressed="false">Auto Key</button><button type="button" id="set-key-mode" aria-pressed="true">Set Key Mode</button><button type="button" id="set-keys">Set Keys</button><span>Auto Key records a changed helper; Set Key Mode lets you pose first.</span></div>
+      </section>
+
+      <div class="statusbar">
+        <span class="status-keys" id="status-keys"><span><kbd>W</kbd>Move helper</span><span><kbd>E</kbd>Rotate helper</span><span><kbd>Ctrl</kbd><kbd>A</kbd>Select keys</span><span><kbd>Del</kbd>Delete keys</span><span><kbd>Space</kbd>Play</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+      <div id="menu" class="context-menu" role="menu" hidden></div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Controls for the 3ds Max animation lab">
+      <div><span class="eyebrow">3DS MAX WORKFLOW</span><h2>Controls you can use here</h2><p>This teaching workspace follows 3ds Max's animation layout. Pick a helper in the viewport, set keys with Auto Key or Set Key Mode, then edit its controller in Track View.</p></div>
+      <dl>
+        <div><dt>Viewport helpers</dt><dd>Select Root, SS_Top, SS_Bottom or Rotation. Use <kbd>W</kbd> or <b>Select and Move</b>; <kbd>E</kbd> or <b>Select and Rotate</b> turns Rotation. Click again to confirm a transform.</dd></div>
+        <div><dt>Auto Key / Set Keys</dt><dd><b>Auto Key</b> makes a key when you change a helper. In <b>Set Key Mode</b>, change the pose and click <b>Set Keys</b> before changing the frame.</dd></div>
+        <div><dt>Time Slider / Track Bar</dt><dd>Scrub the frame numbers. Select and drag keys to retime the bounce; switch to <b>Track View – Dope Sheet</b> for rows by helper and controller.</dd></div>
+        <div><dt>Track View – Curve Editor</dt><dd>Select keys in the Key Window. Use <b>Smooth curve</b>, <b>Linear curve</b> or <b>Step curve</b>, and adjust individual <b>tangents</b>. Drag a key or tangent handle to shape motion.</dd></div>
+        <div><dt>Selected key</dt><dd>The right panel shows its frame, value, curve type and tangent type. You can enter an exact frame or value there.</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>A</kbd> / <kbd>Del</kbd></dt><dd>Select every visible key / delete selected keys in this lab.</dd></div>
+        <div><dt><kbd>Space</kbd> / <kbd>Ctrl</kbd><kbd>Z</kbd></dt><dd>Play or pause / undo.</dd></div>
+      </dl>
+    </section>
+
+    <aside class="max-bridge"><div><span class="eyebrow">IN 3DS MAX</span><h2>Rebuild the bounce in 3ds Max</h2><p>This lab simplifies the application to the controllers needed for one ball. In a Max scene, use named helper objects or a custom rig, then animate their Position and Rotation tracks.</p></div><ol><li>Create a ball and a helper hierarchy: <strong>Root</strong> for the path, <strong>SS_Top</strong> and <strong>SS_Bottom</strong> for deformation, and <strong>Rotation</strong> for rolling.</li><li>Use the <strong>Time Slider</strong> to choose frames. Enable <strong>Auto Key</strong> to record changed transforms, or use <strong>Set Key Mode</strong> and <strong>Set Keys</strong> after posing.</li><li>Open <strong>Track View – Curve Editor</strong>. Select the Z Position keys in the Controller Window; use smooth tangents near the tops and break/linear tangents at the contacts.</li><li>Use <strong>Track View – Dope Sheet</strong> or the <strong>Track Bar</strong> to move keys closer together after each contact.</li><li>Right-click the ball and choose <strong>Show Motion Paths</strong> to inspect spacing. Keep the ball above the floor while squashing and stretching.</li><li>Match Y Rotation to X travel so the ball rolls without sliding.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · 3ds Max Animation Lab</span><a href="https://help.autodesk.com/cloudhelp/2023/ENU/3DSMax-Animation/files/GUID-818205DD-D58A-495E-BD0C-DC69BDE8DAC2.htm" target="_blank" rel="noopener">Autodesk: Animation Controls ↗</a><span>Teaching model · simplified Track View.</span><a href="../../#max">3ds Max labs ↑</a></footer>
+  <script type="module" src="./app.js?v=5"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

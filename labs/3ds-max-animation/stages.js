@@ -1,0 +1,239 @@
+// Stages, starting scenes, guided steps and their checks for the Animation Lab.
+import { key, recalcHandles, evaluate, contacts, tops, strictlyDecreasing, intervals, sharpContact, hangTime, physicsBounce, matchScore, cloneKeys } from './fcurve.js';
+
+export const FPS = 24;
+export const RANGE = [1, 72];
+// A simple 3ds Max-style helper rig: a Root helper (base of the ball, at the floor)
+// and two squash & stretch controls. SS_Top moves the top of the ball (pivot at the base: for contacts),
+// SS_Bottom moves the bottom of the ball (pivot at the top: to stretch down towards the floor).
+// The rig keeps the volume: the ball gets wider when it gets shorter.
+export const BALL = 1; // diameter in metres
+export const BONES = ['Root', 'SS_Top', 'SS_Bottom', 'Rotation'];
+export const CHANNELS = {
+  locX: { name: 'X Position', bone: 'Root', color: '#ff6464', axis: 'X' },
+  locZ: { name: 'Z Position', bone: 'Root', color: '#4aa3ff', axis: 'Z' },
+  topZ: { name: 'Z Position', bone: 'SS_Top', color: '#7ee07e', axis: 'Z' },
+  botZ: { name: 'Z Position', bone: 'SS_Bottom', color: '#e07ee0', axis: 'Z' },
+  rotY: { name: 'Y Rotation', bone: 'Rotation', color: '#ffb347', axis: 'Y', rot: true },
+};
+export const channelOf = bone => ({ Root: 'locZ', SS_Top: 'topZ', SS_Bottom: 'botZ', Rotation: 'rotY' })[bone];
+// A ball that rolls without sliding turns once every π·diameter metres (positive Y rotation = rolling forwards, +X).
+export const rollAngle = dx => dx / (Math.PI * BALL) * 360;
+
+const V = 'VECTOR', AC = 'AUTO_CLAMPED';
+// [frame, value, handle?] → keys
+function curve(points, interp = 'BEZIER') {
+  return recalcHandles(points.map(([f, v, h]) => key(f, v, interp, h || (v <= 0.05 ? V : AC))));
+}
+const travel = () => curve([[1, 0], [72, 9]], 'LINEAR');
+const RUBBER = [[1, 4], [13, 0], [21, 2.6], [29, 0], [35, 1.7], [41, 0], [45, 1.0], [49, 0], [52, 0.5], [55, 0]];
+export const REFERENCE = physicsBounce({ start: 1, height: 4, fall: 12, e: 0.6, end: 72 });
+const PHYSICS_KEYS = [[1, 4], [13, 0], [20, 1.44], [27, 0], [32, 0.52], [36, 0], [39, 0.19], [41, 0]];
+
+const locZ = d => d.channels.locZ;
+const allBezier = keys => keys.slice(0, -1).every(k => k.interp === 'BEZIER');
+const contactKeys = keys => keys.filter(k => k.value <= 0.05);
+const allSharp = keys => contactKeys(keys).every(k => sharpContact(keys, k));
+const topValues = keys => tops(keys).map(k => k.value);
+export function firstBounce(keys) {
+  const c = contacts(keys);
+  return c.length >= 2 ? [c[0], c[1]] : null;
+}
+const chanAt = (d, id, f) => { const k = d.channels[id]; return k && k.length ? evaluate(k, f) : 0; };
+// Where the ball is: bottom and top points (m), height, and the scale the rig gives it.
+export function shape(d, f, over = {}) {
+  const root = over.locZ ?? chanAt(d, 'locZ', f), top = over.topZ ?? chanAt(d, 'topZ', f), bot = over.botZ ?? chanAt(d, 'botZ', f);
+  const bottom = root + bot, topP = root + BALL + top, h = Math.max(0.1 * BALL, topP - bottom);
+  const sz = h / BALL;
+  return { root, bottom, top: bottom + h, center: bottom + h / 2, sz, sx: 1 / Math.sqrt(sz) };
+}
+export const scaleZ = (d, f) => shape(d, f).sz;
+export const scaleX = (d, f) => shape(d, f).sx;
+const minOver = (fn, a, b) => { let m = Infinity; for (let f = a; f <= b; f += 0.25) m = Math.min(m, fn(f)); return m; };
+const maxOver = (fn, a, b) => { let m = -Infinity; for (let f = a; f <= b; f += 0.25) m = Math.max(m, fn(f)); return m; };
+export const lowestPoint = d => minOver(f => shape(d, f).bottom, RANGE[0], RANGE[1]);
+
+export const STAGES = [
+  {
+    id: 'timing', name: 'Timing', sub: 'Spacing and rhythm',
+    channels: ['locX', 'locZ'],
+    start: () => ({ channels: { locX: travel(), locZ: curve([[1, 4, AC], [13, 0, AC], [25, 4, AC], [37, 0, AC], [49, 4, AC], [61, 0, AC]], 'LINEAR') } }),
+    steps: [
+      {
+        id: 't1', title: 'Ease in and out',
+        text: 'The Z Position keys use linear curves: the ball moves at the same speed all the time. Look at the Motion Paths: the dots are evenly spaced. A real ball slows down at the top of each bounce.',
+        how: ['In Track View – Curve Editor, click the Root Z Position controller and press <kbd>Ctrl</kbd><kbd>A</kbd> to select its keys.', 'Click <b>Smooth curve</b> in the Curve Editor toolbar.', 'Play with <kbd>Space</kbd> and look at the dots: close together at the top (slow), far apart near the ground (fast).'],
+        why: 'Timing is how many frames an action takes; spacing is how far the object moves between frames. Close dots = slow, far dots = fast.',
+        check: d => allBezier(locZ(d)),
+        solve: d => { locZ(d).forEach(k => { k.interp = 'BEZIER'; }); },
+      },
+      {
+        id: 't2', title: 'Hit the ground hard',
+        text: 'Smooth tangents make the curve flat at the contacts: the ball slows before touching the floor and seems to stick to it. A ball hits the ground fast, so the contact needs a sharp V.',
+        how: ['In the Curve Editor, click a contact key at value 0 and <kbd>Shift</kbd>-click the others.', 'Click <b>Linear tangent</b>.', 'Play again: the ball now bounces off the floor.'],
+        why: 'In Track View – Curve Editor the slope of the curve shows speed. Flat means stopped; steep means fast.',
+        check: d => allBezier(locZ(d)) && allSharp(locZ(d)),
+        solve: d => { locZ(d).forEach(k => { k.interp = 'BEZIER'; if (k.value <= 0.05) k.handle = V; }); recalcHandles(locZ(d)); },
+      },
+      {
+        id: 't3', title: 'Lose energy',
+        text: 'The ball bounces back to the same height every time, as if it never lost energy. Each bounce must be lower than the one before.',
+        how: ['Click the key at the top of the second bounce and drag it down (or enter its Value in the selected-key panel).', 'Make the third top lower still.', 'Check the heights in the panel: they must go down every bounce.'],
+        why: 'A real ball loses part of its energy in every contact, so every bounce is lower.',
+        check: d => allBezier(locZ(d)) && allSharp(locZ(d)) && strictlyDecreasing(topValues(locZ(d))),
+        solve: d => { const t = tops(locZ(d)); t.forEach((k, i) => { k.value = +(4 * Math.pow(0.55, i)).toFixed(2); }); recalcHandles(locZ(d)); },
+      },
+      {
+        id: 't4', title: 'Faster bounces',
+        text: 'Lower bounces are also shorter in time. Right now every bounce lasts 24 frames. Move the keys so each bounce takes fewer frames than the one before (the frame counts appear under the contacts).',
+        how: ['Drag the second and third bounce keys left in the Track Bar or Dope Sheet; keys snap to whole frames.', 'Keep each top in the middle of its bounce.', 'Aim for something like 16, then 12 frames.'],
+        why: 'Timing gives weight and energy: long bounces feel slow and floaty, short bounces feel quick.',
+        check: d => allBezier(locZ(d)) && allSharp(locZ(d)) && strictlyDecreasing(topValues(locZ(d))) && strictlyDecreasing(intervals(contacts(locZ(d)))) && intervals(contacts(locZ(d))).length >= 2,
+        solve: d => { d.channels.locZ = curve([[1, 4], [13, 0], [21, 2.2], [29, 0], [35, 1.2], [41, 0], [44, 0.5], [47, 0]]); },
+      },
+    ],
+  },
+  {
+    id: 'squash', name: 'Squash & Stretch', sub: 'Flexible, not rigid',
+    channels: ['locX', 'locZ', 'topZ', 'botZ'],
+    start: () => ({
+      channels: {
+        locX: travel(),
+        locZ: curve([[1, 4], [13, 0], [21, 2.2], [29, 0], [35, 1.1], [40, 0], [44, 0.45], [47, 0]]),
+        topZ: curve([1, 13, 21, 29, 35, 40, 44, 47].map(f => [f, 0, AC])),
+        botZ: curve([1, 13, 21, 29, 35, 40, 44, 47].map(f => [f, 0, AC])),
+      },
+    }),
+    steps: [
+      {
+        id: 's1', title: 'Squash on contact',
+        text: 'A rubber ball squashes when it hits the ground. The rig has two squash & stretch controls: SS_Top moves the top of the ball, SS_Bottom the bottom. At the contacts the base must stay on the floor, so squash with SS_Top: lower it about 0.4 m at the first two contacts (frames 13 and 29).',
+        how: ['Scrub the Time Slider to frame 13, then click the green <b>SS_Top</b> helper above the ball.', 'With <b>Set Key Mode</b> on, click <b>Select and Move</b> (or <kbd>W</kbd>), move it down about 0.4 m and click to confirm. Click <b>Set Keys</b>. You can also turn on <b>Auto Key</b> before moving.', 'Do the same at frame 29. The ball gets wider automatically because the rig keeps its volume.'],
+        why: 'Squash and stretch shows that an object is soft and makes impacts readable. The pivot at the base keeps the ball on the floor.',
+        check: d => { const c = contacts(locZ(d)); return c.length >= 2 && c.slice(0, 2).every(f => shape(d, f).sz <= 0.8 && shape(d, f).bottom >= -0.02); },
+        solve: d => { const k = d.channels.topZ; for (const f of contacts(locZ(d)).slice(0, 2)) { const x = k.find(q => q.frame === f); if (x) x.value = -0.4; else k.push(key(f, -0.4)); } recalcHandles(k); },
+      },
+      {
+        id: 's2', title: 'Stretch before and after',
+        text: 'Just before and after the contact the ball moves fast and stretches along its path. Before the contact, stretch it downwards with SS_Bottom: the ball reaches for the floor. After the contact, stretch it upwards with SS_Top: the ball leaves the floor. That is why the rig has two controls.',
+        how: ['At frame 11 select <b>SS_Bottom</b>, click <b>Select and Move</b>, lower it about 0.25 m and click <b>Set Keys</b>. Then select SS_Top, click <b>Reset helper</b> and <b>Set Keys</b> so its squash begins only at contact.', 'At frame 15 select <b>SS_Top</b>, move it up about 0.2 m and click <b>Set Keys</b>. Auto Key is another way to record each changed helper.', 'Play with <kbd>Space</kbd>: the ball stretches into the floor and out of it.'],
+        why: 'Stretch is a kind of motion blur drawn into the shape: it makes fast movement easier to follow.',
+        check: d => { const c = contacts(locZ(d))[0]; if (c == null) return false; return minOver(f => chanAt(d, 'botZ', f), c - 3, c - 1) <= -0.1 && maxOver(f => shape(d, f).sz, c - 3, c - 1) >= 1.12 && maxOver(f => chanAt(d, 'topZ', f), c + 1, c + 3) >= 0.1 && maxOver(f => shape(d, f).sz, c + 1, c + 3) >= 1.1; },
+        solve: d => { const c = contacts(locZ(d))[0]; for (const [id, f, v] of [['botZ', c - 2, -0.25], ['topZ', c - 2, 0], ['topZ', c + 2, 0.2]]) { const k = d.channels[id], x = k.find(q => q.frame === f); if (x) x.value = v; else k.push(key(f, v)); recalcHandles(k); } },
+      },
+      {
+        id: 's3', title: 'Round at the top',
+        text: 'At the top of each bounce the ball is almost still, so it must be perfectly round again (both controls back at 0). Check the first two tops (frames 1 and 21) after adding your squash and stretch keys.',
+        how: ['Scrub to frame 21 and read Z Scale in the selected-key panel.', 'If it is not close to 1, select the SS_Top and SS_Bottom keys in Track View and set their values to 0.'],
+        why: 'Keeping the shape stable when the ball is slow makes the squash at the contact stand out.',
+        check: d => { const t = tops(locZ(d)).slice(0, 2); return STAGES[1].steps[0].check(d) && STAGES[1].steps[1].check(d) && t.length === 2 && t.every(k => Math.abs(shape(d, k.frame).sz - 1) <= 0.07); },
+        solve: d => { STAGES[1].steps[0].solve(d); STAGES[1].steps[1].solve(d); },
+      },
+      {
+        id: 's4', title: 'Never through the floor',
+        text: 'SS_Bottom moves the bottom of the ball, so it can push it through the floor. Play the whole animation and check that the ball never goes below the floor: the selected-key panel shows the lowest point. At contact frames SS_Bottom must be back at 0.',
+        how: ['Watch <b>Lowest point</b> in the panel: it must not be below 0.', 'If it is, scrub to find the frame and move the SS_Bottom key up.', 'Keep the squash and stretch from the previous steps.'],
+        why: 'A ball that sinks into the floor breaks the illusion of contact at once. Riggers add the second control so animators can stretch without cheating the contact.',
+        check: d => STAGES[1].steps[2].check(d) && lowestPoint(d) >= -0.03,
+        solve: d => { STAGES[1].steps[2].solve(d); },
+      },
+    ],
+  },
+  {
+    id: 'weight', name: 'Weight', sub: 'Heavy or light',
+    channels: ['locX', 'locZ'],
+    independent: true, // each step loads its own starting scene
+    steps: [
+      {
+        id: 'w1', title: 'A bowling ball',
+        text: 'This is a rubber ball. Turn it into a heavy bowling ball: it barely bounces. Make the first bounce at most 30% as high as the drop (4 m → 1.2 m or less), and make it short: 10 frames or fewer between the first two contacts.',
+        how: ['Drag the second top down to 1 m or less in the Curve Editor.', 'Drag that bounce\'s keys left in the Track Bar so it lasts 10 frames or fewer.', 'Lower or delete (<kbd>Delete</kbd>) the later bounces.'],
+        why: 'Heavy objects lose their energy quickly: low, short bounces and a sudden stop.',
+        start: () => ({ channels: { locX: travel(), locZ: curve(RUBBER) } }),
+        check: d => { const t = topValues(locZ(d)), fb = firstBounce(locZ(d)); return t.length >= 2 && t[1] <= 0.3 * t[0] && fb && fb[1] - fb[0] <= 10 && allSharp(locZ(d)); },
+        solve: d => { d.channels.locZ = curve([[1, 4], [13, 0], [18, 0.9], [23, 0], [25.5 | 0, 0.25], [28, 0]]); },
+      },
+      {
+        id: 'w2', title: 'A beach ball',
+        text: 'Now a light beach ball: it floats at the top of every bounce. Change only the handles: make the curve stay near the top for longer. Your goal is a hang time of 55% or more in the first bounce (time above 80% of its height).',
+        how: ['In the Curve Editor click the key at the first bounce top (frame 21). Its tangent handles appear.', 'Drag each tangent handle horizontally away from the key. This gives the key custom spline tangents while keeping the top smooth.', 'Watch Hang time in the panel and the Motion Paths dots bunching at the top.'],
+        why: 'Long handles at the top = the ball spends more frames up there = it feels light. This is how you give weight with curves alone.',
+        start: () => ({ channels: { locX: travel(), locZ: curve(RUBBER) } }),
+        check: d => { const fb = firstBounce(locZ(d)); return fb && hangTime(locZ(d), fb[0], fb[1]) >= 0.55 && allSharp(locZ(d)); },
+        solve: d => { const k = locZ(d); for (const t of tops(k)) { const i = k.indexOf(t), p = k[i - 1], n = k[i + 1]; t.handle = 'ALIGNED'; if (p) t.left = { frame: t.frame - (t.frame - p.frame) * 0.85, value: t.value }; if (n) t.right = { frame: t.frame + (n.frame - t.frame) * 0.85, value: t.value }; } },
+      },
+      {
+        id: 'w3', title: 'Match a real bounce',
+        text: 'The dashed yellow curve is a real ball simulated with physics. The keys are already at the right frames and heights, but with Linear interpolation. Shape the curve until it matches the reference: 94% or more.',
+        how: ['In the Curve Editor select the Z Position keys with <kbd>Ctrl</kbd><kbd>A</kbd> and click <b>Smooth curve</b>. Select the contacts and click <b>Linear tangent</b>.', 'If contacts are still too soft, select one and drag its tangent handles so the curve leaves the ground more steeply.', 'Watch Match in the selected-key panel.'],
+        why: 'A falling object follows a parabola: slow at the top, fastest at the contact. Animators copy that shape with the handles.',
+        reference: true,
+        start: () => ({ channels: { locX: travel(), locZ: curve(PHYSICS_KEYS, 'LINEAR') } }),
+        check: d => matchScore(locZ(d), REFERENCE, 1, 60) >= 94,
+        solve: d => {
+          const k = locZ(d); k.forEach(q => { q.interp = 'BEZIER'; }); recalcHandles(k);
+          for (const c of k) if (c.value <= 0.05) {
+            const i = k.indexOf(c), p = k[i - 1], n = k[i + 1];
+            c.handle = 'FREE';
+            if (p) c.left = { frame: c.frame - (c.frame - p.frame) / 3, value: 2 * p.value / 3 };
+            if (n) c.right = { frame: c.frame + (n.frame - c.frame) / 3, value: 2 * n.value / 3 };
+          }
+        },
+      },
+    ],
+  },
+  {
+    id: 'rotation', name: 'Rotation', sub: 'Roll as it travels',
+    channels: ['locX', 'locZ', 'rotY'], hide: ['locX', 'locZ'], active: 'rotY',
+    independent: true,
+    steps: [
+      {
+        id: 'r1', title: 'Roll the right way',
+        text: 'A ball that moves forwards also turns. The rig has a Rotation control (the orange circle arrow around the ball): it turns the ball but not its squash, which stays vertical. Right now the ball turns backwards and far too little. A ball rolls without sliding: it turns once for every π × diameter it travels (3.14 m for this 1 m ball). It travels 9 m, so at frame 72 it must have turned about 1031°, forwards.',
+        how: ['At frame 72 click the orange <b>Rotation</b> helper. Choose <b>Select and Rotate</b> (or <kbd>E</kbd>), type 1031 and press <kbd>Enter</kbd>, then click <b>Set Keys</b>. Auto Key also records the turn.', 'Or select the frame 72 Y Rotation key in the Curve Editor and enter 1031 as its Value in the selected-key panel.', 'Forwards is clockwise in this side view: positive Y Rotation.'],
+        why: 'A ball that slides without turning, or turns the wrong way, looks as if it were on ice. The rotation sells the contact with the floor.',
+        start: () => ({ channels: { locX: travel(), locZ: curve(RUBBER), rotY: curve([[1, 0, AC], [72, -360, AC]], 'LINEAR') } }),
+        check: d => { const r = rollReport(d); return !r.backwards && r.endErr <= ROLL_TOL; },
+        solve: d => { const k = d.channels.rotY, e = k[k.length - 1]; e.value = ROLL; recalcHandles(k); },
+      },
+      {
+        id: 'r2', title: 'Roll at the speed it travels',
+        text: 'The total turn is right, but Y Rotation uses a smooth curve: it starts and stops slowly while X Position travels at a constant speed. The ball slides at the start and end, then spins too fast in the middle. Its rotation must follow its travel at every frame.',
+        how: ['In Track View select the Y Rotation controller and its two keys (<kbd>Ctrl</kbd><kbd>A</kbd> in the Key Window).', 'Click <b>Linear curve</b>, matching the Root X Position controller (use its eye button to compare).', 'The selected-key panel shows the worst slide of rotation against travel.'],
+        why: 'Rotation and travel are two channels of the same movement: when their curves have the same shape, the ball rolls.',
+        start: () => ({ channels: { locX: travel(), locZ: curve(RUBBER), rotY: curve([[1, 0, AC], [72, ROLL, AC]]) } }),
+        check: d => rollReport(d).worst <= ROLL_TOL,
+        solve: d => { d.channels.rotY.forEach(k => { k.interp = 'LINEAR'; }); },
+      },
+      {
+        id: 'r3', title: 'Slow down together',
+        text: 'Now the ball slows and stops at frame 60 (the X Position curve eases out). Y Rotation continues at a constant speed until frame 72, so the ball spins on the spot. Make the rotation stop with the travel.',
+        how: ['Show the Root X Position controller with its eye button to see where travel stops.', 'Drag the last rotation key to frame 60 in the Track Bar, or enter 60 as its Frame in the selected-key panel.', 'Give rotation the same curve as travel: select both Y Rotation keys and click <b>Smooth curve</b>.'],
+        why: 'When an object slows down, every controller of its movement slows down with it. Matching controller curves is a common task in Track View.',
+        start: () => ({ channels: { locX: curve([[1, 0, AC], [60, 9, AC]]), locZ: curve(RUBBER), rotY: curve([[1, 0, AC], [72, ROLL, AC]], 'LINEAR') } }),
+        check: d => rollReport(d).worst <= ROLL_TOL,
+        solve: d => { const k = d.channels.rotY; k[k.length - 1].frame = 60; k.forEach(q => { q.interp = 'BEZIER'; q.handle = 'AUTO_CLAMPED'; }); recalcHandles(k); },
+      },
+    ],
+  },
+];
+
+// How well the Rotation follows the travel: the rotation the ball needs at each frame to roll without sliding.
+export function rollReport(d, from = RANGE[0], to = RANGE[1]) {
+  const x0 = chanAt(d, 'locX', from), r0 = chanAt(d, 'rotY', from);
+  const need = f => r0 + rollAngle(chanAt(d, 'locX', f) - x0), total = Math.max(1, Math.abs(need(to) - r0));
+  let worst = 0, worstF = from;
+  for (let f = from; f <= to; f += 0.5) { const e = Math.abs(chanAt(d, 'rotY', f) - need(f)); if (e > worst) { worst = e; worstF = f; } }
+  const end = chanAt(d, 'rotY', to) - r0, want = need(to) - r0;
+  return { end, want, endErr: Math.abs(end - want) / total, worst: worst / total, worstF: Math.round(worstF), backwards: want * end < 0 };
+}
+const ROLL_TOL = 0.05;
+const ROLL = +rollAngle(9).toFixed(1); // 9 m of travel
+
+export function startData(stage, stepIndex = 0) {
+  const d = stage.independent ? stage.steps[stepIndex].start() : stage.start();
+  return d;
+}
+export function cloneData(d) {
+  return { channels: Object.fromEntries(Object.entries(d.channels).map(([k, v]) => [k, cloneKeys(v)])) };
+}

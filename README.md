@@ -6,9 +6,9 @@ Interactive browser labs for learning by experimenting. This independent collect
 
 ## Learning areas
 
-The home page groups labs by their **main teaching interface**. Blender has its own track (14 labs) with basics, modeling and UVs, materials, light and camera, and rigging and animation. Unity-focused work sits under Game engines; C#, video grading, scenography and graphic design have separate areas. All 22 existing lab URLs remain unchanged.
+The home page groups labs by their **main teaching interface**. Blender has its own track (14 labs) with basics, modeling and UVs, materials, light and camera, and rigging and animation. 3ds Max begins with a separate bouncing-ball Animation Lab. Unity-focused work sits under Game engines; C#, video grading, scenography and graphic design have separate areas. All 22 original lab URLs remain unchanged.
 
-The 3ds Max area is a visible placeholder. Its future labs can reuse the learning goals and concepts from the Blender track, while presenting 3ds Max controls, terminology, examples and screenshots. New application-specific labs should have their own directories under `labs/`; do not copy a Blender interface into the 3ds Max track or link to a Blender lab as though it were a 3ds Max lesson.
+The 3ds Max area has a dedicated Animation Lab. It shares the bouncing-ball principles and four assessment stages with the Blender lab, while using a separate 3ds Max-inspired viewport, helper rig, Time Slider and Track Bar, Track View Curve Editor/Dope Sheet, and Auto Key/Set Keys workflow. Its progress is stored separately in the browser. Future Max labs can build on the same learning goals with their own application controls and terminology.
 
 Lab content and shared lab controls were last synchronized from CIFOG Lab through commit `36a3ac5` (2026-09-28). The Carrot Revolt Labs home page, learning areas, branding and local preview configuration are maintained here.
 
@@ -17,6 +17,7 @@ Lab content and shared lab controls were last synchronized from CIFOG Lab throug
 - UV Unwrap Lab: ./labs/uv-unwrapping/
 - Code Lab (C#): ./labs/csharp/
 - Animation Lab: ./labs/animation/
+- 3ds Max Animation Lab: ./labs/3ds-max-animation/
 - Code Lab 02 (objects): ./labs/csharp-objects/
 - Skin Weights Lab: ./labs/skin-weights/
 - Rig Lab: ./labs/rig/
