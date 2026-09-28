@@ -12,4 +12,4 @@ http.createServer(async(req,res)=>{
   if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}
   const bytes=await fs.readFile(file);res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(bytes);
  }catch{res.writeHead(404);res.end('Not found');}
-}).listen(Number(process.env.PORT)||5197,'127.0.0.1',()=>console.log(`Carrot Revolt Labs: http://127.0.0.1:${Number(process.env.PORT)||5197}`));
+}).listen(Number(process.env.PORT)||5198,'127.0.0.1',()=>console.log(`Carrot Revolt Labs: http://127.0.0.1:${Number(process.env.PORT)||5198}`));

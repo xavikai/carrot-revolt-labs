@@ -111,7 +111,7 @@ The site is static. Node.js is needed only for a local preview:
 npm start
 ```
 
-Visit `http://127.0.0.1:5197/`. The local server resolves folder URLs to their `index.html` files. All site links and assets use relative URLs and also work beneath the GitHub Pages project path.
+Visit `http://127.0.0.1:5198/`. The local server resolves folder URLs to their `index.html` files. All site links and assets use relative URLs, so they can also work under a subdirectory when the site is published again.
 
 ```sh
 npm test
