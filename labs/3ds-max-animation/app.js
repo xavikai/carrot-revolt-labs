@@ -131,6 +131,7 @@ function ctrlShape(bone) {
 const ctrls3 = { Root: ctrlShape('Root'), SS_Top: ctrlShape('SS_Top'), SS_Bottom: ctrlShape('SS_Bottom'), Rotation: ctrlShape('Rotation') };
 const gizmo3 = new THREE.Group();
 const gizmoParts = {};
+const gizmoPickParts = [];
 const gizmoLabel = (text, color) => {
   const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
   x.font = '700 42px Segoe UI, Arial'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = color; x.strokeStyle = '#111b'; x.lineWidth = 6; x.strokeText(text, 32, 32); x.fillText(text, 32, 32);
@@ -138,6 +139,9 @@ const gizmoLabel = (text, color) => {
 };
 for (const [axis, dir, color] of [['x', new THREE.Vector3(1, 0, 0), 0xe34b4b], ['y', new THREE.Vector3(0, 1, 0), 0x55c878], ['z', new THREE.Vector3(0, 0, 1), 0x4f9cff]]) {
     const a = new THREE.ArrowHelper(dir, new THREE.Vector3(), .9, color, .16, .09); a.renderOrder = 30; a.line.material.depthTest = false; a.cone.material.depthTest = false; a.line.material.transparent = true; a.cone.material.transparent = true; gizmo3.add(a); gizmo3.add(gizmoLabel(axis.toUpperCase(), '#' + color.toString(16).padStart(6, '0'))); gizmoParts[axis] = { arrow: a, label: gizmo3.children[gizmo3.children.length - 1] };
+    const size = axis === 'x' ? [.95, .18, .18] : axis === 'y' ? [.18, .95, .18] : [.18, .18, .95];
+    const pick = new THREE.Mesh(new THREE.BoxGeometry(...size), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthTest: false }));
+    pick.userData.axis = axis; pick.renderOrder = 31; gizmo3.add(pick); gizmoPickParts.push(pick);
 }
 const gizmoOrigin = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false })); gizmoOrigin.renderOrder = 30; gizmo3.add(gizmoOrigin); gizmo3.visible = false; scene3.add(gizmo3);
 const pathDots = new THREE.Group(), ghosts = new THREE.Group(), refGroup = new THREE.Group(); scene3.add(pathDots, ghosts, refGroup);
@@ -226,6 +230,12 @@ function pickCtrl(e) {
   if (ray3.intersectObject(ball3, false).length) return S.toggles.ctrls ? 'Root' : null;
   return null;
 }
+function pickGizmoAxis(e) {
+  if (!gizmo3.visible) return null;
+  const r = viewCanvas.getBoundingClientRect();
+  ray3.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), cam3);
+  return ray3.intersectObjects(gizmoPickParts, false)[0]?.object.userData.axis || null;
+}
 function selectBone(bone) {
   S.bone = bone;
   const ch = channelOf(bone);
@@ -234,6 +244,10 @@ function selectBone(bone) {
 }
 viewCanvas.addEventListener('pointerdown', e => {
   closeMenu();
+  if (e.button === 0) {
+    const axis = pickGizmoAxis(e);
+    if (axis) { e.preventDefault(); chooseAxis(axis); if (!S.vgrab && !S.vrot && !S.vscale) activateTool(S.tool); return; }
+  }
   if (S.vgrab) { e.preventDefault(); endVGrab(e.button === 0); return; }
   if (S.vrot) { e.preventDefault(); endVRot(e.button === 0); return; }
   if (S.vscale) { e.preventDefault(); endVScale(e.button === 0); return; }
@@ -247,7 +261,7 @@ viewCanvas.addEventListener('pointermove', e => {
   if (S.vrot) updateVRot(true);
   if (S.vscale) updateVScale();
 });
-viewCanvas.addEventListener('contextmenu', e => { if (S.vgrab) { e.preventDefault(); endVGrab(false); } if (S.vrot) { e.preventDefault(); endVRot(false); } });
+viewCanvas.addEventListener('contextmenu', e => { if (S.vgrab) { e.preventDefault(); endVGrab(false); } if (S.vrot) { e.preventDefault(); endVRot(false); } if (S.vscale) { e.preventDefault(); endVScale(false); } });
 // G in the 3D Viewport. The Root moves in X (forwards) and Z (up); the squash & stretch controls only in Z.
 // This lab lets X or Z lock the axis while moving a helper.
 function startVGrab() {
@@ -290,12 +304,13 @@ function updateVGrab() {
   let dx = (S.vpointer.x - g.x0) * g.wpp, dz = -(S.vpointer.y - g.y0) * g.wpp;
   if (typed != null) { if (g.axis === 'z') { dz = typed; dx = 0; } else { dx = typed; dz = 0; } }
   if (g.axis === 'x') dz = 0;
+  if (g.axis === 'y') { dx = 0; dz = 0; }
   if (g.axis === 'z' || !g.root) dx = 0;
   const over = { ...g.prev, [g.ch]: Math.round((g.start + dz) * 1000) / 1000 };
   if (g.root) over.locX = Math.round((g.startX + dx) * 1000) / 1000;
   S.override = over;
   $('#view-readout').hidden = false;
-  const lock = g.root ? (g.axis ? ` · ${t(g.axis === 'x' ? 'only X' : 'only Z')}` : ` · ${t('X / Z lock an axis')}`) : ` · ${t('SS controls move only in Z')}`;
+  const lock = g.root ? (g.axis ? ` · ${t(g.axis === 'x' ? 'only X' : g.axis === 'y' ? 'Y depth unavailable' : 'only Z')}` : ` · ${t('X / Z lock an axis')}`) : ` · ${t('SS controls move only in Z')}`;
   $('#view-readout').textContent = `${t('Move')}${g.root ? `  X ${dx >= 0 ? '+' : ''}${dx.toFixed(2)} m` : ''}  Z ${dz >= 0 ? '+' : ''}${dz.toFixed(2)} m${g.num ? `  [${g.num}]` : ''}${lock}`;
   drawView(); renderSidebar();
 }
@@ -395,7 +410,7 @@ function keyControl() {
   msg(tr('Inserted a keyframe on {c} at frame {n}.', { c: ch === 'rotY' ? 'Rotation · Y Rotation' : `${S.bone} · ${[...chans].sort().map(c => CHANNELS[c].axis).join(', ')} Position`, n: f })); changed(true);
 }
 function syncTransformTools() {
-  document.querySelectorAll('.max-transform').forEach(b => b.classList.toggle('active', b.dataset.tool === S.tool));
+  document.querySelectorAll('.max-transform').forEach(b => { const active = b.dataset.tool === S.tool; b.classList.toggle('active', active); b.setAttribute('aria-pressed', String(active)); });
   document.querySelectorAll('.max-axis-constraints button').forEach(b => b.setAttribute('aria-pressed', String(S.axis === b.dataset.axis)));
   gizmo3.visible = S.toggles.ctrls;
 }
@@ -407,7 +422,17 @@ function activateTool(tool) {
   if (tool === 'move') startVGrab(); else if (tool === 'rotate') startVRot(); else startVScale();
 }
 document.querySelectorAll('.max-transform').forEach(b => b.onclick = () => activateTool(b.dataset.tool));
-document.querySelectorAll('.max-axis-constraints button').forEach(b => b.onclick = () => { S.axis = S.axis === b.dataset.axis ? null : b.dataset.axis; store.set('axis', S.axis); syncTransformTools(); drawView(); });
+function chooseAxis(axis) {
+  S.axis = S.axis === axis ? null : axis;
+  store.set('axis', S.axis);
+  if (S.vgrab) {
+    if (S.axis === 'y') msg('Y depth is not editable in this side view. Use X or Z.', true);
+    S.vgrab.axis = S.axis || (S.vgrab.root ? null : 'z');
+    updateVGrab();
+  }
+  syncTransformTools(); drawView();
+}
+document.querySelectorAll('.max-axis-constraints button').forEach(b => b.onclick = () => chooseAxis(b.dataset.axis));
 function syncKeyMode() {
   $('#auto-key').setAttribute('aria-pressed', String(S.keyMode === 'auto'));
   $('#set-key-mode').setAttribute('aria-pressed', String(S.keyMode === 'set'));
@@ -1141,6 +1166,12 @@ graphCanvas.addEventListener('pointermove', e => { const r = graphCanvas.getBoun
 for (const [el, area] of [[viewHost, 'view'], [$('#graph-host'), 'graph'], [$('#timeline-host'), 'timeline']]) el.addEventListener('pointerenter', () => { S.area = area; });
 document.addEventListener('keydown', e => {
   if (e.target.closest?.('input, select, textarea')) return;
+  const shortcut = e.key.toLowerCase();
+  if (S.hover && !e.ctrlKey && !e.altKey && !e.metaKey && ['w', 'e', 'r'].includes(shortcut)) {
+    e.preventDefault();
+    activateTool(shortcut === 'w' ? 'move' : shortcut === 'e' ? 'rotate' : 'scale');
+    return;
+  }
     if (S.vgrab) { e.preventDefault(); vgrabKey(e); return; }
     if (S.vrot) { e.preventDefault(); vrotKey(e); return; }
     if (S.vscale) { e.preventDefault(); vscaleKey(e); return; }
