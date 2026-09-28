@@ -2,35 +2,37 @@
 
 Interactive browser labs for learning by experimenting. This independent collection begins with 3D, game development, design, and stage topics and can grow into other subjects.
 
+**Publication status:** The repository is private and the website is currently unpublished. Run the local preview to browse the labs while a future hosting option is decided.
+
 ## Learning areas
 
 The home page groups labs by their **main teaching interface**. Blender has its own track (14 labs) with basics, modeling and UVs, materials, light and camera, and rigging and animation. Unity-focused work sits under Game engines; C#, video grading, scenography and graphic design have separate areas. All 22 existing lab URLs remain unchanged.
 
 The 3ds Max area is a visible placeholder. Its future labs can reuse the learning goals and concepts from the Blender track, while presenting 3ds Max controls, terminology, examples and screenshots. New application-specific labs should have their own directories under `labs/`; do not copy a Blender interface into the 3ds Max track or link to a Blender lab as though it were a 3ds Max lesson.
 
-- Live collection: https://xavikai.github.io/carrot-revolt-labs/
-- Material Lab: https://xavikai.github.io/carrot-revolt-labs/labs/materials/
-- UV Unwrap Lab: https://xavikai.github.io/carrot-revolt-labs/labs/uv-unwrapping/
-- Code Lab (C#): https://xavikai.github.io/carrot-revolt-labs/labs/csharp/
-- Animation Lab: https://xavikai.github.io/carrot-revolt-labs/labs/animation/
-- Code Lab 02 (objects): https://xavikai.github.io/carrot-revolt-labs/labs/csharp-objects/
-- Skin Weights Lab: https://xavikai.github.io/carrot-revolt-labs/labs/skin-weights/
-- Rig Lab: https://xavikai.github.io/carrot-revolt-labs/labs/rig/
-- Photo Lab: https://xavikai.github.io/carrot-revolt-labs/labs/photo/
-- Baking Lab: https://xavikai.github.io/carrot-revolt-labs/labs/baking/
-- Lighting Lab: https://xavikai.github.io/carrot-revolt-labs/labs/lighting/
-- Topology Lab: https://xavikai.github.io/carrot-revolt-labs/labs/topology/
-- Trim Sheet Lab: https://xavikai.github.io/carrot-revolt-labs/labs/trim-sheet/
-- Stage House Lab: https://xavikai.github.io/carrot-revolt-labs/labs/stage/
-- Color & Type Lab: https://xavikai.github.io/carrot-revolt-labs/labs/color-type/
-- Stage Lighting Lab: https://xavikai.github.io/carrot-revolt-labs/labs/stage-lighting/
-- Texel Density Lab: https://xavikai.github.io/carrot-revolt-labs/labs/texel-density/
-- LOD & Mipmaps Lab: https://xavikai.github.io/carrot-revolt-labs/labs/lod/
-- Color Grading Lab: https://xavikai.github.io/carrot-revolt-labs/labs/grading/
-- Lightmap Lab: https://xavikai.github.io/carrot-revolt-labs/labs/lightmaps/
-- Viewport Lab: https://xavikai.github.io/carrot-revolt-labs/labs/viewport/
-- Edit Mode Lab: https://xavikai.github.io/carrot-revolt-labs/labs/editmode/
-- Tileable Texture Lab: https://xavikai.github.io/carrot-revolt-labs/labs/tileable/
+- Home page (local): `index.html`
+- Material Lab: ./labs/materials/
+- UV Unwrap Lab: ./labs/uv-unwrapping/
+- Code Lab (C#): ./labs/csharp/
+- Animation Lab: ./labs/animation/
+- Code Lab 02 (objects): ./labs/csharp-objects/
+- Skin Weights Lab: ./labs/skin-weights/
+- Rig Lab: ./labs/rig/
+- Photo Lab: ./labs/photo/
+- Baking Lab: ./labs/baking/
+- Lighting Lab: ./labs/lighting/
+- Topology Lab: ./labs/topology/
+- Trim Sheet Lab: ./labs/trim-sheet/
+- Stage House Lab: ./labs/stage/
+- Color & Type Lab: ./labs/color-type/
+- Stage Lighting Lab: ./labs/stage-lighting/
+- Texel Density Lab: ./labs/texel-density/
+- LOD & Mipmaps Lab: ./labs/lod/
+- Color Grading Lab: ./labs/grading/
+- Lightmap Lab: ./labs/lightmaps/
+- Viewport Lab: ./labs/viewport/
+- Edit Mode Lab: ./labs/editmode/
+- Tileable Texture Lab: ./labs/tileable/
 
 ## Available labs
 
@@ -103,7 +105,7 @@ Open a lab from the home page. To add another lab later, create a new `labs/<nam
 
 ## Local preview
 
-The published site is static. Node.js is needed only for a local preview:
+The site is static. Node.js is needed only for a local preview:
 
 ```sh
 npm start
