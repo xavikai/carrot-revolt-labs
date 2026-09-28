@@ -131,17 +131,28 @@ function ctrlShape(bone) {
 const ctrls3 = { Root: ctrlShape('Root'), SS_Top: ctrlShape('SS_Top'), SS_Bottom: ctrlShape('SS_Bottom'), Rotation: ctrlShape('Rotation') };
 const gizmo3 = new THREE.Group();
 const gizmoParts = {};
+const gizmoRotateParts = {};
+const gizmoScaleParts = {};
 const gizmoPickParts = [];
+const gizmoMove = new THREE.Group(), gizmoRotate = new THREE.Group(), gizmoScale = new THREE.Group(), gizmoPickLayer = new THREE.Group();
+gizmo3.add(gizmoMove, gizmoRotate, gizmoScale, gizmoPickLayer);
 const gizmoLabel = (text, color) => {
   const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
   x.font = '700 42px Segoe UI, Arial'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = color; x.strokeStyle = '#111b'; x.lineWidth = 6; x.strokeText(text, 32, 32); x.fillText(text, 32, 32);
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthTest: false })); s.scale.set(.34, .34, 1); s.renderOrder = 30; return s;
 };
 for (const [axis, dir, color] of [['x', new THREE.Vector3(1, 0, 0), 0xe34b4b], ['y', new THREE.Vector3(0, 1, 0), 0x55c878], ['z', new THREE.Vector3(0, 0, 1), 0x4f9cff]]) {
-    const a = new THREE.ArrowHelper(dir, new THREE.Vector3(), .9, color, .16, .09); a.renderOrder = 30; a.line.material.depthTest = false; a.cone.material.depthTest = false; a.line.material.transparent = true; a.cone.material.transparent = true; gizmo3.add(a); gizmo3.add(gizmoLabel(axis.toUpperCase(), '#' + color.toString(16).padStart(6, '0'))); gizmoParts[axis] = { arrow: a, label: gizmo3.children[gizmo3.children.length - 1] };
+    const a = new THREE.ArrowHelper(dir, new THREE.Vector3(), .9, color, .16, .09); a.renderOrder = 30; a.line.material.depthTest = false; a.cone.material.depthTest = false; a.line.material.transparent = true; a.cone.material.transparent = true; gizmoMove.add(a); const label = gizmoLabel(axis.toUpperCase(), '#' + color.toString(16).padStart(6, '0')); gizmoMove.add(label); gizmoParts[axis] = { arrow: a, label };
     const size = axis === 'x' ? [.95, .18, .18] : axis === 'y' ? [.18, .95, .18] : [.18, .18, .95];
     const pick = new THREE.Mesh(new THREE.BoxGeometry(...size), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthTest: false }));
-    pick.userData.axis = axis; pick.renderOrder = 31; gizmo3.add(pick); gizmoPickParts.push(pick);
+    pick.userData.axis = axis; pick.renderOrder = 31; gizmoPickLayer.add(pick); gizmoPickParts.push(pick);
+
+    const points = [], radius = 1.02;
+    for (let i = 0; i <= 48; i++) { const a = i / 48 * Math.PI * 2; const c = Math.cos(a) * radius, s = Math.sin(a) * radius; points.push(axis === 'x' ? new THREE.Vector3(0, c, s) : axis === 'y' ? new THREE.Vector3(c, 0, s) : new THREE.Vector3(c, s, 0)); }
+    const ring = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), new THREE.LineBasicMaterial({ color, transparent: true, opacity: .92, depthTest: false })); ring.renderOrder = 30; gizmoRotate.add(ring); const rlabel = gizmoLabel(axis.toUpperCase(), '#' + color.toString(16).padStart(6, '0')); rlabel.position.copy(points[12]).multiplyScalar(1.05); gizmoRotate.add(rlabel); gizmoRotateParts[axis] = { ring, label: rlabel };
+
+    const bar = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), dir.clone().multiplyScalar(.82)]), new THREE.LineBasicMaterial({ color, transparent: true, opacity: .9, depthTest: false })); bar.renderOrder = 30; gizmoScale.add(bar);
+    const handle = new THREE.Mesh(new THREE.BoxGeometry(.2, .2, .2), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: .95, depthTest: false })); handle.position.copy(dir).multiplyScalar(.88); handle.renderOrder = 31; gizmoScale.add(handle); const slabel = gizmoLabel(axis.toUpperCase(), '#' + color.toString(16).padStart(6, '0')); slabel.position.copy(dir).multiplyScalar(1.12); gizmoScale.add(slabel); gizmoScaleParts[axis] = { bar, handle, label: slabel };
 }
 const gizmoOrigin = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false })); gizmoOrigin.renderOrder = 30; gizmo3.add(gizmoOrigin); gizmo3.visible = false; scene3.add(gizmo3);
 const pathDots = new THREE.Group(), ghosts = new THREE.Group(), refGroup = new THREE.Group(); scene3.add(pathDots, ghosts, refGroup);
@@ -178,8 +189,11 @@ function drawView() {
   ctrls3.SS_Top.position.set(p.x, p.top + 0.08, p.previewDepth + 0.02); ctrls3.SS_Bottom.position.set(p.x, p.bottom - 0.08, p.previewDepth + 0.02);
   ctrls3.Rotation.position.set(p.x, p.center, p.previewDepth + 0.03); ctrls3.Rotation.rotation.z = toRad(p.rot);
   const helperPoint = S.bone === 'SS_Top' ? [p.x, p.top + .08, p.previewDepth + .08] : S.bone === 'SS_Bottom' ? [p.x, p.bottom - .08, p.previewDepth + .08] : S.bone === 'Rotation' ? [p.x, p.center, p.previewDepth + .08] : [p.x, Math.max(0, p.root) + .02, p.previewDepth + .08];
-  gizmo3.position.set(...helperPoint); gizmo3.scale.setScalar(S.tool === 'scale' ? 1.1 : 1); gizmo3.visible = S.toggles.ctrls;
+  gizmo3.position.set(...helperPoint); gizmo3.scale.setScalar(S.tool === 'scale' ? 1.1 : S.tool === 'rotate' ? 1.15 : 1); gizmo3.visible = S.toggles.ctrls;
+  gizmoMove.visible = S.tool === 'move'; gizmoRotate.visible = S.tool === 'rotate'; gizmoScale.visible = S.tool === 'scale'; gizmoPickLayer.visible = true;
   for (const [axis, part] of Object.entries(gizmoParts)) { const active = S.axis === axis; part.arrow.line.material.opacity = active ? 1 : .82; part.arrow.cone.material.opacity = active ? 1 : .82; part.label.material.opacity = active ? 1 : .9; }
+  for (const [axis, part] of Object.entries(gizmoRotateParts)) { const active = S.axis === axis; part.ring.material.opacity = active ? 1 : .82; part.label.material.opacity = active ? 1 : .9; }
+  for (const [axis, part] of Object.entries(gizmoScaleParts)) { const active = S.axis === axis; part.bar.material.opacity = active ? 1 : .82; part.handle.material.opacity = active ? 1 : .88; part.label.material.opacity = active ? 1 : .9; }
   const on = S.toggles.ctrls;
   ctrls3.Root.visible = on; ctrls3.SS_Top.visible = on && anim.includes('topZ'); ctrls3.SS_Bottom.visible = on && anim.includes('botZ'); ctrls3.Rotation.visible = on && anim.includes('rotY');
   for (const [b, m] of Object.entries(ctrls3)) { const sel = S.bone === b; m.material.color.set(sel ? 0xffffff : CTRL_COLORS[b]); m.scale.setScalar(sel ? 1.15 : 1); }
