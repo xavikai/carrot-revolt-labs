@@ -273,7 +273,7 @@ dialog::backdrop{background:#0b0c0ecc}dialog h2{font-size:1.6rem;letter-spacing:
 .arr .cell .vl.ref{min-width:0;padding:0 4px;font-size:.66rem}
 /* ─── The challenge above the editor and the scene (read first, then code) ─── */
 .workspace{grid-template-rows:auto minmax(560px,calc(100dvh - 150px));height:auto}
-.challenge-panel{grid-column:1;grid-row:1/3}
+.challenge-panel{grid-column:1;grid-row:1/3;contain:size;overflow:auto}
 .challenge{grid-column:2/4;grid-row:1;margin:0;border:0;border-bottom:2px solid #5b4a22;border-radius:0;padding:14px 20px 16px;background:linear-gradient(90deg,#ffbf000f,var(--panel) 55%);display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) auto;gap:6px 24px;align-items:start;max-height:42vh;overflow:auto;position:relative}
 .ch-main,.ch-side{min-width:0}
 .ch-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
@@ -293,6 +293,6 @@ dialog::backdrop{background:#0b0c0ecc}dialog h2{font-size:1.6rem;letter-spacing:
   .workspace{grid-template-rows:auto auto auto}
   .challenge{grid-column:1/-1;grid-row:auto;grid-template-columns:1fr 1fr;max-height:none}
   .challenge-actions{grid-column:1/-1;grid-row:auto;flex-direction:row}
-  .challenge-panel{grid-row:auto}
+  .challenge-panel{grid-row:auto;contain:none}
 }
 @media(max-width:760px){.challenge{grid-template-columns:1fr;margin:0}}

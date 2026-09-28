@@ -2,7 +2,7 @@
 
 Interactive browser labs for learning by experimenting. This independent collection begins with 3D, game development, design, and stage topics and can grow into other subjects.
 
-**Publication status:** The repository is private and the website is currently unpublished. Run the local preview to browse the labs while a future hosting option is decided.
+**Publication status:** The repository is public and the website is published with GitHub Pages.
 
 ## Learning areas
 
@@ -10,7 +10,7 @@ The home page groups labs by their **main teaching interface**. Blender has its 
 
 The 3ds Max area has a dedicated Animation Lab. It shares the bouncing-ball principles and four assessment stages with the Blender lab, while using a separate 3ds Max-inspired viewport, helper rig, Time Slider and Track Bar, Track View Curve Editor/Dope Sheet, and Auto Key/Set Keys workflow. Its progress is stored separately in the browser. Future Max labs can build on the same learning goals with their own application controls and terminology.
 
-Lab content and shared lab controls were last synchronized from CIFOG Lab through commit `36a3ac5` (2026-09-28). The Carrot Revolt Labs home page, learning areas, branding and local preview configuration are maintained here.
+Lab content and shared lab controls were last synchronized from CIFOG Lab through commit `6618198` (2026-09-28). The Carrot Revolt Labs home page, learning areas, branding, 3ds Max Animation Lab and local preview configuration are maintained here.
 
 - Home page (local): `index.html`
 - Material Lab: ./labs/materials/

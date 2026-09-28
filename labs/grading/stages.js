@@ -1,6 +1,6 @@
 // Color Grading Lab: stages, steps and checks. Pure JS (tested with node).
 import { defaultNode, gradeImage, regionMean, levels, balance, chroma, scopeAngle, angleDiff, SKIN_LINE, luma, rgbPuck, keyImage } from './grade.js?v=1';
-import { shot, REG } from './shots.js?v=1';
+import { shot, REG } from './shots.js?v=2';
 
 export const MW = 160, MH = 90;                     // the checks measure a small copy of the shot
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -93,11 +93,11 @@ export function answerQuiz(st, list, a) {
   const ok = a === item.a; if (ok) st.quiz = (st.quiz | 0) + 1; return { ok, item };
 }
 export const WAVE_QUIZ = [
-  { q: 'On the Waveform, where are the darkest parts of this shot (the bookshelf)?', opts: ['At 0, true black', 'Around 15–20: lifted, the picture is flat', 'Below 0: crushed'], a: 1, why: 'Cameras record flat (log) pictures to keep detail: nothing reaches 0. The grade has to bring the blacks down.' },
+  { q: 'On the Waveform, where are the darkest parts of this shot (the chair, the legs of the table)?', opts: ['At 0, true black', 'Around 10–15: lifted, the picture is flat', 'Below 0: crushed'], a: 1, why: 'Cameras record flat (log) pictures to keep detail: nothing reaches 0. The grade has to bring the blacks down.' },
   { q: 'And the brightest part, the window?', opts: ['Above 100: clipped', 'Around 70–75: it could be much brighter', 'Exactly 100'], a: 1, why: 'The window is the brightest thing in the room but sits at about 70: the contrast is still in the file, waiting to be stretched.' },
 ];
 export const PARADE_QUIZ = [
-  { q: 'Look at the grey card on the Parade (the small flat line in the lower middle of each channel). Which channel is the highest?', opts: ['Red', 'Green', 'Blue'], a: 2, why: 'The card is neutral grey, so its three lines should be level. Blue is highest: the shot is too cool (the camera was set to a warmer white balance than the light).' },
+  { q: 'Look at the grey card on the Parade (the short flat line on the right of each channel, in the middle of the height). Which channel is the highest?', opts: ['Red', 'Green', 'Blue'], a: 2, why: 'The card is neutral grey, so its three lines should be level. Blue is highest: the shot is too cool (the camera was set to a warmer white balance than the light).' },
   { q: 'On the Vectorscope, where does the skin sit compared to the skin tone line?', opts: ['On the line', 'Rotated towards red and magenta', 'Rotated towards yellow and green'], a: 1, why: 'The skin cluster points a little under the line, towards red and magenta, and it is very short: low saturation. Balance first, then check it again.' },
 ];
 export const MATCH_QUIZ = [
@@ -114,7 +114,7 @@ export const STAGES = [
       {
         id: 's1', title: 'The Waveform',
         text: 'Monitors lie; scopes do not. The Waveform draws every column of the picture as a column of dots: the higher a dot, the brighter that pixel, from 0 (black) to 100 (white). This interview was shot in a flat, log-like mode: look at where its darkest and brightest parts land.',
-        how: ['In the <b>Scopes</b> panel, keep <b>Waveform</b>. Move the pointer over the viewer: a line marks the same column on the Waveform.', 'Find the bookshelf (dark, on the right) and the window (bright, on the left) on the Waveform.', 'Answer the two questions.'],
+        how: ['In the <b>Scopes</b> panel, keep <b>Waveform</b>. Move the pointer over the viewer: a line marks the same column on the Waveform.', 'Find the chair and the little table (dark) and the window (bright, on the left) on the Waveform.', 'Answer the two questions.'],
         why: 'The Waveform tells you the real levels. In a flat picture nothing reaches 0 or 100: the contrast is there, but you have to stretch it.',
         start: { shot: 'intA', scope: 'waveform' },
         check: s => (s.quiz | 0) >= WAVE_QUIZ.length,
@@ -211,7 +211,7 @@ export const STAGES = [
         start: { shot: 'intA', scope: 'waveform', palette: 'window' },
         setup: s => { s.nodes = [balancedNode()]; s.sel = 0; },
         check: s => { if (s.nodes.length < 2) return false; const i = s.nodes.findIndex((n, k) => k > 0 && n.win && n.on); if (i < 0) return false; const base = measure(s, s.nodes.slice(0, i)), m = measure(s); const dFace = luma(...m.reg.skin) - luma(...base.reg.skin), dWall = Math.abs(luma(...m.reg.wall) - luma(...base.reg.wall)); const k = keyReport(s, i); return dFace >= 0.03 && dWall <= 0.015 && k.face >= 0.6; },
-        solve: s => { if (s.nodes.length < 2) s.nodes.push(defaultNodeLike('02')); const n = s.nodes[1]; n.win = { cx: 0.47, cy: 0.37, rx: 0.13, ry: 0.19, soft: 0.35, invert: false }; n.gamma.m = 0.12; s.sel = 1; },
+        solve: s => { if (s.nodes.length < 2) s.nodes.push(defaultNodeLike('02')); const n = s.nodes[1]; n.win = { cx: 0.27, cy: 0.3, rx: 0.12, ry: 0.21, soft: 0.3, invert: false }; n.gamma.m = 0.16; s.sel = 1; },
       },
     ],
   },

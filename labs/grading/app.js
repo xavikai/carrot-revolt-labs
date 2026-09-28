@@ -1,9 +1,9 @@
-// Color Grading Lab: a DaVinci Resolve-style Color page (viewer, nodes, palettes, scopes) on painted shots.
+// Color Grading Lab: a DaVinci Resolve-style Color page (viewer, nodes, palettes, scopes) on three photos.
 import { defaultNode, gradeImage, keyImage, puckRGB, wheelNumbers, curveLUT, LUTS, luma, cb, cr, rgbHsl, balance, chroma, scopeAngle, angleDiff, SKIN_LINE } from './grade.js?v=1';
-import { shot, SHOTS, REG } from './shots.js?v=1';
-import { STAGES, startState, measure, levelsOk, greyOk, skinOk, skinChromaOk, cardMidOk, matchReport, matchOk, keyReport, referenceA, answerQuiz, WAVE_QUIZ, PARADE_QUIZ, MATCH_QUIZ, isSCurve } from './stages.js?v=1';
+import { shot, SHOTS, REG, loadPhotos } from './shots.js?v=2';
+import { STAGES, startState, measure, levelsOk, greyOk, skinOk, skinChromaOk, cardMidOk, matchReport, matchOk, keyReport, referenceA, answerQuiz, WAVE_QUIZ, PARADE_QUIZ, MATCH_QUIZ, isSCurve } from './stages.js?v=2';
 import { t, tr, onLangChange, addDictionary } from '../../i18n.js';
-import dictionary from './i18n.js?v=1';
+import dictionary from './i18n.js?v=2';
 addDictionary(dictionary);
 
 const $ = s => document.querySelector(s);
@@ -18,6 +18,7 @@ const node = () => S.st.nodes[Math.min(S.st.sel, S.st.nodes.length - 1)];
 let msgTimer;
 function msg(text, warning = false) { const el = $('#status-msg'); el.textContent = t(text); el.classList.toggle('warning', warning); clearTimeout(msgTimer); msgTimer = setTimeout(() => { el.textContent = ''; }, 7000); }
 const VW = 512, VH = 288;
+await loadPhotos(VW, VH);
 
 // ─── Images ──────────────────────────────────────────────────────────────────
 const img = id => shot(id, VW, VH);
