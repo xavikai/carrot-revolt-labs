@@ -499,6 +499,7 @@ footer span:nth-child(3){margin-left:auto}
 .max-command-row output{display:block;min-width:70px;text-align:right;background:#2f2f2f;border:1px solid #5d5d5d;padding:3px 4px;color:#eef3f6;font-variant-numeric:tabular-nums}
 .max-command-help{color:#aaa;font-size:10px;line-height:1.4;margin-top:14px}
 .max-curve-editor{position:relative;z-index:2;width:min(1120px,94%);margin:-30px auto 10px;border:1px solid #1f1f1f;box-shadow:0 12px 28px #0009;background:#3b3b3b}
+.max-workspace>.max-curve-editor{width:100%;margin:0;z-index:auto;border:0;border-top:3px solid #262626;box-shadow:none}
 .max-window-titlebar{display:flex;align-items:center;height:31px;padding:0 8px;background:#efefef;color:#171717;font-size:13px;font-weight:400}
 .max-window-titlebar .max-app-badge{width:17px;height:17px;margin:0 7px 0 0;font-size:12px}
 .max-window-actions{margin-left:auto;color:#242424;font-size:18px;letter-spacing:4px}

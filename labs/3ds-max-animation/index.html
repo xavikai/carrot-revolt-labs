@@ -6,7 +6,7 @@
   <meta name="description" content="Animate a bouncing ball in a 3ds Max-inspired workspace with Time Slider, Track Bar, Auto Key, Set Key and Track View Curve Editor.">
   <title>3ds Max Animation Lab · Carrot Revolt Labs</title>
   <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./style.css?v=5">
+  <link rel="stylesheet" href="./style.css?v=6">
   <link rel="stylesheet" href="../../lab-brief.css?v=3">
   <script type="module" src="../../lab-brief.js?v=3"></script>
   <link rel="stylesheet" href="../../brand.css?v=1">
@@ -79,6 +79,28 @@
           </aside>
         </section>
 
+
+      </div>
+
+      <section class="editor timeline" id="bottom-editor" aria-label="Time Slider, Track Bar and Dope Sheet">
+        <div class="editor-header">
+          <label class="editor-type editor-switch" title="Time Slider or Track View Dope Sheet"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8h13M4 5v6M8 4v8M12 5v6" fill="none" stroke="currentColor"/></svg><select id="bottom-type" aria-label="Time Slider or Dope Sheet" data-no-i18n><option value="timeline">Time Slider / Track Bar</option><option value="dopesheet">Track View – Dope Sheet</option></select></label>
+          <div class="play-controls">
+            <button type="button" id="b-start" title="Jump to start (Shift ←)">⏮</button>
+            <button type="button" id="b-prevkey" title="Previous keyframe (↓)">◆◂</button>
+            <button type="button" id="b-play" title="Play (Space)" aria-pressed="false">▶</button>
+            <button type="button" id="b-nextkey" title="Next keyframe (↑)">▸◆</button>
+            <button type="button" id="b-end" title="Jump to end (Shift →)">⏭</button>
+          </div>
+          <label class="frame-field">Frame <input type="number" id="f-cur" class="current" min="0" max="250" value="1"></label>
+          <label class="frame-field">Start <input type="number" id="f-start" min="0" max="249" value="1"></label>
+          <label class="frame-field">End <input type="number" id="f-end" min="2" max="250" value="72"></label>
+          <span class="fps">24 fps · <span id="time-sec">0.00 s</span></span>
+        </div>
+        <div class="timeline-host" id="timeline-host"><canvas id="timeline" aria-label="Track Bar or Dope Sheet with animation keys"></canvas></div>
+        <div class="max-key-controls" aria-label="3ds Max keying controls"><button type="button" id="auto-key" aria-pressed="false">Auto Key</button><button type="button" id="set-key-mode" aria-pressed="true">Set Key Mode</button><button type="button" id="set-keys">Set Keys</button><span>Auto Key records a changed helper; Set Key Mode lets you pose first.</span></div>
+      </section>
+
         <section class="editor max-curve-editor" aria-label="Track View Curve Editor">
           <div class="max-window-titlebar"><span class="max-app-badge" aria-hidden="true">3</span> Track View - Curve Editor <span class="max-window-actions" aria-hidden="true">― &nbsp; □ &nbsp; ×</span></div>
           <div class="editor-header">
@@ -105,26 +127,6 @@
             <aside class="sidebar" id="sidebar" aria-label="Selected key and controller values"></aside>
           </div>
         </section>
-      </div>
-
-      <section class="editor timeline" id="bottom-editor" aria-label="Time Slider, Track Bar and Dope Sheet">
-        <div class="editor-header">
-          <label class="editor-type editor-switch" title="Time Slider or Track View Dope Sheet"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8h13M4 5v6M8 4v8M12 5v6" fill="none" stroke="currentColor"/></svg><select id="bottom-type" aria-label="Time Slider or Dope Sheet" data-no-i18n><option value="timeline">Time Slider / Track Bar</option><option value="dopesheet">Track View – Dope Sheet</option></select></label>
-          <div class="play-controls">
-            <button type="button" id="b-start" title="Jump to start (Shift ←)">⏮</button>
-            <button type="button" id="b-prevkey" title="Previous keyframe (↓)">◆◂</button>
-            <button type="button" id="b-play" title="Play (Space)" aria-pressed="false">▶</button>
-            <button type="button" id="b-nextkey" title="Next keyframe (↑)">▸◆</button>
-            <button type="button" id="b-end" title="Jump to end (Shift →)">⏭</button>
-          </div>
-          <label class="frame-field">Frame <input type="number" id="f-cur" class="current" min="0" max="250" value="1"></label>
-          <label class="frame-field">Start <input type="number" id="f-start" min="0" max="249" value="1"></label>
-          <label class="frame-field">End <input type="number" id="f-end" min="2" max="250" value="72"></label>
-          <span class="fps">24 fps · <span id="time-sec">0.00 s</span></span>
-        </div>
-        <div class="timeline-host" id="timeline-host"><canvas id="timeline" aria-label="Track Bar or Dope Sheet with animation keys"></canvas></div>
-        <div class="max-key-controls" aria-label="3ds Max keying controls"><button type="button" id="auto-key" aria-pressed="false">Auto Key</button><button type="button" id="set-key-mode" aria-pressed="true">Set Key Mode</button><button type="button" id="set-keys">Set Keys</button><span>Auto Key records a changed helper; Set Key Mode lets you pose first.</span></div>
-      </section>
 
       <div class="statusbar">
         <span class="status-keys" id="status-keys"><span><kbd>W</kbd>Move helper</span><span><kbd>E</kbd>Rotate helper</span><span><kbd>R</kbd>Scale helper</span><span><kbd>Ctrl</kbd><kbd>A</kbd>Select keys</span><span><kbd>Del</kbd>Delete keys</span><span><kbd>Space</kbd>Play</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
@@ -153,7 +155,7 @@
     <aside class="max-bridge"><div><span class="eyebrow">IN 3DS MAX</span><h2>Rebuild the bounce in 3ds Max</h2><p>This lab simplifies the application to the controllers needed for one ball. In a Max scene, use named helper objects or a custom rig, then animate their Position, Rotation and Scale tracks.</p></div><ol><li>Create a ball and a helper hierarchy: <strong>Root</strong> for the path, <strong>SS_Top</strong> and <strong>SS_Bottom</strong> for deformation, and <strong>Rotation</strong> for rolling.</li><li>Use the <strong>Time Slider</strong> to choose frames. Enable <strong>Auto Key</strong> to record changed transforms, or use <strong>Set Key Mode</strong> and <strong>Set Keys</strong> after posing.</li><li>Open <strong>Track View – Curve Editor</strong>. Select the Z Position keys in the Controller Window; use smooth tangents near the tops and break/linear tangents at the contacts.</li><li>Use <strong>Track View – Dope Sheet</strong> or the <strong>Track Bar</strong> to move keys closer together after each contact.</li><li>Right-click the ball and choose <strong>Show Motion Paths</strong> to inspect spacing. Keep the ball above the floor while squashing and stretching.</li><li>Match Y Rotation to X travel so the ball rolls without sliding.</li></ol></aside>
   </main>
   <footer><span>Carrot Revolt Labs · 3ds Max Animation Lab</span><a href="https://help.autodesk.com/cloudhelp/2023/ENU/3DSMax-Animation/files/GUID-818205DD-D58A-495E-BD0C-DC69BDE8DAC2.htm" target="_blank" rel="noopener">Autodesk: Animation Controls ↗</a><span>Teaching model · simplified Track View.</span><a href="../../#max">3ds Max labs ↑</a></footer>
-  <script type="module" src="./app.js?v=8"></script>
+  <script type="module" src="./app.js?v=9"></script>
   <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
 </body>
 </html>

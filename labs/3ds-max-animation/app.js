@@ -93,9 +93,16 @@ const scene3 = new THREE.Scene();
 const cam3 = new THREE.PerspectiveCamera(30, 1, 0.1, 200);
 scene3.add(new THREE.HemisphereLight(0xffffff, 0x505050, 1.9));
 const sun3 = new THREE.DirectionalLight(0xffffff, 1.6); sun3.position.set(-3, 8, 6); scene3.add(sun3);
-const floorTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); g.fillStyle = '#393939'; g.fillRect(0, 0, 64, 64); g.strokeStyle = '#626262'; g.lineWidth = 1; for (const n of [0, 32, 63]) { g.beginPath(); g.moveTo(n + .5, 0); g.lineTo(n + .5, 64); g.moveTo(0, n + .5); g.lineTo(64, n + .5); g.stroke(); } const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(20, 8); t.colorSpace = THREE.SRGBColorSpace; t.magFilter = THREE.LinearFilter; return t; })();
-const floor3 = new THREE.Mesh(new THREE.PlaneGeometry(40, 16), new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.95 }));
+const floor3 = new THREE.Mesh(new THREE.PlaneGeometry(40, 16), new THREE.MeshStandardMaterial({ color: 0x393939, roughness: 0.95 }));
 floor3.rotation.x = -Math.PI / 2; floor3.position.set(4.5, 0, -4); scene3.add(floor3);
+const gridPoints = [];
+for (let x = -20; x <= 20; x++) gridPoints.push(new THREE.Vector3(x, .012, -8), new THREE.Vector3(x, .012, 8));
+for (let z = -8; z <= 8; z++) gridPoints.push(new THREE.Vector3(-20, .012, z), new THREE.Vector3(20, .012, z));
+const floorGrid = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(gridPoints), new THREE.LineBasicMaterial({ color: 0x777777, transparent: true, opacity: .85, depthWrite: false }));
+floorGrid.position.set(4.5, 0, -4); scene3.add(floorGrid);
+const floorAxis = (from, to, color) => new THREE.Line(new THREE.BufferGeometry().setFromPoints([from, to]), new THREE.LineBasicMaterial({ color, depthWrite: false }));
+scene3.add(floorAxis(new THREE.Vector3(-15.5, .018, 0), new THREE.Vector3(24.5, .018, 0), 0xa85050));
+scene3.add(floorAxis(new THREE.Vector3(0, .018, -12), new THREE.Vector3(0, .018, 4), 0x56a867));
 const ballTex = (() => { const c = document.createElement('canvas'); c.width = 256; c.height = 128; const g = c.getContext('2d'); const cols = ['#e83c32', '#f5f2e9', '#1971d4', '#f6d123', '#f5f2e9', '#e83c32', '#f5f2e9', '#1971d4']; for (let i = 0; i < 8; i++) { g.fillStyle = cols[i]; g.fillRect(i * 32, 0, 32, 128); } const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
 const ball3 = new THREE.Mesh(new THREE.SphereGeometry(0.5, 40, 24), new THREE.MeshStandardMaterial({ map: ballTex, roughness: 0.45 }));
 const ballGroup = new THREE.Group(); ballGroup.add(ball3); scene3.add(ballGroup); // the group squashes (world vertical), the ball turns inside it
