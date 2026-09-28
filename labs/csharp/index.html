@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="A hands-on C# lab for Carrot Revolt. Program a drone that builds voxel sculptures and watch variables, loops and conditions run step by step.">
+  <title>Code Lab · C# · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=10">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a>
+    <div class="app-title"><span class="eyebrow">INTERACTIVE STUDIES / 03</span><h1>Code Lab <span class="title-lang">C#</span></h1></div>
+    <div class="header-actions"><a class="lab-home" href="../../">All labs</a><span class="reference">C# concepts · ready for Unity</span><button id="help" class="quiet">How it works <span aria-hidden="true">?</span></button></div>
+  </header>
+
+  <main class="workspace">
+    <!-- Challenges -->
+    <aside class="challenge-panel" aria-label="Levels and challenges">
+      <nav class="levels" id="levels" aria-label="Levels"></nav>
+      <article class="challenge" id="challenge">
+        <div class="challenge-top"><span class="eyebrow" id="challenge-level">LEVEL 1 · SEQUENCE</span><span class="challenge-count" id="challenge-count">1 / 15</span></div>
+        <span class="type-badge" id="challenge-type"></span>
+        <h2 id="challenge-title">First block</h2>
+        <p class="goal" id="challenge-goal"></p>
+        <div class="brief" id="challenge-brief"></div>
+        <div class="predict" id="predict" hidden>
+          <p class="predict-q" id="predict-q"></p>
+          <div class="predict-options" id="predict-options" role="radiogroup"></div>
+          <p class="predict-note" id="predict-note">Choose an answer, then press Run or Step.</p>
+        </div>
+        <ul class="requirements" id="requirements" aria-label="Goals"></ul>
+        <div class="challenge-actions">
+          <button id="hint-button" class="quiet-btn">Show hint</button>
+          <button id="reset-code" class="quiet-btn">Reset code ↺</button>
+        </div>
+        <p class="hint" id="hint" hidden></p>
+      </article>
+      <details class="toolbox" id="toolbox" open>
+        <summary class="toolbox-head"><h3>Toolbox</h3><span class="small-label">CLICK TO INSERT</span></summary>
+        <div id="toolbox-items"></div>
+      </details>
+    </aside>
+
+    <!-- Code -->
+    <section class="code-panel" aria-label="Program editor">
+      <div class="panel-bar">
+        <div class="file-tab"><span class="file-icon" aria-hidden="true">C#</span>Program.cs</div>
+        <span class="small-label" id="code-stats">0 INSTRUCTIONS</span>
+      </div>
+      <div class="run-bar" role="toolbar" aria-label="Run controls">
+        <button id="run" class="run" title="Run (F5)"><span aria-hidden="true">▶</span> <span id="run-label">Run</span></button>
+        <button id="step" title="Step: run one line (F10)"><span aria-hidden="true">⤼</span> Step</button>
+        <button id="step-into" title="Step Into: follow the program inside a method (F11)" hidden><span aria-hidden="true">↴</span> Step Into</button>
+        <button id="stop" title="Stop (Shift+F5)" disabled><span aria-hidden="true">■</span> Stop</button>
+        <label class="speed"><span>Speed</span><input id="speed" type="range" min="0" max="4" step="1" value="1" aria-label="Execution speed"><output id="speed-label">Normal</output></label>
+      </div>
+      <div class="parsons" id="parsons" hidden>
+        <div class="parsons-col"><div class="parsons-head"><h3>Your program</h3><span class="small-label">DRAG · ↑↓ · ×</span></div><ol class="parsons-list program" id="parsons-program" aria-label="Your program"></ol></div>
+        <div class="parsons-col"><div class="parsons-head"><h3>Available lines</h3><span class="small-label">CLICK TO ADD</span></div><ul class="parsons-list pool" id="parsons-pool" aria-label="Available lines"></ul></div>
+      </div>
+      <div class="classify" id="classify" hidden><div class="classify-list" id="classify-list"></div></div>
+      <div class="editor" id="editor">
+        <div class="gutter" id="gutter" aria-hidden="true"></div>
+        <div class="code-wrap">
+          <pre class="code-layer" id="code-layer" aria-hidden="true"></pre>
+          <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-label="C# code"></textarea>
+        </div>
+      </div>
+      <div class="editing-note" id="editing-note" hidden></div>
+      <section class="console" aria-label="Console">
+        <div class="console-head"><h3>Console</h3><span id="build-status" class="build-status">Ready</span><button id="clear-console" class="tiny">Clear</button></div>
+        <div class="console-body" id="console" role="log" aria-live="polite"></div>
+      </section>
+    </section>
+
+    <!-- World + memory -->
+    <section class="scene-panel" aria-label="World and memory">
+      <div class="panel-bar"><h2>Scene</h2><span class="small-label" id="drone-status">DRONE (0, 0)</span></div>
+      <div class="viewport" id="viewport">
+        <canvas id="scene" aria-label="Isometric view of the voxel world and the drone"></canvas>
+        <div class="progress-chip" id="progress-chip"></div>
+        <div class="result" id="result" hidden></div>
+        <div class="strip" id="strip" hidden></div>
+        <div class="strip lamps" id="lamps" hidden></div>
+      </div>
+      <div class="inspect">
+        <section class="memory" aria-labelledby="memory-title">
+          <div class="inspect-head"><h3 id="memory-title">Memory</h3><span class="small-label">VARIABLES IN SCOPE</span></div>
+          <div class="memory-body" id="memory"></div>
+        </section>
+        <section class="execution" aria-labelledby="exec-title">
+          <div class="inspect-head"><h3 id="exec-title">Execution</h3><span class="small-label" id="step-count">STEP 0</span></div>
+          <div class="now" id="now"></div>
+          <ol class="trace" id="trace" aria-label="Last steps"></ol>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer"><span>Carrot Revolt Labs · Programming fundamentals</span><span>A teaching subset of C#. The same code runs in Unity or .NET, except for the lab's drone.</span></footer>
+
+  <dialog id="help-dialog"><button class="dialog-close" aria-label="Close help">×</button><span class="eyebrow">CODE LAB · C#</span><h2>Write it. Run it. Watch it.</h2><p>You program a drone that builds with blocks. Every challenge has a ghost shape to build.</p><ol><li><strong>Run (F5)</strong> first <em>compiles</em> the program: the compiler checks the whole code. If there is an error, nothing runs and the Console tells you the line and what is wrong.</li><li><strong>Step (F10)</strong> runs one line at a time. The yellow line is the next one to run. Conditions show how they are evaluated: <code>i &lt; 7 → 3 &lt; 7 → true</code>.</li><li><strong>Step Into (F11)</strong> follows the program inside a method you wrote; Step runs the whole call at once. Each call gets its own frame in Memory: the <em>call stack</em>.</li><li><strong>Memory</strong> shows each variable as a box with a type, a name and a value. Variables live inside a <em>scope</em> (the <code>{ }</code> where they were created) and disappear when it ends.</li><li>The <strong>×</strong> numbers next to the line numbers count how many times each line ran. Grey text at the end of a line shows what it did the last time.</li><li>Click a line number to add a <strong>breakpoint</strong>: Run pauses there.</li></ol><p><strong>Coordinates:</strong> the drone moves on an 8 × 8 grid. X goes Right, Z goes Forward and Y is up, as in Unity.</p><p class="muted">This lab runs a focused subset of C# in the browser (variables, if, loops, methods, Console, Math). The drone API only exists here. Progress and code are saved in this browser.</p><button class="primary dialog-close-action">Back to the lab</button></dialog>
+  <noscript><p class="no-script">Enable JavaScript to use the Code Lab.</p></noscript>
+  <script type="module" src="./app.js?v=10"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.header-actions' });</script>
+</body>
+</html>

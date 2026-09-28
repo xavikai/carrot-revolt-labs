@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Pose an armature like in Blender: forward kinematics on an arm, then an IK constraint with a pole target on a leg.">
+  <title>Rig Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=3">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 07</span><strong>Rig Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Rotate from the root. <span>Or pull from the tip.</span></h1>
+        <p>Pose an armature in <strong>Pose Mode</strong> as in Blender. First with <strong>FK</strong>, one rotation after another along the arm; then with an <strong>IK</strong> constraint and a <strong>pole target</strong>, so the leg follows its foot and the knee knows where to point.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="Blender-style Pose Mode workspace">
+      <section class="editor" aria-label="3D Viewport">
+        <div class="editor-header">
+          <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z M2 5l6 3.5L14 5 M8 8.5v6" fill="none" stroke="currentColor"/></svg>3D Viewport</span>
+          <button type="button" class="mode-pill" id="mode-pill" title="Tab: switch between Pose Mode and Edit Mode (the leg)" data-no-i18n>Pose Mode</button>
+          <div class="menubar">
+            <button type="button" class="menu-button" data-menu="view" aria-haspopup="menu">View</button>
+            <button type="button" class="menu-button" data-menu="select" aria-haspopup="menu">Select</button>
+            <button type="button" class="menu-button" data-menu="pose" aria-haspopup="menu">Pose</button>
+          </div>
+          <div class="view-toggles">
+            <label class="live-toggle" title="Show the mesh that the bones move"><input type="checkbox" id="o-mesh" checked><span class="switch" aria-hidden="true"></span>Mesh</label>
+            <label class="live-toggle" title="In Blender: Viewport Overlays › Relationship Lines"><input type="checkbox" id="o-lines" checked><span class="switch" aria-hidden="true"></span>Relationship Lines</label>
+            <label class="live-toggle" title="In Blender: Armature › Viewport Display › Axes"><input type="checkbox" id="o-axes"><span class="switch" aria-hidden="true"></span>Axes</label>
+          </div>
+        </div>
+        <div class="rig-body">
+          <div class="view-host rig-view" id="view-host">
+            <canvas id="view" aria-label="3D view of the armature"></canvas>
+            <div class="view-overlay" id="view-overlay"></div>
+            <div class="op-readout" id="op-readout" hidden></div>
+            <span class="graph-hint">LMB select · MMB orbit · Shift MMB pan · Wheel zoom</span>
+          </div>
+          <aside class="props" id="props" aria-label="Properties"></aside>
+        </div>
+      </section>
+      <div class="statusbar">
+        <span class="status-keys" id="status-keys"><span><kbd>LMB</kbd>Select a bone</span><span><kbd>G</kbd>Move</span><span><kbd>R</kbd>Rotate</span><span><kbd>X</kbd><kbd>Y</kbd><kbd>Z</kbd>Axis</span><span><kbd>Alt</kbd><kbd>R</kbd> / <kbd>Alt</kbd><kbd>G</kbd>Clear</span><span><kbd>Shift</kbd><kbd>I</kbd>Add IK</span><span><kbd>Tab</kbd>Edit / Pose Mode</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+      <div id="menu" class="context-menu" role="menu" hidden></div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Blender shortcuts used in this lab">
+      <div><span class="eyebrow">SAME KEYS AS BLENDER</span><h2>Shortcuts you can use here</h2><p>Keys work while the mouse is over the workspace, just like Blender sends keys to the editor under the pointer.</p></div>
+      <dl>
+        <div><dt><kbd>LMB</kbd> · <kbd>Shift</kbd><kbd>LMB</kbd></dt><dd>Select a bone · add it to the selection (the last one is the active bone)</dd></div>
+        <div><dt><kbd>R</kbd></dt><dd>Rotate the selected bones. Then <kbd>X</kbd>, <kbd>Y</kbd> or <kbd>Z</kbd> for a global axis, pressed twice for the bone's own axis. Type a number for exact degrees. Click or Enter to confirm, Esc to cancel.</dd></div>
+        <div><dt><kbd>G</kbd></dt><dd>Move the selected bones that are free to move (controls and the Hips). Connected bones can only rotate.</dd></div>
+        <div><dt><kbd>Alt</kbd><kbd>R</kbd> · <kbd>Alt</kbd><kbd>G</kbd></dt><dd>Clear the rotation / location of the selected bones</dd></div>
+        <div><dt><kbd>Shift</kbd><kbd>I</kbd></dt><dd>Add IK to the active bone: To Active Bone (the other selected bone is the target) or Without Targets</dd></div>
+        <div><dt><kbd>A</kbd> · <kbd>Alt</kbd><kbd>A</kbd></dt><dd>Select all / none</dd></div>
+        <div><dt><kbd>MMB</kbd> · <kbd>Shift</kbd><kbd>MMB</kbd> · <kbd>Wheel</kbd></dt><dd>Orbit / pan / zoom the view (<kbd>Alt</kbd><kbd>LMB</kbd> also orbits)</dd></div>
+        <div><dt><kbd>Numpad 1</kbd> <kbd>3</kbd> <kbd>7</kbd> · <kbd>Home</kbd></dt><dd>Front / right / top view · frame all</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>Z</kbd></dt><dd>Undo · <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Z</kbd> redo</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>An FK arm and an IK leg</h2><p>This lab shows a simplified Blender: a few bones, rigid pieces of mesh and one IK constraint. Selecting, rotating, moving and the IK options behave like Blender's.</p></div><ol><li>Add an <strong>Armature</strong>, extrude the bones in <strong>Edit Mode</strong> (<strong>E</strong>) and name them. Bend the knee and the elbow slightly in Edit Mode so the IK knows which way to bend.</li><li>Switch to <strong>Pose Mode</strong> (<strong>Ctrl Tab</strong>). Rotate with <strong>R</strong>; <strong>R X X</strong> uses the bone's own axis. <strong>Alt R</strong> clears it.</li><li>Add control bones that do not deform: in the Bone properties turn off <strong>Deform</strong>, and clear their parent (<strong>Alt P</strong>) so they move freely.</li><li>Select the control, then <strong>Shift</strong>-click the Shin and press <strong>Shift I › To Active Bone</strong>. Set <strong>Chain Length</strong> to 2.</li><li>Set the <strong>Pole Target</strong> and fix the <strong>Pole Angle</strong> (often -90°) until the knee points at it.</li><li>Parent the foot to the IK control so it stays flat, and use the constraint's <strong>Influence</strong> for an IK/FK switch.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Rig Lab</span><a href="https://docs.blender.org/manual/en/latest/animation/constraints/tracking/ik_solver.html" target="_blank" rel="noopener">Blender: IK Constraint ↗</a><span>Teaching model · simplified Pose Mode.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=4"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

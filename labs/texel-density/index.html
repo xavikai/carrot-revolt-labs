@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Understand texel density: see it with a checker map, compute it in px/m, match it with S, Average Islands Scale, Pack Islands and Set TD, choose a target from the camera and the memory budget, and break the rule on purpose.">
+  <title>Texel Density Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=5">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 16</span><strong>Texel Density Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Same squares, <span>same sharpness.</span></h1>
+        <p><strong>Texel density</strong> is how many pixels of texture cover one metre of surface. See it with a <strong>checker map</strong>, compute it in <strong>px/m</strong>, match it with <strong>S</strong>, <strong>Average Islands Scale</strong>, <strong>Pack Islands</strong> and <strong>Set TD</strong> as in Blender, choose a target from the <strong>camera</strong> and the <strong>memory</strong>, and learn when to break the rule.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="Blender-style UV editing workspace">
+      <div class="trim-body">
+        <section class="editor pane" aria-label="UV Editor">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" fill="none" stroke="currentColor"/><path d="M2 6h12M2 10h12M6 2v12M10 2v12" stroke="currentColor" opacity=".6"/></svg><span id="uv-title" data-no-i18n>UV Editor</span><span class="obj-badge" id="obj-badge" data-no-i18n></span></span>
+            <div class="seg small" id="uv-image" role="group" aria-label="Image"><span class="seg-label" data-no-i18n>Image</span><button type="button" data-img="checker" data-no-i18n>Checker</button><button type="button" data-img="texture" data-no-i18n>Texture</button></div>
+            <label class="hdr-field" id="pivot-field"><span data-no-i18n>Pivot</span><select id="pivot" data-no-i18n><option value="bbox">Bounding Box Center</option><option value="individual">Individual Origins</option></select></label>
+          </div>
+          <div class="view-host uv-host" id="uv-host">
+            <canvas id="uv" aria-label="UV Editor with a checker grid and the UV islands"></canvas>
+            <div class="uv-tip" id="uv-tip" hidden></div>
+            <div class="op-readout" id="op-readout" hidden></div>
+            <span class="graph-hint" id="uv-hint">LMB select · Shift add · G S R · Wheel zoom · MMB pan</span>
+          </div>
+        </section>
+        <section class="editor pane" aria-label="3D Viewport">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z M2 5l6 3.5L14 5 M8 8.5v6" fill="none" stroke="currentColor"/></svg><span data-no-i18n>3D Viewport</span></span>
+            <div class="seg small" id="shading" role="group" aria-label="Viewport shading"><span class="seg-label">Shading</span><button type="button" data-view="texture">Texture</button><button type="button" data-view="checker">Checker</button></div>
+            <button type="button" class="ruler-btn wire-btn" id="wire-btn" aria-pressed="false" title="Show the edges of the faces" data-no-i18n>Wireframe</button>
+            <button type="button" class="ruler-btn" id="ruler-btn" aria-pressed="false" title="A 1 m ruler on the selected face">📏 Ruler 1 m</button>
+          </div>
+          <div class="view-host trim-view" id="view-host">
+            <canvas id="view" aria-label="3D view of the props"></canvas>
+            <div class="td-labels" id="labels"></div>
+            <span class="graph-hint">LMB select · MMB orbit · Wheel zoom</span>
+          </div>
+        </section>
+        <aside class="props" id="props" aria-label="Properties"></aside>
+      </div>
+      <div class="statusbar">
+        <span class="status-keys"><span><kbd>LMB</kbd>Select</span><span><kbd>G</kbd>Move</span><span><kbd>S</kbd>Scale</span><span><kbd>R</kbd>Rotate</span><span><kbd>A</kbd>All</span><span><kbd>Ctrl</kbd><kbd>A</kbd>Average</span><span><kbd>Home</kbd>Frame</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Key ideas">
+      <div><span class="eyebrow">KEY IDEAS</span><h2>Pixels per metre</h2><p>Three things decide the density together. Change any of them and the checker squares change size.</p></div>
+      <dl>
+        <div><dt>Texel density</dt><dd>The texture pixels that a 1 m ruler on the surface covers (px/m). It is measured on the model: texture size, UV size and object size. The camera does not change it.</dd></div>
+        <div><dt>The formula</dt><dd>Texture size × √(UV area ÷ 3D area). For a square island: island px ÷ face m.</dd></div>
+        <div><dt>Checker map</dt><dd>Every square is the same number of texels: same square size = same density.</dd></div>
+        <div><dt>Target</dt><dd>The density you aim for, chosen per project from how close the camera gets (how big things look on screen) and the memory: about 512 px/m for third person, 1024 px/m for first person.</dd></div>
+        <div><dt>Texture size</dt><dd>≈ target × size of the object in metres, rounded up to a power of two.</dd></div>
+        <div><dt>Memory</dt><dd>2 × the density = 4 × the pixels. A 2K texture costs four times a 1K.</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>Texel density in Blender</h2><p>Blender measures UVs but has no texel density number of its own; add-ons such as <strong>Texel Density Checker</strong> add it. The rest is ordinary UV editing.</p></div><ol><li>Make a checker: <strong>Image › New</strong>, Generated Type <strong>Color Grid</strong> or <strong>UV Grid</strong>, at the size of your real texture. Show it in the UV Editor and in the material.</li><li><strong>Apply the scale</strong> of your objects first: <kbd>Ctrl</kbd> <kbd>A</kbd> › Scale in the 3D Viewport.</li><li>In the UV Editor: <strong>UV › Average Islands Scale</strong> (<kbd>Ctrl</kbd> <kbd>A</kbd>) evens the islands of an object, <strong>UV › Pack Islands</strong> fills the square with a margin.</li><li>With <strong>Texel Density Checker</strong> (N panel): set the texture size, read the density, type the target and press <strong>Set TD</strong>.</li><li>Scale islands by hand with <kbd>S</kbd> for exceptions: hero areas up, hidden faces down.</li><li>Write the target in the art bible of the project, with the texture sizes it gives for common object sizes.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Texel Density Lab</span><a href="https://docs.blender.org/manual/en/latest/modeling/meshes/uv/editing.html" target="_blank" rel="noopener">Blender: UV editing ↗</a><span>Teaching model · simulated textures.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=5"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

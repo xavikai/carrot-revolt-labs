@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Understand trim sheets: read and design a medieval wood and stone sheet, map UV islands to its strips in a Blender-style UV Editor, round edges with bevel strips and Weighted Normal, and reuse one sheet on many props.">
+  <title>Trim Sheet Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=1">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 12</span><strong>Trim Sheet Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>One texture, <span>a whole castle.</span></h1>
+        <p>A <strong>trim sheet</strong> is a texture made of horizontal strips that repeat along U: planks, stone courses, beams, moldings, iron straps and bevels. Read one, plan one by <strong>texel density</strong>, put UV islands on its strips with <strong>G</strong>, <strong>S</strong> and <strong>R</strong> as in Blender, round edges with a bevel strip and <strong>Weighted Normal</strong>, and texture many props with a single material.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="Blender-style UV editing workspace">
+      <div class="trim-body">
+        <section class="editor pane" aria-label="UV Editor">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" fill="none" stroke="currentColor"/><path d="M2 6h12M2 10h12" stroke="currentColor" opacity=".6"/></svg><span id="uv-title" data-no-i18n>UV Editor</span></span>
+            <label class="hdr-field" id="pivot-field"><span data-no-i18n>Pivot</span><select id="pivot" data-no-i18n><option value="bbox">Bounding Box Center</option><option value="individual">Individual Origins</option></select></label>
+            <label class="hdr-field" id="mip-field"><span data-no-i18n>Mip level</span><select id="mip" data-no-i18n><option value="0">0 · 1024</option><option value="1">1 · 512</option><option value="2">2 · 256</option><option value="3">3 · 128</option><option value="4">4 · 64</option><option value="5">5 · 32</option></select></label>
+          </div>
+          <div class="view-host uv-host" id="uv-host">
+            <canvas id="uv" aria-label="UV Editor with the trim sheet and the UV islands"></canvas>
+            <div class="uv-tip" id="uv-tip" hidden></div>
+            <div class="op-readout" id="op-readout" hidden></div>
+            <span class="graph-hint">LMB select · Shift add · G S R · Wheel zoom · MMB pan</span>
+          </div>
+        </section>
+        <section class="editor pane" aria-label="3D Viewport">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z M2 5l6 3.5L14 5 M8 8.5v6" fill="none" stroke="currentColor"/></svg><span data-no-i18n>3D Viewport</span></span>
+            
+            <span class="mip-note" id="mip-note" hidden></span>
+          </div>
+          <div class="view-host trim-view" id="view-host">
+            <canvas id="view" aria-label="3D view of the props"></canvas>
+            <span class="graph-hint">LMB select · MMB orbit · Wheel zoom</span>
+          </div>
+        </section>
+        <aside class="props" id="props" aria-label="Properties"></aside>
+      </div>
+      <div class="statusbar">
+        <span class="status-keys"><span><kbd>G</kbd>Move</span><span><kbd>S</kbd>Scale</span><span><kbd>R</kbd>Rotate</span><span><kbd>X</kbd><kbd>Y</kbd>Axis</span><span><kbd>Ctrl</kbd>Snap</span><span><kbd>A</kbd>All</span><span><kbd>Home</kbd>Frame</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Blender shortcuts used in this lab">
+      <div><span class="eyebrow">SAME KEYS AS BLENDER</span><h2>Shortcuts you can use here</h2><p>Keys work while the mouse is over the workspace. Transforms act on the selected UV islands, as in the UV Editor.</p></div>
+      <dl>
+        <div><dt><kbd>LMB</kbd> · <kbd>Shift</kbd><kbd>LMB</kbd></dt><dd>Select an island · add or remove it (in the UV Editor or on the model)</dd></div>
+        <div><dt><kbd>A</kbd> · <kbd>Alt</kbd><kbd>A</kbd></dt><dd>Select all · select none</dd></div>
+        <div><dt><kbd>G</kbd> · <kbd>S</kbd> · <kbd>R</kbd></dt><dd>Move, scale, rotate. Type a number (<kbd>S</kbd> <kbd>2</kbd>, <kbd>R</kbd> <kbd>9</kbd><kbd>0</kbd>) and <kbd>Enter</kbd>.</dd></div>
+        <div><dt><kbd>X</kbd> · <kbd>Y</kbd></dt><dd>Lock the move or the scale to U or V</dd></div>
+        <div><dt><kbd>Ctrl</kbd> (held)</dt><dd>Snap: 8 px steps, 5° steps, 0.1 scale steps</dd></div>
+        <div><dt><kbd>LMB</kbd> / <kbd>Enter</kbd> · <kbd>RMB</kbd> / <kbd>Esc</kbd></dt><dd>Confirm · cancel</dd></div>
+        <div><dt><kbd>Home</kbd> · <kbd>Wheel</kbd> · <kbd>MMB</kbd></dt><dd>Frame the sheet · zoom · pan (UV Editor) or orbit (3D Viewport)</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>Working with trim sheets in Blender</h2><p>Blender has no special trim-sheet mode: it is ordinary UV editing with a plan. These are the tools used in this lab.</p></div><ol><li>Open the sheet in the <strong>UV Editor</strong> (Image › Open) and assign it to one material shared by all the props.</li><li>In Edit Mode, select a band of faces and unwrap it with <strong>UV › Follow Active Quads</strong> (<kbd>U</kbd> in the 3D Viewport) so it comes out straight. <strong>UV › Align Rotation</strong> turns it to the axes.</li><li>Move, scale and rotate islands with <kbd>G</kbd> <kbd>S</kbd> <kbd>R</kbd>; <kbd>X</kbd>/<kbd>Y</kbd> lock an axis and <kbd>Ctrl</kbd> snaps. Scale uniformly to keep one texel density; add-ons such as <strong>Texel Density Checker</strong> measure and set it.</li><li>Islands can overlap and run past the edges of the image in U: the texture repeats. Keep them inside their strip in V.</li><li>For round edges: <strong>Bevel</strong> modifier (Width Type: Width, Segments 1), map the chamfer faces to a bevel strip, then <strong>Shade Smooth</strong> and a <strong>Weighted Normal</strong> modifier (Face Area).</li><li>Trim-sheet add-ons add a <strong>fit to trim</strong> operator that does the scaling and placing in one click.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Trim Sheet Lab</span><a href="https://docs.blender.org/manual/en/latest/editors/uv/index.html" target="_blank" rel="noopener">Blender: UV Editor ↗</a><span>Teaching model · procedural medieval sheet.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=2"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

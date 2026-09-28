@@ -1,0 +1,12 @@
+/* The fonts of the lab (SIL Open Font License, see the LICENSE files). Latin subset from Fontsource. */
+@font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url(./fonts/inter-400.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:700;font-display:swap;src:url(./fonts/inter-700.woff2) format('woff2')}
+@font-face{font-family:'Jost';font-style:normal;font-weight:400;font-display:swap;src:url(./fonts/jost-400.woff2) format('woff2')}
+@font-face{font-family:'Jost';font-style:normal;font-weight:700;font-display:swap;src:url(./fonts/jost-700.woff2) format('woff2')}
+@font-face{font-family:'Merriweather';font-style:normal;font-weight:400;font-display:swap;src:url(./fonts/merriweather-400.woff2) format('woff2')}
+@font-face{font-family:'Merriweather';font-style:normal;font-weight:700;font-display:swap;src:url(./fonts/merriweather-700.woff2) format('woff2')}
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:400;font-display:swap;src:url(./fonts/playfair-display-400.woff2) format('woff2')}
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:700;font-display:swap;src:url(./fonts/playfair-display-700.woff2) format('woff2')}
+@font-face{font-family:'Lobster';font-style:normal;font-weight:400;font-display:swap;src:url(./fonts/lobster-400.woff2) format('woff2')}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400;font-display:swap;src:url(./fonts/jetbrains-mono-400.woff2) format('woff2')}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:700;font-display:swap;src:url(./fonts/jetbrains-mono-700.woff2) format('woff2')}

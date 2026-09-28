@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Light a plaster bust as in Blender: Point, Sun, Spot and Area lights, hard and soft light, three-point and portrait setups, colour temperature, HDRIs, exposure, AgX and False Color.">
+  <title>Lighting Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=2">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 10</span><strong>Lighting Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Shape it <span>with light.</span></h1>
+        <p>A plaster bust, a grey ball and a chrome ball in a small studio. Move the lights around the subject, change their type, size and colour, measure them with a light meter and watch a physically based render refine itself. From the <strong>inverse square law</strong> to <strong>Rembrandt</strong>, <strong>HDRIs</strong> and <strong>False Color</strong>.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="Blender-style lighting workspace">
+      <div class="light-body">
+        <section class="editor pane" aria-label="3D Viewport">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z M2 5l6 3.5L14 5 M8 8.5v6" fill="none" stroke="currentColor"/></svg><span data-no-i18n>3D Viewport</span></span>
+            <div class="seg small" id="v-mode" role="group" aria-label="View"><button type="button" data-v="persp" aria-pressed="true">Perspective</button><button type="button" data-v="top" aria-pressed="false">Top</button></div>
+            <div class="view-toggles">
+              <label class="live-toggle" title="The points where the light meter measures"><input type="checkbox" id="v-probes"><span class="switch" aria-hidden="true"></span>Meter points</label>
+            </div>
+          </div>
+          <div class="view-host light-view" id="view-host">
+            <canvas id="view" aria-label="3D view of the studio"></canvas>
+            <div class="view-overlay" id="view-overlay"></div>
+            <span class="graph-hint" id="view-hint">Drag a light to move it around the bust · MMB orbit · Wheel zoom</span>
+          </div>
+        </section>
+        <section class="editor pane" aria-label="Render">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3" width="13" height="10" rx="1" fill="none" stroke="currentColor"/><circle cx="8" cy="8" r="2.5" fill="none" stroke="currentColor"/></svg><span data-no-i18n>Render</span></span>
+            <span class="samples" id="samples" data-no-i18n></span>
+            <div class="view-toggles">
+              <label class="live-toggle" title="Show the reference image of this step"><input type="checkbox" id="r-ref" checked><span class="switch" aria-hidden="true"></span>Reference</label>
+            </div>
+          </div>
+          <div class="render-host" id="render-host">
+            <canvas id="render" aria-label="The render. Hover to read the light of a pixel."></canvas>
+            <figure class="reference" id="reference" hidden><figcaption>Reference</figcaption><img id="reference-img" alt="Reference render"></figure>
+            <div class="fc-legend" id="fc-legend" hidden></div>
+          </div>
+          <div class="meter-strip" id="meter-strip" aria-live="polite"></div>
+          <div class="inspector" id="inspector"></div>
+        </section>
+        <aside class="props" id="props" aria-label="Properties"></aside>
+      </div>
+      <div class="statusbar">
+        <span class="status-keys"><span><kbd>LMB</kbd>Select / drag a light</span><span><kbd>Wheel</kbd>Distance of the selected light</span><span><kbd>MMB</kbd>Orbit</span><span><kbd>H</kbd>Hide / show</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Key ideas">
+      <div><span class="eyebrow">KEY IDEAS</span><h2>Direction, size, colour, amount</h2><p>Every light is described by where it comes from, how big it looks from the subject, what colour it is and how much there is. The rest is balance between lights.</p></div>
+      <dl>
+        <div><dt>Inverse square law</dt><dd>At twice the distance a small light gives a quarter of the light: 2 stops less.</dd></div>
+        <div><dt>Apparent size</dt><dd>A light that looks big from the subject gives soft shadows; a small or distant one gives hard shadows.</dd></div>
+        <div><dt>Key, fill, rim</dt><dd>The key draws the shape, the fill opens the shadows, the rim separates the subject from the background.</dd></div>
+        <div><dt>Lighting ratio</dt><dd>The light on the lit cheek divided by the light on the shadow cheek. 2:1 = 1 stop, 4:1 = 2 stops, 8:1 = 3 stops.</dd></div>
+        <div><dt>Colour temperature</dt><dd>In kelvin: low values are warm (candles, tungsten), high values are cool (shade, blue sky).</dd></div>
+        <div><dt>Middle grey</dt><dd>A surface that reflects 18% of the light. Exposure is measured in stops above or below it.</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>The same lights in Blender</h2><p>Blender has the same four light types, the same World and the same Color Management. The lab renders them with a fast progressive renderer instead of Cycles or Eevee, with a simplified set.</p></div><ol><li><strong>Add › Light</strong>: Point, Sun, Spot or Area. <strong>Object Data Properties</strong> (the light bulb tab) has Color, Power (W) or Strength (W/m² for the Sun), and Radius, Angle or Size, which make shadows soft.</li><li>Aim a light with a <strong>Track To</strong> constraint pointing at the subject, as the lab does, and move it around freely.</li><li>For colour temperature, use a <strong>Blackbody</strong> node on the light (in the light's node tree) or pick the colour by eye.</li><li><strong>World Properties › Surface</strong>: Background colour or an <strong>Environment Texture</strong> with an HDRI. Rotate it with a Mapping node.</li><li><strong>Render Properties › Color Management</strong>: <strong>View Transform</strong> (Standard, AgX, False Color) and <strong>Exposure</strong>.</li><li>A <strong>grey ball</strong> and a <strong>chrome ball</strong> next to the subject are the standard way to check light and reflections, in CG and on film sets.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Lighting Lab</span><a href="https://docs.blender.org/manual/en/latest/render/lights/light_object.html" target="_blank" rel="noopener">Blender: Light Objects ↗</a><span>Teaching model · simplified set and renderer.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=3"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

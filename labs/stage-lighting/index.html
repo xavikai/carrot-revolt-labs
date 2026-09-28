@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Light a small theatre stage like in Lightkey: the kinds of fixtures, DMX channels, patch and DIP switches, lighting a face in lux, colour, aiming a moving head, and a cue list with fades.">
+  <title>Stage Lighting Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=1">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 15</span><strong>Stage Lighting Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Light is a number. <span>512 of them.</span></h1>
+        <p>Light a small theatre stage the way a lighting desk such as <strong>Lightkey</strong> does it: choose the <strong>fixtures</strong>, send them <strong>DMX</strong>, <strong>patch</strong> the rig, light a face in <strong>lux</strong>, mix colour, aim a <strong>moving head</strong> and build a <strong>cue list</strong> with fades.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender lk" id="workspace" aria-label="Lighting desk">
+      <div class="lk-toolbar">
+        <span class="lk-logo" aria-hidden="true">◉</span><b class="lk-title">Live</b>
+        <label class="live-toggle" title="Haze in the air makes the beams visible"><input type="checkbox" id="o-haze" checked><span class="switch" aria-hidden="true"></span>Haze</label>
+        <label class="live-toggle" title="The stage seen from the middle of the audience"><input type="checkbox" id="o-preview" checked><span class="switch" aria-hidden="true"></span>Preview</label>
+        <label class="live-toggle" title="The work light: see the stage and the rig without stage light"><input type="checkbox" id="o-work"><span class="switch" aria-hidden="true"></span>Work light</label>
+        <button type="button" class="lk-btn danger" id="blackout" title="Every fixture to 0">Blackout</button>
+      </div>
+      <div class="lk-body">
+        <aside class="lk-panel lk-fixtures" aria-label="Fixtures"><div class="lk-head">Fixtures</div><div id="fixtures"></div></aside>
+        <div class="view-host lk-view" id="view-host">
+          <canvas id="view" aria-label="3D view of the stage and the lighting rig"></canvas>
+          <div class="view-overlay" id="view-overlay"></div>
+          <figure class="seat-view" id="preview-box">
+            <figcaption><span>Preview</span><small>audience, row 8</small></figcaption>
+            <div class="seat-frame"><canvas id="preview" aria-label="The stage seen from the audience"></canvas></div>
+          </figure>
+          <span class="graph-hint">LMB select · MMB orbit · Shift MMB pan · Wheel zoom</span>
+        </div>
+        <aside class="lk-panel lk-inspector" aria-label="Inspector"><div class="lk-head">Inspector</div><div id="inspector"></div></aside>
+      </div>
+      <div class="lk-bottom">
+        <div class="lk-panel lk-dmx" aria-label="DMX monitor"><div class="lk-head">DMX · Universe 1 <small id="dmx-note"></small></div><div class="dmx-grid" id="dmx"></div></div>
+        <div class="lk-panel lk-cues" aria-label="Cue list"><div class="lk-head">Cue list
+          <span class="lk-actions"><button type="button" class="lk-btn" id="record" title="Store the look on stage as a new cue">● Record</button><button type="button" class="lk-btn" id="back" title="Go back to the previous cue">◀</button><button type="button" class="lk-btn go" id="go" title="Space: go to the next cue">GO ▶</button></span></div>
+          <div id="cues"></div></div>
+      </div>
+      <div class="statusbar">
+        <span class="status-keys"><span><kbd>LMB</kbd>Select</span><span><kbd>F</kbd>Full</span><span><kbd>0</kbd>Off</span><span><kbd>Space</kbd>GO</span><span><kbd>Home</kbd>Frame all</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">FROM THE LAB TO LIGHTKEY</span><h2>The same steps on a real desk</h2><p>Lightkey (for Mac) is a DMX lighting desk in software: a USB or network interface turns its numbers into the DMX signal that runs from fixture to fixture. The lab follows its workflow.</p></div><ol><li><strong>Output</strong>: connect the DMX interface and choose the universe.</li><li><strong>Patch</strong>: add the fixtures from the library (the profile knows its channels) and give each one its DMX address. Set the same address on the fixture (menu or DIP switches).</li><li><strong>Design view</strong>: place the fixtures where they hang, so the 2D preview shows the real beams.</li><li><strong>Live View</strong>: build the looks with the controls of each fixture; save <strong>presets</strong> (a colour, a position) to reuse them.</li><li><strong>Cue lists</strong>: record the looks as cues with fade times and play them with GO during the show.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Stage Lighting Lab</span><a href="https://lightkeyapp.com/en" target="_blank" rel="noopener">Lightkey ↗</a><span>Teaching model · simplified photometry.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=1"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Lightmaps for Unity: a second UV map made in Blender, the FBX export, Lightmap Resolution, Scale In Lightmap, bounces and denoising in the Progressive Lightmapper, Baked and Mixed lights, static objects, Light Probes, Adaptive Probe Volumes and Reflection Probes.">
+  <title>Lightmap Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=1">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 19</span><strong>Lightmap Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Bake the light, <span>keep the frame rate.</span></h1>
+        <p>A <strong>lightmap</strong> is a texture that stores the light that falls on each point of a static surface, bounces included. Make the <strong>second UV map</strong> in Blender, export the <strong>FBX</strong> for Unity, bake with the <strong>Progressive Lightmapper</strong>, choose <strong>Baked</strong> or <strong>Mixed</strong> lights, and light moving objects with <strong>Light Probes</strong> and <strong>Reflection Probes</strong>.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="Unity-style lighting workspace">
+      <div class="lm-body">
+        <section class="editor pane" aria-label="Scene view">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z M2 5l6 3.5L14 5 M8 8.5v6" fill="none" stroke="currentColor"/></svg><span id="scene-title" data-no-i18n>Scene</span></span>
+            <div class="seg small" id="draw-mode" role="group" aria-label="Draw mode"><button type="button" data-view="lit" data-no-i18n>Shaded</button><button type="button" data-view="baked" data-no-i18n>Baked Lightmap</button><button type="button" data-view="charts" data-no-i18n>UV Charts</button></div>
+            <button type="button" class="ruler-btn play-btn" id="play-btn" aria-pressed="false">▶ Play</button>
+          </div>
+          <div class="view-host lm-view" id="view-host">
+            <canvas id="view" aria-label="3D view of the scene"></canvas>
+            <div class="vp-text" id="vp-text" data-no-i18n></div>
+            <span class="graph-hint">LMB orbit · Wheel zoom · MMB pan</span>
+          </div>
+        </section>
+        <section class="editor pane" aria-label="Lightmap view">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" fill="none" stroke="currentColor"/><path d="M2 8h12M8 2v12" stroke="currentColor" opacity=".6"/></svg><span id="side-title" data-no-i18n>Lightmap</span></span>
+            <span class="mip-note" id="side-note" data-no-i18n></span>
+          </div>
+          <div class="view-host lm-side" id="side-host"><canvas id="side" aria-label="Lightmap atlas, UV layout or top view"></canvas><div class="uv-tip" id="side-tip" hidden></div></div>
+        </section>
+        <aside class="props" id="props" aria-label="Inspector"></aside>
+      </div>
+      <div class="statusbar">
+        <span class="status-keys"><span><kbd>LMB</kbd>Orbit</span><span><kbd>Space</kbd>Play</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Key ideas">
+      <div><span class="eyebrow">KEY IDEAS</span><h2>Light that costs nothing at run time</h2><p>Global illumination is too slow to compute every frame. Baking computes it once, in the editor, and stores it in textures (lightmaps) and in points in space (probes).</p></div>
+      <dl>
+        <div><dt>Lightmap UVs</dt><dd>A second UV map (UV1 in Unity) with no overlaps, islands in proportion to their real size and a margin between them.</dd></div>
+        <div><dt>Lightmap Resolution</dt><dd>Texels per unit (metre) of surface: a texel density for light. Scale In Lightmap changes it per object.</dd></div>
+        <div><dt>Bounces and samples</dt><dd>Bounces carry light into shadows and corners. More samples, less noise; a denoiser removes the rest.</dd></div>
+        <div><dt>Baked · Mixed · Realtime</dt><dd>Baked lights exist only in the bake. Mixed lights bake the bounce and draw direct light in real time. Realtime lights bake nothing.</dd></div>
+        <div><dt>Static</dt><dd>Only objects with Contribute Global Illumination take part. They receive the bake from lightmaps or from probes.</dd></div>
+        <div><dt>Probes</dt><dd>Light Probes give baked light to moving objects; Reflection Probes give reflections of the real room instead of the sky.</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">BLENDER → UNITY 6 (URP)</span><h2>The workflow</h2><p>The names are the ones of Blender and of Unity 6 with the Universal Render Pipeline.</p></div><ol><li><strong>Blender</strong>: apply the scale (<kbd>Ctrl</kbd> <kbd>A</kbd>), add a second map in Object Data › <strong>UV Maps</strong>, make it with <strong>UV › Lightmap Pack</strong> or Smart UV Project with a margin. Keep the texture map first.</li><li><strong>FBX export</strong>: Selected Objects, Mesh, Apply Scalings <strong>FBX Units Scale</strong>, <strong>-Z Forward</strong>, <strong>Y Up</strong>, Apply Modifiers, Smoothing <strong>Face</strong>.</li><li><strong>Unity import</strong> (Model tab): Scale Factor 1, Convert Units, Bake Axis Conversion; <strong>Generate Lightmap UVs</strong> only if you did not make your own.</li><li>Mark the static objects (<strong>Contribute Global Illumination</strong>), set the lights to <strong>Baked</strong> or <strong>Mixed</strong>, open <strong>Window › Rendering › Lighting</strong> and press <strong>Generate Lighting</strong>.</li><li>Moving objects: add a <strong>Light Probe Group</strong>, or set the URP Asset's <strong>Light Probe System</strong> to <strong>Adaptive Probe Volumes</strong> and add a <strong>Probe Volume</strong>.</li><li>Shiny materials: add a <strong>Reflection Probe</strong> per room, with <strong>Box Projection</strong> and its box fitted to the room.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Lightmap Lab</span><a href="https://docs.unity3d.com/6000.0/Documentation/Manual/Lightmappers.html" target="_blank" rel="noopener">Unity: Lightmapping ↗</a><span>Teaching model · a small path tracer in the browser.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=1"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

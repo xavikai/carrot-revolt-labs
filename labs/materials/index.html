@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Build PBR materials with Blender-style nodes and the full Principled BSDF: roughness, metal, colour spaces, masks, bump and displacement, emission and Glare, glass in EEVEE and Cycles, coat, sheen, subsurface, thin film and anisotropy.">
+  <title>Material Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=5">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a>
+    <div class="app-title"><span class="eyebrow">INTERACTIVE STUDIES / 01</span><h1>Material Lab</h1></div>
+    <div class="header-actions"><a class="lab-home" href="../../">All labs</a><span class="reference">Blender concepts</span><button id="help" class="quiet">How it works <span aria-hidden="true">?</span></button><button id="reset" class="reset">Reset scene <span aria-hidden="true">↺</span></button></div>
+  </header>
+  <nav class="stage-bar" aria-label="Stages and steps">
+    <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage"><span class="control-label">STAGE</span></div>
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+  </nav>
+  <main class="workspace" id="app">
+    <section class="preview-panel" aria-label="Material preview">
+      <div id="viewer" class="viewer" aria-label="3D material preview. Drag to orbit and scroll to zoom.">
+        <div id="render-status" class="render-status" role="status">Preparing material…</div>
+        <div class="view-top"><label class="env-picker"><span>World</span><select id="env" aria-label="World lighting"><option value="room">Room</option><option value="studio">Studio HDRI</option><option value="sunset">Sunset HDRI</option><option value="overcast">Overcast HDRI</option><option value="dark">Dark studio</option></select></label><label class="env-picker preset-picker" id="preset-field" hidden><span>Preset</span><select id="preset" aria-label="Material preset"></select></label><span class="engine-badge" id="engine-badge" data-no-i18n>EEVEE</span><button id="rotate" aria-pressed="false" title="Toggle automatic rotation">Auto rotate</button></div>
+        <div class="view-note" id="view-note" hidden></div>
+        <div class="view-bottom"><div class="shape-picker" role="group" aria-label="Preview object"><button data-shape="sphere" class="active" aria-pressed="true">Sphere</button><button data-shape="cube" aria-pressed="false">Cube</button><button data-shape="plane" aria-pressed="false">Plane</button></div>
+          <span class="orbit-hint">Drag or MMB to orbit · Scroll to zoom</span></div>
+      </div>
+      <div class="step-card" id="step-card" aria-live="polite"></div>
+    </section>
+    <section class="editor-panel" aria-label="Shader node editor">
+      <div class="panel-bar editor-bar"><div><h2 data-no-i18n>Shader Editor</h2><span class="small-label">MATERIAL</span></div><div class="graph-tools"><button id="zoom-out" aria-label="Zoom out node editor">−</button><output id="zoom-label">100%</output><button id="zoom-in" aria-label="Zoom in node editor">+</button><button id="fit">Fit nodes</button></div></div>
+      <div class="editor-guide"><span><i class="legend-dot color"></i>Color</span><span><i class="legend-dot vector"></i>Vector</span><span><i class="legend-dot shader"></i>Shader</span><span class="tip-hint">Rest the pointer on a value to see what it does</span><span class="guide-copy"><kbd>Drag</kbd> output → input: connect · <kbd>Drag</kbd> input away: disconnect · <kbd>Ctrl</kbd>+<kbd>RMB</kbd> drag: cut · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>Home</kbd> fit</span></div>
+      <div id="graph-viewport" class="graph-viewport" tabindex="0" aria-label="Node canvas. Drag the background to pan. Use the zoom buttons or Control and scroll to zoom.">
+        <div id="graph-world" class="graph-world"><svg id="wires" viewBox="0 0 980 600" aria-hidden="true"></svg><div id="nodes"></div></div>
+      </div>
+      <div class="editor-status"><span id="connection-status" role="status" aria-live="polite">Ready. Change a value or connect a socket.</span><span id="link-count">9 connections</span></div>
+    </section>
+    <aside class="props-panel" aria-label="Properties">
+      <div class="panel-bar"><div><h2 data-no-i18n>Properties</h2></div></div>
+      <div class="props-tabs" role="tablist" aria-label="Properties tabs">
+        <button type="button" role="tab" data-tab="render" title="Render Properties"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="4" width="12" height="9" rx="1.5" fill="none" stroke="currentColor"/><circle cx="8" cy="8.5" r="2.5" fill="none" stroke="currentColor"/><path d="M5 4l1-2h4l1 2" fill="none" stroke="currentColor"/></svg><span data-no-i18n>Render</span></button>
+        <button type="button" role="tab" data-tab="modifiers" title="Modifier Properties"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 2a3 3 0 0 0-2.8 4L2.5 11.2a1.2 1.2 0 0 0 1.7 1.7L9.4 7.7A3 3 0 0 0 13.6 5l-1.8 1.2-1.6-.4-.4-1.6L11 2.4 10.5 2z" fill="none" stroke="currentColor"/></svg><span data-no-i18n>Modifiers</span></button>
+        <button type="button" role="tab" data-tab="material" title="Material Properties"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor"/><path d="M4 6.5a4.5 4.5 0 0 1 4-2.5" fill="none" stroke="currentColor"/></svg><span data-no-i18n>Material</span></button>
+      </div>
+      <div class="props-body" id="props-body">
+        <section class="props-page" data-page="render" data-no-i18n>
+          <div class="pgroup"><div class="prow"><span>Render Engine</span><select id="set-engine" data-setting="engine"><option value="eevee">EEVEE</option><option value="cycles">Cycles</option></select></div></div>
+          <div class="pgroup" id="eevee-group"><h4>Raytracing</h4><label class="pcheck"><input type="checkbox" data-setting="raytracing"><span>Raytracing</span></label></div>
+          <div class="pgroup"><h4>Compositor</h4>
+            <label class="pcheck"><input type="checkbox" data-setting="glare"><span>Glare node · Bloom</span></label>
+            <div class="glare-fields" id="glare-fields">
+              <label class="bslider pslider"><input type="range" min="0" max="5" step=".05" data-setting="glareThreshold"><span class="bs-label">Threshold</span><output></output></label>
+              <label class="bslider pslider"><input type="range" min="0" max="2" step=".05" data-setting="glareStrength"><span class="bs-label">Strength</span><output></output></label>
+              <label class="bslider pslider"><input type="range" min="0" max="1" step=".05" data-setting="glareSize"><span class="bs-label">Size</span><output></output></label>
+            </div>
+            <div class="prow"><span>Viewport Shading › Compositor</span><select data-setting="vpCompositor"><option value="disabled">Disabled</option><option value="always">Always</option></select></div>
+          </div>
+        </section>
+        <section class="props-page" data-page="modifiers" data-no-i18n>
+          <div class="pgroup"><h4>Subdivision Surface</h4>
+            <div class="prow"><span>Type</span><b>Simple</b></div>
+            <label class="bslider pslider" for="subdiv"><input id="subdiv" type="range" min="0" max="8" step="1" value="7" aria-label="Levels Viewport"><span class="bs-label">Levels Viewport</span><output id="subdiv-value"></output></label>
+            <label class="pcheck"><input type="checkbox" data-setting="adaptive"><span>Adaptive Subdivision</span></label>
+          </div>
+          <div class="pgroup"><h4>Displace</h4>
+            <label class="pcheck"><input type="checkbox" data-setting="dispMod"><span>Displace modifier</span></label>
+            <div class="prow"><span>Texture</span><b>Height</b></div>
+            <label class="bslider pslider"><input type="range" min="0" max=".6" step=".01" data-setting="modStrength"><span class="bs-label">Strength</span><output></output></label>
+            <label class="bslider pslider"><input type="range" min="0" max="1" step=".01" data-setting="modMid"><span class="bs-label">Midlevel</span><output></output></label>
+          </div>
+        </section>
+        <section class="props-page" data-page="material" data-no-i18n>
+          <div class="pgroup"><h4>Settings › Surface</h4>
+            <div class="prow"><span>Displacement</span><select data-setting="dispMethod"><option value="bump">Bump Only</option><option value="displacement">Displacement Only</option><option value="both">Displacement and Bump</option></select></div>
+            <label class="pcheck" id="rtt-row"><input type="checkbox" data-setting="rtTransmission"><span>Raytraced Transmission</span></label>
+          </div>
+        </section>
+        <p class="props-note" id="props-note"></p>
+      </div>
+    </aside>
+  </main>
+  <footer class="app-footer"><span>Carrot Revolt Labs · Color, lighting & finishing</span><span>A learning subset of Blender’s nodes. Rendering may differ from Blender.</span><button id="credits">Sources & credits</button></footer>
+  <dialog id="help-dialog"><button class="dialog-close" aria-label="Close help">×</button><span class="eyebrow">MATERIAL LAB</span><h2>Follow the connections.</h2><p>A texture supplies data. The shader uses that data to calculate how the surface reacts to light.</p><ol><li><strong>Connect:</strong> drag from an output socket (right side of a node) to an input (left side). Inputs that can accept the link light up. Clicking the output and then the input also works.</li><li><strong>Disconnect or move a link:</strong> drag a connected input away, as in Blender. Drop it on empty space to remove it, or on another input to move it. <strong>Ctrl + right-drag</strong> across wires cuts them.</li><li><strong>Explore:</strong> move a node by its header. Drag the background or the middle mouse button to pan, scroll to zoom, press <strong>Home</strong> to see every node.</li><li><strong>Change values:</strong> drag along a value bar, as in Blender's sliders.</li><li><strong>Learn a parameter:</strong> rest the pointer on any value (or its panel header, or a setting in Properties): a card explains what it does, typical values of real materials and the usual mistake.</li><li><strong>Use your images:</strong> choose Open in an Image Texture node. Images stay in your browser and are never uploaded.</li></ol><p>Roughness and Base Color values are replaced by a connected texture, as in Blender. Disconnect the input to use its slider or color picker.</p><p><strong>Stages and steps:</strong> each step loads a material and checks your change. <strong>Show a solution</strong> and <strong>Ctrl Z</strong> are always there. Your work in each step is kept in this browser.</p><p><strong>Coordinates:</strong> start with UV → Mapping → Image Texture. Mapping changes Location, Rotation and Scale in XYZ. Images use Flat projection and Repeat: with UV input, Z translation or scaling alone does not change the image. Object coordinates use the preview mesh.</p><p class="muted">This lab implements a focused subset of Blender node concepts with a browser renderer. It does not run Blender or open .blend files.</p><button class="primary dialog-close-action">Back to the lab</button></dialog>
+  <dialog id="credits-dialog"><button class="dialog-close" aria-label="Close credits">×</button><h2>Sources & credits</h2><p><a href="https://docs.blender.org/manual/en/latest/render/shader_nodes/shader/principled.html" target="_blank" rel="noopener">Blender manual · Principled BSDF</a><br>Node names, sockets and material concepts.</p><p><a href="https://polyhaven.com/a/brick_wall_001" target="_blank" rel="noopener">Brick Wall 001 · Poly Haven</a><br>Color, roughness and OpenGL normal maps. CC0.</p><p>Painted steel, tiles and leaf textures are drawn by the lab in your browser. The HDRIs are the procedural ones of the Lighting Lab.</p><p><a href="https://threejs.org/" target="_blank" rel="noopener">Three.js</a> · MIT license. Browser rendering and orbit controls.</p><button class="primary dialog-close-action">Back to the lab</button></dialog>
+  <noscript><p class="no-script">Enable JavaScript to use the interactive material editor.</p></noscript>
+  <script type="module" src="./app.js?v=6"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; import dict from './i18n.js?v=6'; initI18n({ dictionaries: [dict], mount: '.header-actions' });</script>
+</body>
+</html>
+

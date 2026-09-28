@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Design a festival website in a Figma-style editor: HSL, WCAG contrast, colour vision, CMYK and gamut, the anatomy of type, readable text, type scales, colour styles and dark mode.">
+  <title>Color &amp; Type Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./fonts.css?v=1">
+  <link rel="stylesheet" href="./style.css?v=1">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 14</span><strong>Color &amp; Type Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Pretty is not enough. <span>It has to read.</span></h1>
+        <p>Design the website of a film festival in a <strong>Figma</strong>-style editor. Mix colours in <strong>HSL</strong>, pass the <strong>WCAG</strong> contrast, look through other eyes, prepare the colours for <strong>print</strong>, set readable <strong>type</strong> and build a small <strong>design system</strong> with a dark mode.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender figma" id="workspace" aria-label="Figma-style editor">
+      <div class="fg-toolbar">
+        <span class="fg-logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="fg-file"><span>Lumen Fest</span> / <b>Home · Desktop</b></span>
+        <label class="fg-field" title="Simulate how people with a colour vision deficiency see the page">View <select id="view-mode">
+          <option value="normal">Normal vision</option><option value="protanopia">Protanopia</option><option value="deuteranopia">Deuteranopia</option><option value="tritanopia">Tritanopia</option><option value="achromatopsia">Greyscale</option>
+        </select></label>
+        <label class="live-toggle" title="Show the page as the colours would print (CMYK, coated paper). Striped layers are out of gamut."><input type="checkbox" id="o-proof"><span class="switch" aria-hidden="true"></span>Proof colours (CMYK)</label>
+        <span class="fg-zoom" id="zoom">100%</span>
+      </div>
+      <div class="fg-body">
+        <aside class="fg-panel fg-layers" aria-label="Layers"><div class="fg-tabs"><b>Layers</b></div><div id="layers"></div></aside>
+        <div class="fg-canvas" id="canvas-wrap">
+          <div class="fg-stage" id="stage">
+            <div class="pg" id="page" data-layer="page">
+              <div class="pg-nav" data-layer="nav"><span class="pg-brand" data-layer="brand">Lumen Fest</span><span class="pg-links" data-layer="links">Programme · Tickets · Venue</span></div>
+              <div class="pg-main">
+                <div class="pg-hero">
+                  <span class="pg-chip" data-layer="chip"><span data-layer="tag">Animation</span></span>
+                  <div class="pg-title" data-layer="title">Seven nights of short films</div>
+                  <div class="pg-sub" data-layer="subtitle">12–18 April · Main theatre and open-air cinema</div>
+                  <div class="pg-body" data-layer="body">Every spring the school turns its theatre into a cinema. Students of animation, lighting and live production show the short films they made this year, and a jury of professionals chooses the best of each category. Entry is free, but seats are limited: book yours before the doors open.</div>
+                  <div class="pg-actions"><span class="pg-btn" data-layer="button"><span data-layer="label">Book a seat</span></span><span class="pg-link" data-layer="link">See the full programme →</span></div>
+                </div>
+                <div class="pg-card" data-layer="card">
+                  <div class="pg-poster" data-layer="poster" aria-hidden="true"><svg viewBox="0 0 280 160" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c2a4a"/><stop offset="1" stop-color="#e07a4f"/></linearGradient></defs><rect width="280" height="160" fill="url(#sky)"/><path d="M0 128 60 112 130 124 200 108 280 120V160H0Z" fill="#1b1d2b"/><rect x="186" y="54" width="16" height="58" fill="#e9e3d6"/><path d="M182 54h24l-4-10h-16z" fill="#c43d2f"/><circle cx="194" cy="48" r="4" fill="#ffe7a0"/><path d="M194 48 60 20v24z" fill="#ffe7a0" opacity=".35"/></svg></div>
+                  <div class="pg-card-title" data-layer="cardTitle">The Lighthouse Keeper</div>
+                  <div class="pg-meta" data-layer="meta">18 min · Room 2 · 19:30</div>
+                  <div class="pg-status"><span class="pg-st" data-layer="okChip"><i class="ic" aria-hidden="true">✓</i><span data-layer="okText">Available</span></span><span class="pg-st" data-layer="noChip"><i class="ic" aria-hidden="true">✕</i><span data-layer="noText">Sold out</span></span></div>
+                </div>
+              </div>
+            </div>
+            <div class="widget" id="widget" hidden></div>
+          </div>
+          <div class="fg-hover" id="hover-box" hidden></div>
+          <div class="fg-sel" id="sel-box" hidden><span id="sel-tag"></span></div>
+        </div>
+        <aside class="fg-panel fg-design" aria-label="Design"><div class="fg-tabs"><b>Design</b></div><div id="design"></div></aside>
+      </div>
+      <div class="statusbar">
+        <span class="status-keys"><span><kbd>Click</kbd>Select a layer</span><span><kbd>Esc</kbd>Deselect</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+      <svg class="cvd-filters" aria-hidden="true" width="0" height="0"><defs>
+        <filter id="cvd-protanopia" color-interpolation-filters="linearRGB"><feColorMatrix type="matrix" values="0.152286 1.052583 -0.204868 0 0  0.114503 0.786281 0.099216 0 0  -0.003882 -0.048116 1.051998 0 0  0 0 0 1 0"/></filter>
+        <filter id="cvd-deuteranopia" color-interpolation-filters="linearRGB"><feColorMatrix type="matrix" values="0.367322 0.860646 -0.227968 0 0  0.280085 0.672501 0.047413 0 0  -0.011820 0.042940 0.968881 0 0  0 0 0 1 0"/></filter>
+        <filter id="cvd-tritanopia" color-interpolation-filters="linearRGB"><feColorMatrix type="matrix" values="1.255528 -0.076749 -0.178779 0 0  -0.078411 0.930809 0.147602 0 0  0.004733 0.691367 0.303900 0 0  0 0 0 1 0"/></filter>
+        <filter id="cvd-achromatopsia" color-interpolation-filters="linearRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/></filter>
+      </defs></svg>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN FIGMA</span><h2>The same ideas in your tools</h2><p>The lab imitates Figma's panels. The numbers are the same you will find in Figma, Illustrator, InDesign or a browser.</p></div><ol><li>In Figma, a colour becomes a <strong>colour style</strong> or a <strong>variable</strong>; a variable collection can have <strong>modes</strong> (Light and Dark).</li><li>Check contrast with a plugin (Stark, Contrast) or with the browser's developer tools. Simulate colour vision in Chrome DevTools › Rendering › <strong>Emulate vision deficiencies</strong>.</li><li>For print, work in Illustrator or InDesign with the printer's profile (for example <strong>Coated FOGRA39</strong>) and turn on <strong>View › Proof Colors</strong> and <strong>Gamut Warning</strong>.</li><li>Letter spacing in Figma is in <strong>%</strong> of the font size; in CSS it is <code>letter-spacing</code> in <code>em</code>. Line height 150% = <code>line-height: 1.5</code>.</li><li>Build the type scale as <strong>text styles</strong> and use only those: no loose sizes in the file.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Color &amp; Type Lab</span><a href="https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html" target="_blank" rel="noopener">WCAG: Contrast (Minimum) ↗</a><span>Teaching model · approximate print colours.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=1"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

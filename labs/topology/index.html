@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Edit meshes in a Blender-style Edit Mode: quads, triangles, n-gons and poles, Subdivision Surface with holding edges and creases, edge loops for deformation, and retopology.">
+  <title>Topology Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=1">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 11</span><strong>Topology Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Where the edges go <span>decides everything.</span></h1>
+        <p>Edit meshes in a Blender-style <strong>Edit Mode</strong>. Read quads, triangles, n-gons and poles; keep shapes under <strong>Subdivision Surface</strong> with holding edges and creases; put <strong>edge loops</strong> where a joint bends; and build a clean <strong>retopology</strong> cage on a dense sculpt.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="Blender-style Edit Mode workspace">
+      <section class="editor" aria-label="3D Viewport">
+        <div class="editor-header">
+          <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z M2 5l6 3.5L14 5 M8 8.5v6" fill="none" stroke="currentColor"/></svg><span data-no-i18n>3D Viewport</span></span>
+          <span class="mode-pill" title="In Blender: select the object and press Tab" data-no-i18n>Edit Mode</span>
+          <div class="seg icons" id="sel-mode" role="group" aria-label="Select mode">
+            <button type="button" data-mode="vert" title="Vertex select (1)"><svg viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" fill="none" stroke="currentColor" opacity=".5"/><rect x="10" y="10" width="5" height="5" fill="currentColor"/></svg></button>
+            <button type="button" data-mode="edge" title="Edge select (2)"><svg viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" fill="none" stroke="currentColor" opacity=".5"/><path d="M2.5 13.5h11" stroke="currentColor" stroke-width="3"/></svg></button>
+            <button type="button" data-mode="face" title="Face select (3)"><svg viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" fill="currentColor" opacity=".8"/></svg></button>
+          </div>
+          <div class="view-toggles">
+            <label class="live-toggle" title="Colour the faces: quads grey, triangles yellow, n-gons red"><input type="checkbox" id="o-types"><span class="switch" aria-hidden="true"></span>Face types</label>
+            <label class="live-toggle" title="Mark the vertices with 3 edges (blue) and 5 or more edges (orange)"><input type="checkbox" id="o-poles"><span class="switch" aria-hidden="true"></span>Poles</label>
+            <label class="live-toggle" id="snap-toggle" title="Snap to the surface of the high poly (Face Project) when moving vertices"><input type="checkbox" id="o-snap"><span class="switch" aria-hidden="true"></span><span data-no-i18n>Snap</span></label>
+          </div>
+        </div>
+        <div class="topo-body">
+          <div class="view-host topo-view" id="view-host">
+            <canvas id="view" aria-label="3D view of the mesh"></canvas>
+            <div class="view-overlay" id="view-overlay"></div>
+            <div class="op-readout" id="op-readout" hidden></div>
+            <span class="graph-hint">LMB select · Shift add · Alt edge loop · MMB orbit · Wheel zoom</span>
+          </div>
+          <aside class="props" id="props" aria-label="Properties"></aside>
+        </div>
+      </section>
+      <div class="statusbar">
+        <span class="status-keys" id="status-keys"><span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>Vertex / Edge / Face</span><span><kbd>G</kbd>Move</span><span><kbd>Ctrl</kbd><kbd>R</kbd>Loop Cut</span><span><kbd>J</kbd>Connect</span><span><kbd>X</kbd>Dissolve</span><span><kbd>F</kbd>Fill</span><span><kbd>Shift</kbd><kbd>E</kbd>Crease</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+      <div id="menu" class="context-menu" role="menu" hidden></div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Blender shortcuts used in this lab">
+      <div><span class="eyebrow">SAME KEYS AS BLENDER</span><h2>Shortcuts you can use here</h2><p>Keys work while the mouse is over the workspace, just like Blender sends keys to the editor under the pointer.</p></div>
+      <dl>
+        <div><dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></dt><dd>Vertex, edge or face select mode</dd></div>
+        <div><dt><kbd>LMB</kbd> · <kbd>Shift</kbd><kbd>LMB</kbd> · <kbd>Alt</kbd><kbd>LMB</kbd></dt><dd>Select · add or remove · select an edge loop</dd></div>
+        <div><dt><kbd>A</kbd> · <kbd>Alt</kbd><kbd>A</kbd></dt><dd>Select all · select none</dd></div>
+        <div><dt><kbd>G</kbd> then <kbd>X</kbd> <kbd>Y</kbd> <kbd>Z</kbd></dt><dd>Move, locked to an axis. Click or <kbd>Enter</kbd> to confirm, <kbd>Esc</kbd> or right click to cancel.</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>R</kbd></dt><dd>Loop Cut: hover an edge, slide with the mouse and click</dd></div>
+        <div><dt><kbd>J</kbd> · <kbd>F</kbd></dt><dd>Connect two vertices across a face · fill a face from 3 or 4 vertices</dd></div>
+        <div><dt><kbd>X</kbd> · <kbd>Alt</kbd><kbd>J</kbd></dt><dd>Dissolve vertices or edges · triangles to quads</dd></div>
+        <div><dt><kbd>Shift</kbd><kbd>E</kbd> · <kbd>Ctrl</kbd><kbd>1</kbd>–<kbd>3</kbd></dt><dd>Edge crease · Subdivision Surface levels (<kbd>Ctrl</kbd><kbd>0</kbd> off)</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>Checking topology in Blender</h2><p>Blender has all these tools in Edit Mode (<kbd>Tab</kbd>). The lab uses small meshes so every change is easy to see.</p></div><ol><li><strong>Select › Select All by Trait › Faces by Sides</strong> finds triangles (3, Equal To) or n-gons (4, Greater Than). <strong>Viewport Overlays › Statistics</strong> counts them.</li><li><strong>Connect Vertex Path</strong> (<kbd>J</kbd>), <strong>Dissolve</strong> (<kbd>X</kbd>) and <strong>Tris to Quads</strong> (<kbd>Alt</kbd><kbd>J</kbd>) turn messy faces into quads.</li><li><strong>Loop Cut and Slide</strong> (<kbd>Ctrl</kbd><kbd>R</kbd>) adds holding edges; <strong>Edge Crease</strong> (<kbd>Shift</kbd><kbd>E</kbd>) keeps edges sharp without new geometry. <kbd>Ctrl</kbd><kbd>1</kbd>–<kbd>3</kbd> adds a Subdivision Surface.</li><li>For deformation, test the mesh with the armature early: bend every joint to 90° and look for folds and collapse. The <strong>Armature</strong> modifier has <strong>Preserve Volume</strong>.</li><li>Retopology: <strong>Snapping</strong> to <strong>Face Project</strong> (or a <strong>Shrinkwrap</strong> modifier), <strong>Fill</strong> (<kbd>F</kbd>), <strong>Smooth Vertices</strong>, and the <strong>Poly Build</strong> tool.</li><li>Keep the final low poly all quads, with poles on flat areas and loops following the forms and the joints.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Topology Lab</span><a href="https://docs.blender.org/manual/en/latest/modeling/meshes/editing/index.html" target="_blank" rel="noopener">Blender: Mesh Editing ↗</a><span>Teaching model · small meshes, simplified subdivision.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=1"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Practise the Blender UV workflow: select edges, mark seams, unwrap, and read the UV map of a cube or a chair.">
+  <title>UV Unwrap Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=8">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 02</span><strong>UV Unwrap Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Cut the seams. <span>See the map.</span></h1>
+        <p>This workspace copies Blender's <strong>UV Editing</strong> layout. Cut the surface in the <strong>3D Viewport</strong>; read the flat result in the <strong>UV Editor</strong>.</p>
+      </div>
+      <div class="model-switch" role="group" aria-label="Practice object">
+        <span class="control-label">PRACTICE OBJECT</span>
+        <button type="button" class="model-button active" data-model="cube" aria-pressed="true">Cube <small>Start here</small></button>
+        <button type="button" class="model-button" data-model="chair" aria-pressed="false">Chair <small>Six box parts</small></button>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Workflow">
+      <li data-step="1"><b>1</b><span><strong>Select edges</strong><small>Click an edge · <kbd>Shift</kbd> click to add more</small></span></li>
+      <li data-step="2"><b>2</b><span><strong>Mark Seam</strong><small><kbd>U</kbd> menu · <kbd>Ctrl</kbd><kbd>E</kbd> · right-click</small></span></li>
+      <li data-step="3"><b>3</b><span><strong>Unwrap</strong><small><kbd>U</kbd> › Unwrap · or leave Live Unwrap on</small></span></li>
+      <li data-step="4"><b>4</b><span><strong>Read the UV map</strong><small>Each island is one flat piece</small></span></li>
+    </ol>
+
+    <section class="blender" id="workspace" aria-label="Blender-style UV Editing workspace">
+      <div class="topbar" role="toolbar" aria-label="3D Viewport tools">
+        <span class="topbar-context" aria-hidden="true">3D VIEWPORT</span>
+        <label class="mode-select"><span class="sr-only">3D Viewport interaction mode</span><select id="mode-select" aria-label="3D Viewport interaction mode (Tab)"><option value="object">Object Mode</option><option value="edit" selected>Edit Mode</option></select></label>
+        <div class="select-modes" role="group" aria-label="Select mode">
+          <button type="button" class="icon-toggle" data-select-mode="edge" aria-pressed="true" title="Edge Select (2)"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="3.5" width="13" height="13" fill="none" stroke="currentColor" stroke-opacity=".45"/><path d="M3.5 16.5 16.5 3.5" stroke="currentColor" stroke-width="2.4"/></svg><span>Edge</span><kbd>2</kbd></button>
+          <button type="button" class="icon-toggle" data-select-mode="face" aria-pressed="false" title="Face Select (3)"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="3.5" width="13" height="13" fill="currentColor" fill-opacity=".55" stroke="currentColor"/></svg><span>Face</span><kbd>3</kbd></button>
+        </div>
+        <div class="menubar">
+          <button type="button" class="menu-button" data-open-menu="select" aria-haspopup="menu" data-edit-only>Select</button>
+          <button type="button" class="menu-button" data-open-menu="uv" aria-haspopup="menu" data-edit-only>UV</button>
+          <button type="button" class="menu-button" data-open-menu="object" aria-haspopup="menu" data-object-only hidden>Object</button>
+        </div>
+        <span class="bar-sep" aria-hidden="true"></span>
+        <div class="quick-ops" role="group" aria-label="Object operators" data-object-only hidden>
+          <button type="button" class="op" data-open-menu="apply" title="Ctrl A in Object Mode">Apply… <kbd>Ctrl</kbd><kbd>A</kbd></button>
+          <span class="op-hint">Select the object, then press <kbd>G</kbd> to move or <kbd>S</kbd> to scale.</span>
+        </div>
+        <div class="quick-ops" role="group" aria-label="Seam and unwrap operators" data-edit-only>
+          <button type="button" id="op-mark" class="op op-mark" title="Mark Seam (U › Mark Seam, Ctrl+E, right-click)"><i aria-hidden="true"></i>Mark Seam</button>
+          <button type="button" id="op-clear" class="op op-clear" title="Clear Seam (U › Clear Seam)"><i aria-hidden="true"></i>Clear Seam</button>
+          <button type="button" id="op-unwrap" class="op op-unwrap" title="Unwrap (U › Unwrap)">Unwrap</button>
+        </div>
+        <label class="live-toggle" title="In Blender: UV Editor › UV › Live Unwrap"><input type="checkbox" id="live-unwrap" checked><span class="switch" aria-hidden="true"></span>Live Unwrap</label>
+      </div>
+
+      <div class="editors">
+        <section class="editor uv-editor" id="uv-editor" aria-label="UV Editor">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="13" fill="none" stroke="currentColor"/><path d="M1.5 8h13M8 1.5v13" stroke="currentColor" stroke-opacity=".5"/></svg>UV Editor</span><span class="editor-role">2D MAP</span>
+            <button type="button" class="menu-button" data-open-menu="uv-editor" aria-haspopup="menu">UV</button>
+            <div class="stretch-toggle" role="group" aria-label="Display Stretch overlay"><span>Display Stretch</span><button type="button" data-stretch="none" aria-pressed="true">Off</button><button type="button" data-stretch="angle" aria-pressed="false">Angle</button><button type="button" data-stretch="area" aria-pressed="false">Area</button></div>
+          </div>
+          <div class="map-host" id="map-host">
+            <svg id="uv-map" viewBox="0 0 560 500" role="group" aria-label="UV layout of the selected object">
+               <defs><pattern id="uv-check" width="52.5" height="52.5" patternUnits="userSpaceOnUse" x="70" y="40"><rect width="26.25" height="26.25" fill="#fff" fill-opacity=".2"/><rect x="26.25" width="26.25" height="26.25" fill="#14202c" fill-opacity=".2"/><rect y="26.25" width="26.25" height="26.25" fill="#14202c" fill-opacity=".2"/><rect x="26.25" y="26.25" width="26.25" height="26.25" fill="#fff" fill-opacity=".2"/><path d="M0 0H52.5M0 26.25H52.5M0 0V52.5M26.25 0V52.5" stroke="#141c24" stroke-opacity=".35"/></pattern><pattern id="uv-grid" width="42" height="42" patternUnits="userSpaceOnUse" x="70" y="40"><path d="M 42 0 L 0 0 0 42" fill="none" stroke="#9aa4ae" stroke-opacity=".1" stroke-width="1"/></pattern></defs>
+              <rect x="70" y="40" width="420" height="420" fill="#2f3237"/><rect x="70" y="40" width="420" height="420" fill="url(#uv-grid)"/>
+              <rect x="70" y="40" width="420" height="420" fill="none" stroke="#8b949e" stroke-opacity=".55" stroke-width="1.5"/>
+              <text x="70" y="480" class="axis">0</text><text x="486" y="480" class="axis">1</text><text x="52" y="463" class="axis">0</text><text x="52" y="46" class="axis">1</text>
+              <text x="505" y="464" class="axis axis-name">U</text><text x="63" y="25" class="axis axis-name">V</text>
+              <g id="uv-faces"></g><g id="uv-edges"></g><g id="uv-labels"></g>
+            </svg>
+            <div id="map-stale" class="map-stale" hidden><span id="stale-text">UV map out of date. The seams changed.</span><button type="button" id="stale-unwrap">Unwrap now <kbd>U</kbd></button></div>
+            <div id="map-overlay" class="map-overlay" hidden></div>
+          </div>
+          <div class="editor-footer">
+            <span id="island-count" class="island-count">1 UV island</span>
+            <label class="island-scale" for="stretch-u" title="In Blender: select the island in the UV Editor, press S then X">Scale island X <kbd>S</kbd><kbd>X</kbd><input id="stretch-u" type="range" min="0.5" max="2" step="0.05" value="1"><output id="stretch-value">1.00×</output></label>
+            <button type="button" id="reset-stretch" class="mini-button">Reset</button>
+          </div>
+        </section>
+
+        <section class="editor viewport" id="viewport" aria-label="3D Viewport">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z M2 5l6 3.5L14 5 M8 8.5v6" fill="none" stroke="currentColor"/></svg>3D Viewport</span><span class="editor-role">CUT + OPERATE</span>
+            <strong id="object-title">Cube</strong><span id="object-selection-state" class="selection-state" hidden>Selected</span>
+            <div class="viewer-legend" aria-label="Edge colours"><span><i class="legend-edge"></i>Edge</span><span><i class="legend-sel"></i>Selected</span><span><i class="legend-cut"></i>Seam</span></div>
+          </div>
+          <div class="canvas-host" id="viewer">
+            <div class="toolshelf" role="group" aria-label="Tools">
+              <button type="button" class="tool active" data-tool="select" aria-pressed="true" title="Select tool — the normal Blender way: select, then use an operator"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 3v13l3.5-3.3 2.4 5 2-.9-2.3-4.9H15z" fill="currentColor"/></svg><span>Select</span></button>
+              <button type="button" class="tool" data-tool="seam" aria-pressed="false" title="Quick Seam — lab shortcut: one click marks or clears a seam. Blender has no such tool."><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 17 17 3" stroke="currentColor" stroke-width="2.6"/><path d="M6 6.5 4.2 4.7M9.5 3.8 8.3 2.5M3.8 9.5 2.5 8.3" stroke="currentColor" stroke-width="1.5"/><circle cx="15.5" cy="15.5" r="2.4" fill="currentColor"/></svg><span>Quick Seam</span></button>
+            </div>
+            <div class="canvas-hint" id="canvas-hint">Loading object…</div>
+            <div class="nav-hint" aria-hidden="true"><kbd>MMB</kbd> orbit · <kbd>Shift</kbd><kbd>MMB</kbd> pan · <kbd>Wheel</kbd> / <kbd>Ctrl</kbd><kbd>MMB</kbd> zoom</div>
+            <div class="transform-panel" id="transform-panel" aria-label="Object transform (N panel)">
+              <div class="tp-head">Item › Transform <span>N panel</span></div>
+              <div class="tp-row"><span>Location</span><label>X<input type="number" step="0.1" data-location-axis="0" value="0.00" aria-label="Location X"></label><label>Y<input type="number" step="0.1" data-location-axis="1" value="0.00" aria-label="Location Y"></label><label>Z<input type="number" step="0.1" data-location-axis="2" value="0.00" aria-label="Location Z"></label></div>
+              <div class="tp-row"><span>Scale</span><label>X<input type="number" step="0.1" min="0.25" max="4" data-scale-axis="0" value="1.00" aria-label="Scale X"></label><label>Y<input type="number" step="0.1" min="0.25" max="4" data-scale-axis="1" value="1.00" aria-label="Scale Y"></label><label>Z<input type="number" step="0.1" min="0.25" max="4" data-scale-axis="2" value="1.00" aria-label="Scale Z"></label></div>
+              <p id="transform-note" class="tp-note"></p>
+              <button type="button" id="apply-scale" class="tp-apply">Apply Scale <kbd>Ctrl</kbd><kbd>A</kbd></button>
+            </div>
+            <div class="fold-controls" id="fold-controls"><span class="fold-tag">LAB VIEW</span><label for="fold">Fold</label><input id="fold" type="range" min="0" max="100" value="100" aria-label="Fold the cube: 100 is 3D, 0 is flat"><button type="button" id="animate" class="fold-button">Unfold ↘</button></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="statusbar">
+        <span id="status-keys" class="status-keys"></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+      <div id="menu" class="context-menu" role="menu" hidden></div>
+    </section>
+
+    <section class="below">
+      <div class="preset-section" id="preset-section"><span class="control-label">CUBE STARTING LAYOUTS</span><div class="presets" role="group" aria-label="UV seam presets"><button class="preset active" data-preset="classic" aria-pressed="true">One island<span>A box net</span></button><button class="preset" data-preset="two" aria-pressed="false">Two islands<span>One face apart</span></button><button class="preset" data-preset="separate" aria-pressed="false">Six islands<span>Every face apart</span></button><button class="preset" data-preset="closed" aria-pressed="false">No cuts<span>A closed cube</span></button></div></div>
+      <div class="experiment">
+        <div><span class="control-label">EXPERIMENT · APPLY SCALE</span><h3>When the UVs don't match the model</h3>
+        <p>Someone stretched the cube in Object Mode (Scale X = 2) and unwrapped it. The UV islands are still squares, so the checker looks stretched on the model. Blender warns: <em>“Object has non-uniform scale…”</em></p></div>
+        <ol><li><kbd>Tab</kbd> to Object Mode.</li><li><kbd>Ctrl</kbd><kbd>A</kbd> › <strong>Scale</strong>. The Transform panel goes back to 1, 1, 1 but the cube keeps its shape.</li><li>The UVs are now out of date. <kbd>Tab</kbd> › <kbd>U</kbd> › <strong>Unwrap</strong>.</li><li>Check: square checker, and <strong>Unfold</strong> matches the model again.</li></ol>
+        <div class="experiment-actions"><button type="button" id="scale-experiment" class="exp-button">Set up the stretched cube</button><button type="button" id="reset-object" class="mini-link">Reset object</button></div>
+      </div>
+      <details class="edge-panel" id="edge-panel">
+        <summary><span class="control-label">EDGE LIST</span> <span>Hard to click an edge? Select it here.</span> <span id="seam-count" class="seam-count"></span></summary>
+        <div class="edge-panel-body"><label class="part-label" id="part-label" hidden>Part <select id="part-select" aria-label="Chair part"></select></label><div id="edge-list" class="edge-list" role="group" aria-label="Edges"></div></div>
+      </details>
+    </section>
+
+    <section class="shortcuts" aria-label="Blender shortcuts used in this lab">
+      <div><span class="eyebrow">SAME KEYS AS BLENDER</span><h2>Shortcuts you can use here</h2><p>Keys work while the mouse is over the workspace, just like Blender sends keys to the editor under the pointer.</p></div>
+      <dl>
+        <div><dt><kbd>Tab</kbd></dt><dd>Object Mode ↔ Edit Mode</dd></div>
+        <div><dt><kbd>2</kbd> <kbd>3</kbd></dt><dd>Edge Select / Face Select</dd></div>
+        <div><dt><kbd>LMB</kbd></dt><dd>Select · <kbd>Shift</kbd> to add</dd></div>
+        <div><dt><kbd>A</kbd> · <kbd>Alt</kbd><kbd>A</kbd></dt><dd>Select all / none</dd></div>
+        <div><dt><kbd>U</kbd></dt><dd>UV menu: Mark Seam, Clear Seam, Unwrap</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>E</kbd> · <kbd>RMB</kbd></dt><dd>Edge menu / context menu</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>P</kbd> · <kbd>Ctrl</kbd><kbd>A</kbd></dt><dd>In the UV Editor: Pack Islands / Average Islands Scale</dd></div>
+        <div><dt><kbd>S</kbd> · <kbd>Ctrl</kbd><kbd>A</kbd></dt><dd>Object Mode: Scale (then X/Y/Z, a number, Enter) / Apply › Scale</dd></div>
+        <div><dt><kbd>G</kbd></dt><dd>Object Mode: Move. Add X/Y/Z for an axis; Enter or click to confirm, Esc to cancel.</dd></div>
+        <div><dt><kbd>Alt</kbd><kbd>G</kbd></dt><dd>Clear Location: return the selected object to 0, 0, 0.</dd></div>
+        <div><dt><kbd>MMB</kbd> · <kbd>Shift</kbd><kbd>MMB</kbd></dt><dd>Orbit / pan the 3D view</dd></div>
+        <div><dt><kbd>Wheel</kbd> · <kbd>Ctrl</kbd><kbd>MMB</kbd></dt><dd>Zoom the 3D view</dd></div>
+        <div><dt><kbd>Numpad +</kbd> · <kbd>Numpad −</kbd></dt><dd>Zoom in / out · <kbd>Numpad .</kbd> frames the selected object</dd></div>
+        <div><dt><kbd>Numpad 2/4/6/8</kbd></dt><dd>Orbit in steps · <kbd>Home</kbd> frames all objects</dd></div>
+      </dl>
+    </section>
+
+    <section class="concept-strip" aria-label="What these views mean"><div><span>3D OBJECT</span><p>Marking a seam changes where the surface can split. The object's 3D shape stays the same.</p></div><span class="concept-arrow" aria-hidden="true">→</span><div><span>2D UV MAP</span><p>Connected faces form UV islands. A seam edge appears twice in the UV map: once on each side of the cut.</p></div><span class="concept-arrow" aria-hidden="true">→</span><div><span>TEXTURE IMAGE</span><p>Blender uses U and V coordinates to place image detail on each face. Uneven island scale makes that detail look inconsistent.</p></div></section>
+    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>The same steps in Blender</h2><p>This lab uses rectangular paper nets so each operation is easy to see. Blender's real Unwrap uses more advanced solvers on curved meshes and only unwraps the faces you select.</p></div><ol><li>Open the <strong>UV Editing</strong> workspace. The object enters <strong>Edit Mode</strong>.</li><li>Press <strong>2</strong> for Edge Select. Click edges, <strong>Shift</strong>-click to add.</li><li>Press <strong>U › Mark Seam</strong> (or <strong>Ctrl E</strong> › Mark Seam).</li><li>Press <strong>A</strong> to select everything, then <strong>U › Unwrap</strong>.</li><li>In the UV Editor, try <strong>Display Stretch</strong>, <strong>Average Islands Scale</strong> and <strong>Pack Islands</strong>.</li><li>Optional: <strong>UV › Live Unwrap</strong> re-unwraps every time you change a seam.</li><li>Scaled the object in Object Mode? <strong>Ctrl A › Scale</strong> first, then unwrap — otherwise the texture stretches.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · UV Unwrap Lab</span><a href="https://docs.blender.org/manual/en/latest/modeling/meshes/uv/unwrapping/seams.html" target="_blank" rel="noopener">Blender: Seams ↗</a><span>Box-based teaching model · Blender may unwrap differently.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=9"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; import dict from './i18n.js'; initI18n({ dictionaries: [dict], mount: '.site-header', append: true });</script>
+</body>
+</html>

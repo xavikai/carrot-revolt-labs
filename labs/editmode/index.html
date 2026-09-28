@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="First steps in Blender's Edit Mode: vertices, edges and faces, X-ray, edge loops, moving parts of a mesh, Extrude, Inset, Loop Cut, Bevel, cleaning a broken mesh with Merge by Distance, Delete and Dissolve, and modelling a stool.">
+  <title>Edit Mode Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../../blender-ui.css?v=1">
+  <link rel="stylesheet" href="./style.css?v=1">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 21</span><strong>Edit Mode Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Inside the object, <span>the mesh.</span></h1>
+        <p>Press <kbd>Tab</kbd> and a cube becomes <strong>vertices</strong>, <strong>edges</strong> and <strong>faces</strong>. Select them in three modes, see through with <strong>X-ray</strong>, pick whole <strong>edge loops</strong>, then model: <strong>Extrude</strong>, <strong>Inset</strong>, <strong>Loop Cut</strong> and <strong>Bevel</strong>. Clean a broken mesh and finish with a stool. The keys are the real ones of Blender.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="Blender-style Modeling workspace">
+      <div class="topbar vp-topbar">
+        <nav class="menubar" aria-label="Main menu"><button type="button" class="menu-button" data-menu="edit" aria-expanded="false" data-no-i18n>Edit</button></nav>
+        <div class="ws-tabs" data-no-i18n><span class="ws-tab">Layout</span><span class="ws-tab active">Modeling</span><span class="ws-tab">Sculpting</span><span class="ws-tab">UV Editing</span><span class="ws-tab">Shading</span></div>
+        <label class="live-toggle emu-toggle" title="Preferences › Input › Emulate Numpad"><input type="checkbox" id="emu-numpad"><span class="switch" aria-hidden="true"></span><span data-no-i18n>Emulate Numpad</span></label>
+      </div>
+      <div class="vp-body">
+        <section class="editor pane vp-editor" aria-label="3D Viewport">
+          <div class="editor-header">
+            <span class="bh-dd bh-editor" id="editor-type" title="Editor Type: 3D Viewport" data-icon="view3d"></span>
+            <button type="button" class="bh-dd mode-btn" id="mode-btn" aria-pressed="false" data-no-i18n title="Mode (Tab)"></button>
+            <div class="bh-group sm-group" role="group" aria-label="Select mode">
+              <button type="button" class="bh-ico" data-sm="vert" title="Vertex (1)" aria-pressed="false" data-icon="vertexsel"></button>
+              <button type="button" class="bh-ico" data-sm="edge" title="Edge (2)" aria-pressed="false" data-icon="edgesel"></button>
+              <button type="button" class="bh-ico" data-sm="face" title="Face (3)" aria-pressed="false" data-icon="facesel"></button>
+            </div>
+            <nav class="menubar" id="menus" aria-label="3D Viewport menus" data-no-i18n></nav>
+            <span class="bh-right">
+              <span class="bh-group"><button type="button" class="bh-ico soft" disabled title="Show Gizmo" data-icon="gizmo" aria-pressed="true"></button></span>
+              <span class="bh-group"><button type="button" class="bh-ico soft" disabled title="Show Overlays" data-icon="overlay" aria-pressed="true"></button></span>
+              <span class="bh-group"><button type="button" class="bh-ico" id="xray-btn" aria-pressed="false" title="Toggle X-Ray (Alt Z)" data-icon="xray"></button></span>
+              <span class="bh-group" role="group" aria-label="Viewport Shading"><button type="button" class="bh-ico" disabled title="Wireframe" data-icon="shading_wire"></button><button type="button" class="bh-ico" aria-pressed="true" title="Solid" data-icon="shading_solid"></button><button type="button" class="bh-ico" disabled title="Material Preview" data-icon="shading_texture"></button><button type="button" class="bh-ico" disabled title="Rendered" data-icon="shading_rendered"></button></span>
+            </span>
+            <button type="button" class="ruler-btn" id="sidebar-btn" aria-pressed="false" title="Sidebar (N)"><span data-no-i18n>Sidebar</span> <kbd>N</kbd></button>
+          </div>
+          <div class="view-host vp-view" id="view-host" tabindex="-1">
+            <canvas id="view" aria-label="3D Viewport"></canvas>
+            <div class="vp-text" id="vp-text" data-no-i18n></div>
+            <div class="op-readout" id="modal-readout" hidden data-no-i18n></div>
+            <div class="cursor3d" id="cursor3d" aria-hidden="true"></div>
+            <div class="nav-gizmo" id="nav-gizmo">
+              <canvas id="gizmo" width="96" height="96" aria-label="Navigation gizmo: drag to orbit, click an axis to align the view"></canvas>
+              <div class="nav-buttons">
+                <button type="button" data-nav="zoom" title="Zoom: drag"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m10 10 4 4" stroke="currentColor" stroke-width="1.8"/></svg></button>
+                <button type="button" data-nav="pan" title="Pan: drag"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 8V3.8a1 1 0 0 1 2 0V7m0-3.8a1 1 0 0 1 2 0V7m0-2.5a1 1 0 0 1 2 0V8m0-1.5a1 1 0 0 1 2 0v3.3c0 2.7-1.8 4.7-4.4 4.7-1.8 0-2.8-.8-3.8-2.3L3 9.6a1 1 0 0 1 1.6-1.1L5.5 9.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></button>
+                <button type="button" data-nav="persp" title="Perspective / Orthographic (Numpad 5)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 5h12M2 11h12M5 2v12M11 2v12" stroke="currentColor" stroke-width="1.2"/></svg></button>
+              </div>
+            </div>
+            <aside class="n-sidebar" id="n-sidebar" hidden aria-label="Sidebar">
+              <div class="n-tabs" data-no-i18n><span class="active">Item</span><span>Tool</span><span>View</span></div>
+              <div class="n-body" id="n-body"></div>
+            </aside>
+            <div class="last-op em-last-op" id="last-op" hidden></div>
+            <div class="box-rect" id="box-rect" hidden></div>
+            <div class="pie" id="pie" hidden data-no-i18n></div>
+            <span class="graph-hint" id="vp-hint">MMB orbit · Shift MMB pan · Wheel zoom</span>
+          </div>
+        </section>
+        <aside class="props vp-side" id="props" aria-label="Outliner and lab panel">
+          <div id="outliner"></div>
+          <div id="lab-panel"></div>
+        </aside>
+      </div>
+      <div class="statusbar">
+        <span class="status-keys" id="status-keys"></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Key ideas">
+      <div><span class="eyebrow">KEY IDEAS</span><h2>Points, lines, surfaces</h2><p>Object Mode moves whole objects. Edit Mode changes the mesh inside: every modelling tool adds, moves or removes vertices, edges and faces.</p></div>
+      <dl>
+        <div><dt>Tab</dt><dd>Switches between Object Mode and Edit Mode for the active object.</dd></div>
+        <div><dt>1 · 2 · 3</dt><dd>Vertex, Edge and Face select modes. The same selection, seen as points, lines or surfaces.</dd></div>
+        <div><dt>X-ray</dt><dd>Alt Z. You see through the mesh and a box also selects what is behind.</dd></div>
+        <div><dt>Edge loop</dt><dd>A line of edges that goes around the mesh. Alt + click selects it; Shift Alt + click adds one.</dd></div>
+        <div><dt>E · I</dt><dd>Extrude pulls new faces out along the normal. Inset makes a border of faces inside a face.</dd></div>
+        <div><dt>Ctrl R · Ctrl B</dt><dd>Loop Cut adds edge loops across the mesh. Bevel rounds edges with Width and Segments.</dd></div>
+        <div><dt>Clean mesh</dt><dd>No duplicated or loose vertices, no holes, no faces inside, no vertices in the middle of an edge.</dd></div>
+        <div><dt>Delete · Dissolve</dt><dd>Delete removes geometry and leaves a hole. Dissolve removes it and joins what is around.</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">IN THE REAL BLENDER</span><h2>More options, same ideas</h2><p>Everything here works the same in Blender, with the mouse over the 3D Viewport in Edit Mode. Blender has more options for each tool: here are the ones to look for first.</p></div><ol><li>The select mode buttons are in the header, next to <strong>Edit Mode</strong>. With <strong>Emulate Numpad</strong> on, the number row changes the view instead: use the buttons.</li><li><strong>Toggle X-Ray</strong> is the button with two squares at the top right of the viewport. Its opacity is set in the <strong>Shading</strong> popover.</li><li>After each tool, the <strong>Adjust Last Operation</strong> panel (bottom left, or <kbd>F9</kbd>) changes its values: Width and Segments of a bevel, Number of Cuts of a loop cut, Thickness of an inset.</li><li><kbd>E</kbd> also works on vertices and edges, and <kbd>I</kbd> <kbd>I</kbd> insets each face on its own (Individual). This lab extrudes faces only.</li><li><strong>Mesh › Clean Up</strong> has <strong>Merge by Distance</strong>, Delete Loose and more. The <strong>Statistics</strong> overlay counts vertices, edges and faces.</li><li>A bevel of a whole object is also a modifier (<strong>Bevel</strong> in the modifier stack) that keeps the original mesh editable.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Edit Mode Lab</span><a href="https://docs.blender.org/manual/en/latest/modeling/meshes/editing/index.html" target="_blank" rel="noopener">Blender: Mesh editing ↗</a><span>Based on the Blender labs by Joan Copla, adapted to Carrot Revolt Labs.</span><a href="https://joancopla.github.io/blender-lab/" target="_blank" rel="noopener">Joan Copla's labs ↗</a><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=2"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

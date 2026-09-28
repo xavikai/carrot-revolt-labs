@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="A camera you can open: aperture, shutter speed, ISO, focal length and sensor size, with a simulated photo, and the same ideas in Blender's camera.">
+  <title>Photo Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=1">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 08</span><strong>Photo Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Open the camera. <span>Take the photo.</span></h1>
+        <p>A DSLR cut in half next to the photo it takes. Change the <strong>aperture</strong>, the <strong>shutter speed</strong> and the <strong>ISO</strong>, zoom the lens and change the sensor, and see how light, blur and noise change. Then do the same with <strong>Blender's camera</strong>.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="Camera workspace">
+      <div class="photo-body">
+        <section class="editor pane" aria-label="The camera, cut in half">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="4" width="13" height="9" rx="1.5" fill="none" stroke="currentColor"/><circle cx="8" cy="8.5" r="2.6" fill="none" stroke="currentColor"/><path d="M5 4 6 2.5h4L11 4" fill="none" stroke="currentColor"/></svg>Inside the camera</span>
+            <div class="view-toggles">
+              <label class="live-toggle"><input type="checkbox" id="o-labels" checked><span class="switch" aria-hidden="true"></span>Labels</label>
+            </div>
+          </div>
+          <div class="view-host dslr-host" id="dslr-host">
+            <canvas id="dslr" aria-label="3D model of a DSLR cut in half"></canvas>
+            <div class="labels" id="labels"></div>
+            <div class="shot-note" id="shot-note" hidden></div>
+            <span class="graph-hint">Drag to orbit · Wheel zoom</span>
+          </div>
+        </section>
+        <section class="editor pane" aria-label="The photo">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3" width="13" height="10" rx="1" fill="none" stroke="currentColor"/><path d="m2.5 11.5 3.5-4 3 3 2-2 2.5 3" fill="none" stroke="currentColor"/></svg><span id="photo-title">Photo</span></span>
+            <div class="view-toggles">
+              <label class="live-toggle" title="The photo updates all the time, like the screen of a mirrorless camera: the windmill keeps turning"><input type="checkbox" id="o-live" checked><span class="switch" aria-hidden="true"></span>Live view</label>
+              <label class="live-toggle" id="motion-toggle" title="Where the moving things were when the shutter opened and when it closed"><input type="checkbox" id="o-motion" checked><span class="switch" aria-hidden="true"></span>Motion</label>
+              <label class="live-toggle" title="Brightness of each tone: dark on the left, light on the right"><input type="checkbox" id="o-hist" checked><span class="switch" aria-hidden="true"></span>Histogram</label>
+              <button type="button" class="shoot" id="shoot" title="Space">● Shoot</button>
+            </div>
+          </div>
+          <div class="view-host photo-host" id="photo-host">
+            <canvas id="photo" aria-label="The simulated photo. Click to focus."></canvas>
+            <canvas class="motion" id="motion" aria-hidden="true"></canvas>
+            <div class="af" id="af" hidden></div>
+            <canvas class="hist" id="hist" width="192" height="64" aria-hidden="true"></canvas>
+            <div class="reference" id="reference" hidden><span>Reference</span><canvas id="ref" aria-label="Reference photo to match"></canvas></div>
+            <span class="graph-hint">Click the photo to focus there</span>
+          </div>
+          <div class="finder" id="finder" aria-live="polite"></div>
+          <div class="shots" id="shots" aria-label="Your shots"></div>
+        </section>
+        <aside class="props" id="props" aria-label="Camera settings"></aside>
+      </div>
+      <div class="statusbar">
+        <span class="status-keys"><span><kbd>Space</kbd>Shoot</span><span><kbd>Click</kbd>Focus</span><span><kbd>[</kbd> <kbd>]</kbd>Aperture</span><span><kbd>,</kbd> <kbd>.</kbd>Shutter</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Key ideas">
+      <div><span class="eyebrow">KEY IDEAS</span><h2>One stop = double or half the light</h2><p>Each of the three settings changes the light and something else. Balancing them is the whole craft of exposure.</p></div>
+      <dl>
+        <div><dt>Aperture · f/</dt><dd>How wide the lens opens. f/2 lets in 4× more light than f/4. A wide aperture gives a shallow depth of field.</dd></div>
+        <div><dt>Shutter speed</dt><dd>How long the sensor is exposed. 1/60 lets in twice the light of 1/125. Slow speeds blur movement and camera shake.</dd></div>
+        <div><dt>ISO</dt><dd>How much the signal is amplified. ISO 800 is twice as bright as ISO 400, with more noise.</dd></div>
+        <div><dt>Focal length</dt><dd>The angle of view: 16 mm is wide, 200 mm is narrow. Perspective depends on the distance, not on the lens.</dd></div>
+        <div><dt>Sensor size</dt><dd>A smaller sensor crops the image: APS-C × 1.5, Micro Four Thirds × 2 (equivalent focal length).</dd></div>
+        <div><dt>Modes</dt><dd>M: you choose everything. Av (A): you choose the aperture. Tv (S): you choose the shutter speed. The camera fills in the rest.</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>The same camera in Blender</h2><p>Blender's camera is a pinhole with a lens: it has focal length, sensor, focus and aperture, and a shutter for motion blur. It has no ISO and no automatic exposure: brightness is set with the lights and <strong>Color Management › Exposure</strong>.</p></div><ol><li><strong>Camera Properties › Lens › Focal Length</strong> (mm). Lens Unit can show it as Field of View instead.</li><li><strong>Camera › Sensor Fit</strong> and <strong>Size</strong>: 36 mm is full frame. Enter the real sensor width to match a real camera.</li><li><strong>Depth of Field</strong>: turn it on, pick a <strong>Focus Object</strong> or a Focus Distance, and set the <strong>F-Stop</strong>. Blades shape the bokeh.</li><li><strong>Render Properties › Motion Blur › Shutter</strong> is in frames: seconds = Shutter ÷ frame rate. 0.5 is a 180° shutter.</li><li>In Cycles, DoF and motion blur come from sampling the aperture and the exposure time, as in this lab.</li><li>Match the real <strong>Frame Rate</strong> (Output Properties) when you put 3D objects into filmed footage.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Photo Lab</span><a href="https://docs.blender.org/manual/en/latest/render/cameras.html" target="_blank" rel="noopener">Blender: Cameras ↗</a><span>Teaching model · simplified camera and light.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=6"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

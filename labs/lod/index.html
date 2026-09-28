@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Understand LODs and mipmaps: why a far object needs fewer triangles and smaller textures, when a LOD Group switches, how to make LODs with Decimate, why textures shimmer without mipmaps, and how to fit a whole scene in a budget.">
+  <title>LOD &amp; Mipmaps Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=1">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 17</span><strong>LOD &amp; Mipmaps Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Far away, <span>less is enough.</span></h1>
+        <p>A <strong>LOD</strong> (level of detail) is a lighter copy of a model that the engine shows when the model is small on screen. <strong>Mipmaps</strong> do the same for textures. Watch a <strong>LOD Group</strong> switch, set its thresholds, make the LODs with <strong>Decimate</strong>, stop a floor from shimmering, and fit a whole scene in a budget.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="3D workspace">
+      <div class="lod-body">
+        <section class="editor pane" aria-label="3D Viewport">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z M2 5l6 3.5L14 5 M8 8.5v6" fill="none" stroke="currentColor"/></svg><span data-no-i18n>3D Viewport</span></span>
+            <label class="hdr-field" id="dist-field"><span>Distance</span><input type="range" id="dist" min="0" max="1000" step="1"><output id="dist-out" data-no-i18n></output></label>
+            <button type="button" class="ruler-btn wire-btn" id="wire-btn" aria-pressed="false" data-no-i18n>Wireframe</button>
+            <button type="button" class="ruler-btn wire-btn" id="colors-btn" aria-pressed="false">LOD colours</button>
+            <button type="button" class="ruler-btn play-btn" id="play-btn" aria-pressed="false">▶ Play</button>
+          </div>
+          <div class="view-host lod-view" id="view-host">
+            <canvas id="view" aria-label="3D view"></canvas>
+            <div class="vp-text" id="vp-text" data-no-i18n></div>
+            <div class="insets" id="insets" hidden>
+              <span class="inset-title">At game resolution (1080p)</span>
+              <div class="inset-row"><figure><canvas id="inset-a" width="150" height="150"></canvas><figcaption data-no-i18n>LOD0</figcaption></figure><figure><canvas id="inset-b" width="150" height="150"></canvas><figcaption id="inset-b-cap" data-no-i18n>LOD1</figcaption></figure></div>
+              <span class="inset-note" id="inset-note" data-no-i18n></span>
+            </div>
+            <span class="graph-hint" id="vp-hint">MMB / LMB drag orbit · Wheel distance</span>
+          </div>
+        </section>
+        <aside class="props" id="props" aria-label="Properties"></aside>
+      </div>
+      <div class="statusbar">
+        <span class="status-keys"><span><kbd>LMB</kbd>Orbit</span><span><kbd>Wheel</kbd>Distance</span><span><kbd>Space</kbd>Play</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Key ideas">
+      <div><span class="eyebrow">KEY IDEAS</span><h2>Spend where it shows</h2><p>The screen has a fixed number of pixels. Triangles and texels smaller than a pixel cost time and memory and add nothing you can see.</p></div>
+      <dl>
+        <div><dt>LOD</dt><dd>Level of detail: LOD0 is the full model, LOD1, LOD2… are lighter copies. The engine swaps them as the object gets smaller on screen.</dd></div>
+        <div><dt>Screen relative height</dt><dd>How much of the screen height the object fills (%). A LOD Group switches on this number, not on the distance, so it works for any object size and any screen.</dd></div>
+        <div><dt>Error in pixels</dt><dd>How far the lighter mesh is from LOD0, seen on screen. Below about one pixel, nobody can see the change.</dd></div>
+        <div><dt>Popping</dt><dd>The visible jump when a LOD switches too early. Good thresholds and Cross Fade hide it.</dd></div>
+        <div><dt>Mipmaps</dt><dd>Smaller copies of a texture (½, ¼, ⅛…). The GPU reads the one whose texels match the screen pixels: log₂(texels per pixel). They cost +⅓ memory.</dd></div>
+        <div><dt>Filtering</dt><dd>Bilinear reads one mip, Trilinear blends two, Anisotropic keeps floors sharp at grazing angles.</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER AND THE ENGINE</span><h2>LODs in practice</h2><p>Blender makes the meshes; the game engine switches them. Mipmaps are made by the engine when it imports a texture.</p></div><ol><li>Duplicate the model (<kbd>Shift</kbd> <kbd>D</kbd>) and name the copies <strong>_LOD0</strong>, <strong>_LOD1</strong>, <strong>_LOD2</strong>… Unity and Unreal read these suffixes on import.</li><li>Add a <strong>Decimate</strong> modifier to each copy. <strong>Collapse</strong> with a <strong>Ratio</strong> (often about half the triangles for each LOD); watch the <strong>Face Count</strong>. <strong>Un-Subdivide</strong> for grids, <strong>Planar</strong> for flat hard-surface parts.</li><li>Check the silhouette from the distance where each LOD will start, and keep UV seams and hard edges (Planar › Delimit).</li><li>Export all the LODs in one FBX. In Unity the <strong>LOD Group</strong> sets the thresholds in % of screen height and the Fade Mode; in Unreal the <strong>LOD Settings</strong> use Screen Size.</li><li>Textures: keep <strong>Generate Mip Maps</strong> on for 3D textures, use <strong>Trilinear</strong> and <strong>Aniso Level</strong> for floors; turn mips off for UI drawn pixel for pixel.</li><li>Use <strong>LOD Bias</strong> in the quality settings to trade detail for speed on weaker machines.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · LOD &amp; Mipmaps Lab</span><a href="https://docs.blender.org/manual/en/latest/modeling/modifiers/generate/decimate.html" target="_blank" rel="noopener">Blender: Decimate ↗</a><span>Teaching model · the Unity LOD Group as reference.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=2"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

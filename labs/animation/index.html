@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Animate a rigged bouncing ball in 3D with a Blender-style Timeline and Graph Editor: timing, squash and stretch with two controls, and weight with F-curves.">
+  <title>Animation Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=3">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 04</span><strong>Animation Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Time it. Squash it. <span>Give it weight.</span></h1>
+        <p>The bouncing ball, one principle at a time. Pose the rigged ball in the <strong>3D Viewport</strong>, key it, and shape its curves in the <strong>Graph Editor</strong>; move keys in time in the <strong>Timeline</strong> or the <strong>Dope Sheet</strong>, as in Blender.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="Blender-style animation workspace">
+      <div class="anim-editors">
+        <section class="editor" aria-label="3D Viewport">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z M2 5l6 3.5L14 5 M8 8.5v6" fill="none" stroke="currentColor"/></svg>3D Viewport</span><span class="mode-pill" title="In Blender: select the rig and press Ctrl Tab">Pose Mode</span>
+            <div class="view-toggles">
+              <label class="live-toggle" title="In Blender: Overlays › Bones (or hide the bone collection of the controls)"><input type="checkbox" id="t-ctrls" checked><span class="switch" aria-hidden="true"></span>Controls</label>
+              <label class="live-toggle" title="In Blender: Object › Motion Paths"><input type="checkbox" id="t-path" checked><span class="switch" aria-hidden="true"></span>Motion Path</label>
+              <label class="live-toggle" title="Lab view: the ball at every other frame"><input type="checkbox" id="t-ghosts"><span class="switch" aria-hidden="true"></span>Ghosts</label>
+              <label class="live-toggle" id="ref-toggle" title="A real ball simulated with physics"><input type="checkbox" id="t-ref"><span class="switch" aria-hidden="true"></span>Reference</label>
+            </div>
+          </div>
+          <div class="view-host" id="view-host"><canvas id="view" aria-label="The rigged ball in 3D"></canvas><div class="view-overlay" id="view-overlay"></div><div class="op-readout" id="view-readout" hidden></div><span class="graph-hint">LMB select control · G move · R rotate · I key · MMB orbit</span></div>
+        </section>
+
+        <section class="editor" aria-label="Graph Editor">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 13C5 13 5 3 8 3s3 10 6.5 10" fill="none" stroke="currentColor"/><circle cx="8" cy="3" r="1.4" fill="currentColor"/></svg>Graph Editor</span><span class="editor-role">F-CURVES</span>
+            <div class="menubar">
+              <button type="button" class="menu-button" data-menu="view" aria-haspopup="menu">View</button>
+              <button type="button" class="menu-button" data-menu="select" aria-haspopup="menu">Select</button>
+              <button type="button" class="menu-button" data-menu="key" aria-haspopup="menu">Key</button>
+            </div>
+          </div>
+          <div class="graph-body">
+            <div class="channels" id="channels" aria-label="Channels"></div>
+            <div class="graph-host" id="graph-host"><canvas id="graph" aria-label="F-curves"></canvas><span class="graph-hint">Wheel zoom · MMB pan · Home frame all</span></div>
+            <aside class="sidebar" id="sidebar" aria-label="Sidebar (N)"></aside>
+          </div>
+        </section>
+      </div>
+
+      <section class="editor timeline" id="bottom-editor" aria-label="Timeline and Dope Sheet">
+        <div class="editor-header">
+          <label class="editor-type editor-switch" title="Editor Type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8h13M4 5v6M8 4v8M12 5v6" fill="none" stroke="currentColor"/></svg><select id="bottom-type" aria-label="Editor Type" data-no-i18n><option value="timeline">Timeline</option><option value="dopesheet">Dope Sheet</option></select></label>
+          <div class="play-controls">
+            <button type="button" id="b-start" title="Jump to start (Shift ←)">⏮</button>
+            <button type="button" id="b-prevkey" title="Previous keyframe (↓)">◆◂</button>
+            <button type="button" id="b-play" title="Play (Space)" aria-pressed="false">▶</button>
+            <button type="button" id="b-nextkey" title="Next keyframe (↑)">▸◆</button>
+            <button type="button" id="b-end" title="Jump to end (Shift →)">⏭</button>
+          </div>
+          <label class="frame-field">Frame <input type="number" id="f-cur" class="current" min="0" max="250" value="1"></label>
+          <label class="frame-field">Start <input type="number" id="f-start" min="0" max="249" value="1"></label>
+          <label class="frame-field">End <input type="number" id="f-end" min="2" max="250" value="72"></label>
+          <span class="fps">24 fps · <span id="time-sec">0.00 s</span></span>
+        </div>
+        <div class="timeline-host" id="timeline-host"><canvas id="timeline" aria-label="Timeline or Dope Sheet with keyframes"></canvas></div>
+      </section>
+
+      <div class="statusbar">
+        <span class="status-keys" id="status-keys"><span><kbd>LMB</kbd>Select / move</span><span><kbd>G</kbd> <kbd>I</kbd>Pose and key (3D)</span><span><kbd>G</kbd>Move</span><span><kbd>I</kbd>Insert key</span><span><kbd>T</kbd>Interpolation</span><span><kbd>V</kbd>Handle type</span><span><kbd>Space</kbd>Play</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+      <div id="menu" class="context-menu" role="menu" hidden></div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Blender shortcuts used in this lab">
+      <div><span class="eyebrow">SAME KEYS AS BLENDER</span><h2>Shortcuts you can use here</h2><p>Keys work in the editor under the mouse, just like in Blender: the same G moves a control in the 3D Viewport, keys in the Graph Editor and keys in time in the Timeline.</p></div>
+      <dl>
+        <div><dt><kbd>LMB</kbd> · 3D</dt><dd>Select a rig control (Root, SS_Top, SS_Bottom). <kbd>G</kbd> moves it: the Root in X and Z (<kbd>X</kbd> / <kbd>Z</kbd> lock an axis), the squash &amp; stretch controls up or down. Type a number for an exact value. <kbd>I</kbd> inserts a keyframe, <kbd>Alt</kbd><kbd>G</kbd> clears it</dd></div>
+        <div><dt><kbd>LMB</kbd> · Timeline / Dope Sheet</dt><dd>Drag the numbers to change frame · click a keyframe to select it (<kbd>Shift</kbd> adds; on the Summary or a bone row it takes every channel) · drag it or press <kbd>G</kbd> to move it in time · <kbd>Shift</kbd><kbd>D</kbd> duplicates · drag on empty space to box-select · <kbd>X</kbd> deletes. Switch the editor with its <b>Editor Type</b> menu.</dd></div>
+        <div><dt><kbd>LMB</kbd> · Graph</dt><dd>Select a keyframe or handle · <kbd>Shift</kbd> to add · drag to move · drag on empty space to box-select</dd></div>
+        <div><dt><kbd>G</kbd> · <kbd>X</kbd> / <kbd>Y</kbd></dt><dd>Move the selected keys; X only in time, Y only in value. Click or Enter to confirm, Esc to cancel.</dd></div>
+        <div><dt><kbd>A</kbd> · <kbd>Alt</kbd><kbd>A</kbd></dt><dd>Select all / none</dd></div>
+        <div><dt><kbd>I</kbd></dt><dd>Insert a keyframe on the active channel at the current frame</dd></div>
+        <div><dt><kbd>X</kbd> · <kbd>Delete</kbd></dt><dd>Delete the selected keyframes</dd></div>
+        <div><dt><kbd>T</kbd></dt><dd>Interpolation Mode: Constant, Linear, Bezier</dd></div>
+        <div><dt><kbd>V</kbd></dt><dd>Handle Type: Free, Aligned, Vector, Automatic, Auto Clamped</dd></div>
+        <div><dt><kbd>Home</kbd> · <kbd>Numpad .</kbd></dt><dd>Frame all / frame the selected keys</dd></div>
+        <div><dt><kbd>Space</kbd></dt><dd>Play / pause</dd></div>
+        <div><dt><kbd>←</kbd> <kbd>→</kbd> · <kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Previous / next frame · next / previous keyframe</dd></div>
+        <div><dt><kbd>Wheel</kbd> · <kbd>MMB</kbd></dt><dd>Zoom / pan the Graph Editor</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>Z</kbd></dt><dd>Undo · <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Z</kbd> redo</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>The same bounce in Blender</h2><p>This lab shows a simplified Blender: one object, a side camera and a few channels. The curves, handles and keys behave like Blender's F-curves.</p></div><ol><li>Append the ball rig: a <strong>Root</strong> control at the base and two squash & stretch controls, <strong>SS_Top</strong> and <strong>SS_Bottom</strong>. Select it and switch to <strong>Pose Mode</strong>.</li><li>Open the <strong>Animation</strong> workspace. Pose the Root at frame 1 with <strong>G</strong> and key it with <strong>I</strong>; key the contacts and the tops. Move keys in time in the <strong>Timeline</strong> or the <strong>Dope Sheet</strong>.</li><li>In the <strong>Graph Editor</strong>, select all and press <strong>T</strong> › Bezier; select the contacts and press <strong>V</strong> › Vector.</li><li>Make every bounce lower and shorter. Turn on <strong>Motion Paths</strong> (Object properties) to see the spacing.</li><li>Use the rig's squash & stretch controls: the top one at the contacts (pivot at the base), the bottom one to stretch towards the floor. The rig keeps the volume.</li><li>Shape weight with the handles: long at the top for light objects, short and sharp for heavy ones.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Animation Lab</span><a href="https://docs.blender.org/manual/en/latest/editors/graph_editor/fcurves/introduction.html" target="_blank" rel="noopener">Blender: F-Curves ↗</a><span>Teaching model · simplified Graph Editor.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=5"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

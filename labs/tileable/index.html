@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Understand tileable (seamless) textures: use them in Blender with Repeat and Mapping, lay out UVs for them, make one from a photo in a Photoshop-style workspace (crop, even light, Offset, Clone Stamp, Healing Brush, Pattern Preview), keep PBR maps tiling and aligned, project them without UVs and break the repetition.">
+  <title>Tileable Texture Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=1">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 22</span><strong>Tileable Texture Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>One small image, <span>no end in sight.</span></h1>
+        <p>A <strong>tileable</strong> (seamless) texture repeats without a visible edge. Use one in Blender with <strong>Repeat</strong> and the <strong>Mapping</strong> node, lay out <strong>UVs</strong> for it, make one from a photo in a Photoshop-style workspace with <strong>Offset</strong>, the <strong>Clone Stamp</strong> and the <strong>Healing Brush</strong>, keep every <strong>PBR map</strong> tiling, project it without UVs and hide the repetition.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender tl-work" id="workspace" aria-label="Workspace">
+      <!-- Photoshop-style workspace -->
+      <div class="ps" id="ps" hidden>
+        <div class="ps-menubar" id="ps-menubar" data-no-i18n>
+          <span class="ps-logo" aria-hidden="true">Ps</span>
+          <button type="button" data-menu="file">File</button><button type="button" data-menu="edit">Edit</button><button type="button" data-menu="image">Image</button><button type="button" data-menu="layer">Layer</button><button type="button" data-menu="select">Select</button><button type="button" data-menu="filter">Filter</button><button type="button" data-menu="view">View</button><button type="button" data-menu="window">Window</button><button type="button" data-menu="help">Help</button>
+          <span class="ps-app-tag">PHOTOSHOP-STYLE</span>
+        </div>
+        <div class="ps-options" id="ps-options"></div>
+        <div class="ps-body">
+          <div class="ps-tools" id="ps-tools" role="toolbar" aria-label="Tools" data-no-i18n></div>
+          <div class="ps-doc">
+            <div class="ps-tab" id="ps-tab" data-no-i18n></div>
+            <div class="ps-canvas-host" id="ps-host">
+              <canvas id="ps-canvas" aria-label="The document"></canvas>
+              <div class="ps-busy" id="ps-busy" hidden>Working…</div>
+            </div>
+            <div class="ps-docbar" id="ps-docbar" data-no-i18n></div>
+          </div>
+          <aside class="ps-panels">
+            <section class="ps-panel" id="ps-check" aria-label="Checks"></section>
+            <section class="ps-panel" id="ps-layers" aria-label="Layers"></section>
+          </aside>
+        </div>
+      </div>
+      <!-- Blender-style workspace -->
+      <div class="bl-wrap" id="bl" hidden>
+        <div class="trim-body">
+          <section class="editor pane" aria-label="Image Editor">
+            <div class="editor-header">
+              <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" fill="none" stroke="currentColor"/><path d="M2 11l4-4 3 3 2-2 3 3" fill="none" stroke="currentColor" opacity=".7"/></svg><span id="img-title" data-no-i18n>Image Editor</span></span>
+              <span class="hdr-note" id="img-name" data-no-i18n></span>
+              <label class="live-toggle hdr-toggle" id="repeat-field"><input type="checkbox" id="repeat-img" checked><span class="switch"></span><span data-no-i18n>Repeat Image</span></label>
+              <label class="live-toggle hdr-toggle" id="snap-field"><input type="checkbox" id="snap"><span class="switch"></span><span data-no-i18n>Snap</span></label>
+              <label class="hdr-field" id="pivot-field"><span data-no-i18n>Pivot</span><select id="pivot" data-no-i18n><option value="bbox">Bounding Box Center</option><option value="individual">Individual Origins</option></select></label>
+            </div>
+            <div class="view-host uv-host" id="img-host">
+              <canvas id="img2d" aria-label="Image Editor"></canvas>
+              <div class="op-readout" id="op-readout" hidden></div>
+              <span class="graph-hint" id="img-hint">Wheel zoom · MMB pan · Home frame</span>
+            </div>
+          </section>
+          <section class="editor pane" aria-label="3D Viewport">
+            <div class="editor-header">
+              <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z M2 5l6 3.5L14 5 M8 8.5v6" fill="none" stroke="currentColor"/></svg><span data-no-i18n>3D Viewport</span></span>
+              <span class="hdr-note" id="view-note"></span>
+            </div>
+            <div class="view-host trim-view" id="view-host">
+              <canvas id="view" aria-label="3D view"></canvas>
+              <div class="ps-busy" id="bl-busy" hidden>Painting the textures…</div>
+              <span class="graph-hint" id="view-hint">MMB orbit · Shift MMB pan · Wheel zoom · Home</span>
+            </div>
+          </section>
+          <aside class="props" id="props" aria-label="Properties"></aside>
+        </div>
+      </div>
+      <div class="statusbar">
+        <span class="status-keys" id="status-keys"></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+      <div class="ps-menu" id="ps-menu" role="menu" hidden data-no-i18n></div>
+      <div class="ps-dialog-back" id="ps-dialog" hidden></div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Shortcuts used in this lab">
+      <div><span class="eyebrow">SAME KEYS AS THE REAL TOOLS</span><h2>Shortcuts you can use here</h2><p>Keys work while the mouse is over the workspace. In the Photoshop stages they follow Photoshop; in the Blender stages, Blender.</p></div>
+      <dl>
+        <div><dt><kbd>C</kbd> · <kbd>S</kbd> · <kbd>J</kbd> · <kbd>H</kbd></dt><dd>Photoshop: Crop, Clone Stamp, Healing Brush, Hand</dd></div>
+        <div><dt><kbd>Alt</kbd> + click</dt><dd>Photoshop: set the source of the Clone Stamp or the Healing Brush</dd></div>
+        <div><dt><kbd>[</kbd> · <kbd>]</kbd></dt><dd>Photoshop: smaller · bigger brush</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>J</kbd> · <kbd>Ctrl</kbd><kbd>I</kbd> · <kbd>Shift</kbd><kbd>Ctrl</kbd><kbd>U</kbd></dt><dd>Photoshop: Duplicate Layer · Invert · Desaturate</dd></div>
+        <div><dt><kbd>Space</kbd> + drag · <kbd>Ctrl</kbd><kbd>0</kbd></dt><dd>Photoshop: pan · Fit on Screen (the wheel zooms)</dd></div>
+        <div><dt><kbd>G</kbd> · <kbd>S</kbd> · <kbd>R</kbd> · <kbd>X</kbd> <kbd>Y</kbd></dt><dd>Blender UV Editor: move, scale, rotate islands, lock to U or V; type a number and <kbd>Enter</kbd></dd></div>
+        <div><dt><kbd>A</kbd> · <kbd>Alt</kbd><kbd>A</kbd></dt><dd>Blender: select all · none</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>Z</kbd> · <kbd>Home</kbd></dt><dd>Undo (both) · frame the view</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN THE REAL TOOLS</span><h2>Tileable textures in Photoshop and Blender</h2><p>The same steps as in this lab. Photoshop menus change little between versions; the Blender names are the ones in the Shader Editor and the UV Editor.</p></div><ol>
+      <li><strong>Photoshop:</strong> crop a square (Crop Tool, <strong>1:1 (Square)</strong>), then <strong>Image › Image Size</strong> to a power of two. Even out the light before anything else (a blurred, desaturated, inverted copy in <strong>Linear Light</strong> at 50 %, or a <strong>High Pass</strong>).</li>
+      <li><strong>Filter › Other › Offset</strong> with half the width and height and <strong>Wrap Around</strong>, then <strong>Clone Stamp</strong> (<kbd>S</kbd>) and <strong>Healing Brush</strong> (<kbd>J</kbd>) over the cross. <strong>Edit › Content-Aware Fill</strong> can help on big areas. Check with <strong>View › Pattern Preview</strong>.</li>
+      <li>Make Roughness, Normal and Height from the <strong>finished</strong> tileable colour, or repeat every offset and every retouch on each map. Tools that make maps (Substance 3D Sampler, Materialize…) have a <strong>tiling</strong> option: keep it on.</li>
+      <li><strong>Blender:</strong> Image Texture node with <strong>Extension › Repeat</strong>; a <strong>Mapping</strong> node (<kbd>Ctrl</kbd><kbd>T</kbd> with Node Wrangler) sets the size. Or scale the UV islands: with a tileable texture they may go outside 0–1 and overlap.</li>
+      <li>Same metres per tile on every island, no stretching, rows along U. Unwrap walls that meet as one strip so the pattern turns the corner.</li>
+      <li>No good UVs: <strong>Texture Coordinate › Object</strong> + <strong>Projection › Box</strong> with some <strong>Blend</strong>. To hide the repeat, multiply a large <strong>Noise Texture</strong> over the colour and mix a second texture with a size that is not a multiple of the first.</li>
+    </ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Tileable Texture Lab</span><a href="https://docs.blender.org/manual/en/latest/render/shader_nodes/textures/image.html" target="_blank" rel="noopener">Blender: Image Texture node ↗</a><span>Teaching model · procedural photo and textures.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=2"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

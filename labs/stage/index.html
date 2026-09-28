@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="An opera house stage cut in half: the parts of the stage house, the fly system, the platforms and wagons, masking and sightlines, and a scene change.">
+  <title>Stage House Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=1">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 13</span><strong>Stage House Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>What the audience sees <span>is the smallest part.</span></h1>
+        <p>An opera house stage cut in half, based on the <strong>Teatro Real</strong> in Madrid. Find the parts of the <strong>stage house</strong>, fly the scenery, move the <strong>platforms</strong> and <strong>wagons</strong>, hide the machinery from every seat and plan a <strong>scene change</strong>.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="3D workspace of the stage house">
+      <section class="editor" aria-label="3D Viewport">
+        <div class="editor-header">
+          <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z M2 5l6 3.5L14 5 M8 8.5v6" fill="none" stroke="currentColor"/></svg>3D Viewport</span>
+          <div class="view-toggles">
+            <label class="live-toggle" title="Cut the building in half to see inside"><input type="checkbox" id="o-section" checked><span class="switch" aria-hidden="true"></span>Section</label>
+            <label class="live-toggle" title="Lines from the chosen seat through the edges of the proscenium opening"><input type="checkbox" id="o-sight" checked><span class="switch" aria-hidden="true"></span>Sightlines</label>
+            <label class="live-toggle" title="What the chosen seat sees"><input type="checkbox" id="o-seat" checked><span class="switch" aria-hidden="true"></span>Seat view</label>
+          </div>
+        </div>
+        <div class="rig-body">
+          <div class="view-host rig-view stage-view" id="view-host">
+            <canvas id="view" aria-label="3D view of the stage house, cut in half"></canvas>
+            <div class="view-overlay" id="view-overlay"></div>
+            <div class="op-readout" id="op-readout" hidden></div>
+            <div class="part-tip" id="part-tip" hidden></div>
+            <figure class="seat-view" id="seat-box">
+              <figcaption><span>Seat</span><select id="seat" aria-label="Seat"></select><small id="seat-note"></small></figcaption>
+              <div class="seat-frame"><canvas id="seat-canvas" aria-label="What the audience sees from the chosen seat"></canvas><canvas id="seat-marks" aria-hidden="true"></canvas></div>
+            </figure>
+            <span class="graph-hint">LMB select · MMB orbit · Shift MMB pan · Wheel zoom</span>
+          </div>
+          <aside class="props" id="props" aria-label="Properties"></aside>
+        </div>
+      </section>
+      <div class="statusbar">
+        <span class="status-keys"><span><kbd>LMB</kbd>Select</span><span><kbd>G</kbd>Move along its track</span><span><kbd>0</kbd>–<kbd>9</kbd>Type the position (m)</span><span><kbd>Home</kbd>Frame all</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Shortcuts used in this lab">
+      <div><span class="eyebrow">SAME KEYS AS BLENDER</span><h2>Shortcuts you can use here</h2><p>Keys work while the mouse is over the workspace. Every machine moves along one track only, like the real ones: bars and platforms up and down, legs and wagons sideways, the rear wagon forwards and back.</p></div>
+      <dl>
+        <div><dt><kbd>LMB</kbd></dt><dd>Select a piece (or a part of the building in the first step)</dd></div>
+        <div><dt><kbd>G</kbd></dt><dd>Move the selected piece along its track. Type a number for the exact position in metres (a bar: the height of its pipe). Click or Enter to confirm, Esc or right click to cancel.</dd></div>
+        <div><dt><kbd>MMB</kbd> · <kbd>Shift</kbd><kbd>MMB</kbd> · <kbd>Wheel</kbd></dt><dd>Orbit / pan / zoom the view (<kbd>Alt</kbd><kbd>LMB</kbd> also orbits)</dd></div>
+        <div><dt><kbd>Numpad 1</kbd> <kbd>3</kbd> <kbd>7</kbd> · <kbd>Home</kbd></dt><dd>Front / side (section) / top view · frame all</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>Z</kbd></dt><dd>Undo · <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Z</kbd> redo</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">FROM THE LAB TO THE THEATRE</span><h2>The Teatro Real in numbers</h2><p>The lab simplifies the machinery of the Teatro Real (Madrid): fewer bars and platforms, the same ideas.</p></div><ol><li>The stage is 2.54 m above the street. The stage house rises 47 levels above the ground and goes down to "cota -16", 24 m under the stage.</li><li><strong>68 motorised bars</strong> of 20 m, parallel to the audience, lift up to 750 kg each (evenly spread). Point loads hang from <strong>35 "puntos"</strong> of 150 kg and <strong>40 "puntuales"</strong> of 250 kg.</li><li>The <strong>platforms</strong> of 18.20 × 3.5 m carry up to 24 t; four of them also move horizontally. A set of wagons has four units.</li><li><strong>18 goods lifts</strong> of different kinds bring the scenery in: a typical set weighs 10–15 t, a heavy one up to 20 t.</li><li>In Blender: model the stage house to scale and put a camera at the eye height of the worst seats. The <strong>Camera</strong> view shows at once what the masking hides.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Stage House Lab</span><a href="https://elmercantil.com/2020/12/12/el-titiritero-mecanico-del-teatro-real/" target="_blank" rel="noopener">El titiritero mecánico del Teatro Real ↗</a><span>Teaching model · simplified machinery.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=1"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

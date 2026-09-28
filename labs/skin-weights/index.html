@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Practise weight painting like in Blender: automatic weights, blur, normalize, mirror, clean and limit total on a posable arm.">
+  <title>Skin Weights Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=1">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 06</span><strong>Skin Weights Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Paint the weights. <span>Pose to check.</span></h1>
+        <p>Each vertex follows the bones in proportion to its weights. Paint them in <strong>Weight Paint</strong> mode as in Blender, bend the bones and fix what breaks: the elbow, the zero weights, the symmetry and the limits of a game engine.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="Blender-style Weight Paint workspace">
+      <section class="editor" aria-label="3D Viewport">
+        <div class="editor-header">
+          <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z M2 5l6 3.5L14 5 M8 8.5v6" fill="none" stroke="currentColor"/></svg>3D Viewport</span>
+          <span class="mode-pill" title="In Blender: Ctrl Tab with the mesh selected, or the mode menu">Weight Paint</span>
+          <div class="menubar">
+            <button type="button" class="menu-button" data-menu="view" aria-haspopup="menu">View</button>
+            <button type="button" class="menu-button" data-menu="weights" aria-haspopup="menu">Weights</button>
+            <button type="button" class="menu-button" data-menu="parent" aria-haspopup="menu">Parent</button>
+          </div>
+          <div class="view-toggles">
+            <label class="hdr-field" title="In Blender: Viewport Overlays › Weight Paint › Zero Weights">Zero Weights <select id="o-zero"><option value="none">None</option><option value="active">Active</option><option value="all">All</option></select></label>
+            <label class="live-toggle" title="In Blender: Viewport Overlays › Wireframe"><input type="checkbox" id="o-wire" checked><span class="switch" aria-hidden="true"></span>Wireframe</label>
+            <label class="live-toggle" title="In Blender: Armature › Rest Position (Object Data properties)"><input type="checkbox" id="o-rest"><span class="switch" aria-hidden="true"></span>Rest Position</label>
+          </div>
+        </div>
+        <div class="tool-header" id="tool-header">
+          <label class="hdr-field">Blend <select id="b-blend"><option value="mix">Mix</option><option value="add">Add</option><option value="subtract">Subtract</option></select></label>
+          <label class="hdr-field">Weight <input type="range" id="b-weight" min="0" max="1" step="0.01" value="1"><output id="v-weight">1.00</output></label>
+          <label class="hdr-field" title="F">Radius <input type="range" id="b-radius" min="8" max="200" step="1" value="50"><output id="v-radius">50 px</output></label>
+          <label class="hdr-field" title="Shift F">Strength <input type="range" id="b-strength" min="0" max="1" step="0.01" value="0.5"><output id="v-strength">0.50</output></label>
+          <label class="live-toggle" title="In Blender: Tool › Options › Auto Normalize"><input type="checkbox" id="b-norm"><span class="switch" aria-hidden="true"></span>Auto Normalize</label>
+          <label class="live-toggle" title="In Blender: the X button of Mesh Symmetry in the header, with Vertex Group mirroring"><input type="checkbox" id="b-mirror"><span class="switch" aria-hidden="true"></span>X-Mirror</label>
+          <label class="live-toggle" title="In Blender: the Front-Face Only option of the brush"><input type="checkbox" id="b-front" checked><span class="switch" aria-hidden="true"></span>Front-Face Only</label>
+        </div>
+        <div class="skin-body">
+          <div class="toolbar" id="toolbar" role="toolbar" aria-label="Tools">
+            <button type="button" data-tool="draw" title="Draw" aria-pressed="true"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 16c2 0 3-1 3-3l7-8 2 2-8 7c-1 1-2 2-4 2z" fill="currentColor"/></svg><span>Draw</span></button>
+            <button type="button" data-tool="blur" title="Blur" aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="6" fill="currentColor" opacity=".35"/><circle cx="10" cy="10" r="3.5" fill="currentColor" opacity=".7"/></svg><span>Blur</span></button>
+            <button type="button" data-tool="sample" title="Sample Weight" aria-pressed="false"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13 3l4 4-2 2-1-1-6 6H5v-3l6-6-1-1z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><span>Sample</span></button>
+          </div>
+          <div class="view-host skin-view" id="view-host">
+            <canvas id="view" aria-label="3D view of the mesh and its bones"></canvas>
+            <div class="view-overlay" id="view-overlay"></div>
+            <div class="brush-ring" id="brush-ring" hidden></div>
+            <div class="gradient-key" aria-hidden="true"><span>0</span><i></i><span>1</span></div>
+            <div class="last-op" id="last-op" hidden></div>
+            <span class="graph-hint">MMB orbit · Shift MMB pan · Wheel zoom · Ctrl LMB select bone</span>
+          </div>
+          <aside class="props" id="props" aria-label="Properties"></aside>
+        </div>
+      </section>
+      <div class="statusbar">
+        <span class="status-keys"><span><kbd>LMB</kbd>Paint</span><span><kbd>Ctrl</kbd><kbd>LMB</kbd>Select bone</span><span><kbd>F</kbd>Radius</span><span><kbd>Shift</kbd><kbd>F</kbd>Strength</span><span><kbd>R</kbd>Rotate bone</span><span><kbd>Alt</kbd><kbd>R</kbd>Clear pose</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+      <div id="menu" class="context-menu" role="menu" hidden></div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Blender shortcuts used in this lab">
+      <div><span class="eyebrow">SAME KEYS AS BLENDER</span><h2>Shortcuts you can use here</h2><p>Keys work while the mouse is over the workspace, just like Blender sends keys to the editor under the pointer.</p></div>
+      <dl>
+        <div><dt><kbd>LMB</kbd></dt><dd>Paint with the active tool on the active vertex group</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>LMB</kbd></dt><dd>Select a bone: its vertex group becomes the active group</dd></div>
+        <div><dt><kbd>F</kbd> · <kbd>Shift</kbd><kbd>F</kbd></dt><dd>Change the brush Radius / Strength with the mouse; click to confirm, Esc to cancel</dd></div>
+        <div><dt><kbd>R</kbd></dt><dd>Rotate (bend) the active bone with the mouse; click to confirm, Esc to cancel</dd></div>
+        <div><dt><kbd>Alt</kbd><kbd>R</kbd></dt><dd>Clear the rotation of every bone (back to the rest pose)</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>P</kbd></dt><dd>Parent menu: With Empty Groups, With Automatic Weights</dd></div>
+        <div><dt><kbd>MMB</kbd> · <kbd>Shift</kbd><kbd>MMB</kbd> · <kbd>Wheel</kbd></dt><dd>Orbit / pan / zoom the view</dd></div>
+        <div><dt><kbd>Numpad 1</kbd> <kbd>3</kbd> <kbd>7</kbd> · <kbd>Home</kbd></dt><dd>Front / right / top view · frame all</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>Z</kbd></dt><dd>Undo · <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Z</kbd> redo</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>A good skin, step by step</h2><p>This lab shows a simplified Blender: tube-shaped meshes, bones that bend and twist, and the tools that matter most. The weights, the colours and the operators behave like Blender's.</p></div><ol><li>Name the bones with <strong>.L</strong> and <strong>.R</strong> and apply the scale of mesh and armature (<strong>Ctrl A › All Transforms</strong>) before skinning.</li><li>Select the mesh, then the armature, and <strong>Ctrl P › With Automatic Weights</strong>. It is a good start, never the end.</li><li>Select the armature, then Shift-click the mesh so it is active, and switch to <strong>Weight Paint</strong>. <strong>Ctrl</strong>-click bones to change the active group.</li><li>Turn on <strong>Auto Normalize</strong> in the tool options and <strong>Zero Weights › Active</strong> in the overlays.</li><li>Pose the bones to extreme positions while you paint: problems only show up in a pose. Use <strong>Blur</strong> for smooth joints.</li><li>Paint one side and use <strong>X-Mirror</strong> or <strong>Weights › Mirror</strong>. Before export: <strong>Limit Total</strong>, <strong>Clean</strong>, <strong>Normalize All</strong>.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Skin Weights Lab</span><a href="https://docs.blender.org/manual/en/latest/sculpt_paint/weight_paint/index.html" target="_blank" rel="noopener">Blender: Weight Paint ↗</a><span>Teaching model · linear blend skinning.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=1"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

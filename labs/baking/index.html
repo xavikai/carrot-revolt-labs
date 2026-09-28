@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Bake a normal map, ambient occlusion and colour from a high poly crate to a low poly one, as in Blender, and take the maps to a game engine.">
+  <title>Baking Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=2">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 09</span><strong>Baking Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>110,000 triangles <span>in 12.</span></h1>
+        <p>Bake the detail of a <strong>high poly</strong> crate into images that a <strong>low poly</strong> cube can use: a normal map, ambient occlusion and colour. Watch every texel cast its ray, fix what goes wrong, and take the maps to a game engine. Then bake the same crate in <strong>Substance 3D Painter</strong>.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="Blender-style baking workspace">
+      <div class="bake-body">
+        <section class="editor pane" aria-label="3D Viewport">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z M2 5l6 3.5L14 5 M8 8.5v6" fill="none" stroke="currentColor"/></svg><span id="v-name" data-no-i18n>3D Viewport</span></span>
+            <label class="hdr-field">Show <select id="v-show"><option value="low">Crate_low</option><option value="high">Crate_high</option><option value="both">High + low wire</option></select></label>
+            <div class="view-toggles">
+              <label class="live-toggle" title="Some of the rays of the bake, with the current settings: green = hit, yellow = wrong hit, red = miss"><input type="checkbox" id="v-rays"><span class="switch" aria-hidden="true"></span>Rays</label>
+              <label class="live-toggle" title="Where the rays start: the low poly pushed out by Extrusion"><input type="checkbox" id="v-cage" checked><span class="switch" aria-hidden="true"></span>Cage</label>
+              <label class="live-toggle" id="smart-toggle" hidden title="A smart material made from the mesh maps: ID for the materials, Curvature for worn edges, AO for dirt, World Space Normal for dust"><input type="checkbox" id="v-smart"><span class="switch" aria-hidden="true"></span>Smart material</label>
+              <label class="live-toggle" title="Move the light around, to see the bumps of the normal map"><input type="checkbox" id="v-light" checked><span class="switch" aria-hidden="true"></span>Moving light</label>
+            </div>
+          </div>
+          <div class="view-host bake-view" id="view-host">
+            <canvas id="view" aria-label="3D view of the crate"></canvas>
+            <div class="view-overlay" id="view-overlay"></div>
+            <span class="graph-hint">Drag to orbit · Wheel zoom</span>
+          </div>
+        </section>
+        <section class="editor pane" aria-label="Image Editor">
+          <div class="editor-header">
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1" fill="none" stroke="currentColor"/><path d="m2.5 11.5 3.5-4 3 3 2-2 2.5 3" fill="none" stroke="currentColor"/></svg><span id="i-name" data-no-i18n>Image Editor</span></span>
+            <select id="i-slot" aria-label="Image"></select>
+            <div class="seg small" id="i-chan" role="group" aria-label="Channels"><button type="button" data-ch="rgb" aria-pressed="true">RGB</button><button type="button" data-ch="r" aria-pressed="false">R</button><button type="button" data-ch="g" aria-pressed="false">G</button><button type="button" data-ch="b" aria-pressed="false">B</button></div>
+            <div class="view-toggles">
+              <label class="live-toggle" title="The UV islands of Crate_low"><input type="checkbox" id="i-uv" checked><span class="switch" aria-hidden="true"></span>UVs</label>
+              <label class="live-toggle" title="Texels whose ray missed (red) or hit the far side (yellow) in the last bake"><input type="checkbox" id="i-miss" checked><span class="switch" aria-hidden="true"></span>Misses</label>
+            </div>
+          </div>
+          <div class="image-host" id="image-host"><canvas id="image" aria-label="The baked image. Hover to read a texel."></canvas><div class="image-empty" id="image-empty"></div></div>
+          <div class="inspector" id="inspector" aria-live="polite"></div>
+        </section>
+        <aside class="props" id="props" aria-label="Properties"></aside>
+      </div>
+      <div class="statusbar">
+        <span class="status-keys"><span><kbd>LMB</kbd> <kbd>MMB</kbd>Orbit</span><span><kbd>Wheel</kbd>Zoom</span><span><kbd>Hover</kbd>Read a texel</span><span><kbd>Esc</kbd>Cancel the bake</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span class="bake-progress" id="bake-progress" hidden><i></i><span></span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+      <div id="menu" class="context-menu" role="menu" hidden></div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Key ideas">
+      <div><span class="eyebrow">KEY IDEAS</span><h2>How a bake works</h2><p>For every texel of the image, Blender finds the point of the low poly with those UVs and casts a ray towards the high poly. What the ray finds is written into the texel.</p></div>
+      <dl>
+        <div><dt>Selected to Active</dt><dd>Bake from the selected objects (high poly) to the active one (low poly). Without it, an object bakes itself.</dd></div>
+        <div><dt>Extrusion</dt><dd>How far out the rays start. It must enclose every detail that sticks out of the low poly.</dd></div>
+        <div><dt>Cage</dt><dd>A copy of the low poly, inflated along averaged normals, used as the start of the rays. It avoids gaps at hard edges.</dd></div>
+        <div><dt>Max Ray Distance</dt><dd>How far the rays can travel (0 = no limit). A limit avoids hitting far parts of the model.</dd></div>
+        <div><dt>Tangent space</dt><dd>The normal map stores directions relative to each UV island: R = right, G = up, B = out. Flat is (0.5, 0.5, 1).</dd></div>
+        <div><dt>Margin</dt><dd>Extends the islands outwards so filtering and mipmaps don't pick up the empty background.</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>Baking in Blender, step by step</h2><p>Baking uses the <strong>Cycles</strong> render engine. The lab shows the same settings, with a simplified crate and a fast ray caster instead of Cycles.</p></div><ol><li>Unwrap the low poly with <strong>unique UVs</strong> (no overlaps) and put UV seams on its hard edges. Add a material with an <strong>Image Texture</strong> node pointing to a new image, and keep that node selected: it is the bake target.</li><li>Set the render engine to <strong>Cycles</strong>. In <strong>Render Properties › Bake</strong> choose the Bake Type.</li><li>Select the high poly, then <strong>Shift</strong>-click the low poly (active). Tick <strong>Selected to Active</strong>, set Extrusion or a <strong>Cage</strong> object and a Max Ray Distance.</li><li>Press <strong>Bake</strong>. Save the image (<strong>Image › Save</strong>): baked images are not saved with the .blend file.</li><li>Normal maps: <strong>Non-Color</strong> + <strong>Normal Map</strong> node. For Unreal, bake with Swizzle G −Y or flip green on import.</li><li>For colour, bake <strong>Diffuse</strong> with only <strong>Color</strong>. Keep a <strong>Margin</strong> of 16 px or more.</li></ol></aside>
+
+    <section class="equiv" aria-label="Blender and Substance Painter"><div><span class="eyebrow">BLENDER / SUBSTANCE PAINTER</span><h2>The same bake, other names</h2><p>Both programs cast one ray per texel from the low poly to the high poly. What changes is where the settings are and what they are called.</p></div>
+      <table><thead><tr><th>Blender</th><th>Substance 3D Painter</th><th>Note</th></tr></thead><tbody>
+        <tr><td data-no-i18n>Selected to Active</td><td data-no-i18n>High Definition Meshes</td><td>In Painter the high poly is a separate file listed in the Baking window.</td></tr>
+        <tr><td data-no-i18n>Extrusion</td><td data-no-i18n>Max Frontal Distance</td><td>How far above the low poly the rays start.</td></tr>
+        <tr><td data-no-i18n>Max Ray Distance</td><td data-no-i18n>Max Rear Distance</td><td>In Painter it is measured below the low poly surface.</td></tr>
+        <tr><td data-no-i18n>Cage</td><td data-no-i18n>Average Normals · Use Cage</td><td>Averaged ray directions, or a cage mesh made in your 3D program.</td></tr>
+        <tr><td data-no-i18n>Margin</td><td data-no-i18n>Dilation Width</td><td>Extends the islands for filtering and mipmaps.</td></tr>
+        <tr><td data-no-i18n>Bake Type</td><td data-no-i18n>Mesh maps</td><td>Blender bakes one map at a time; Painter bakes every ticked map at once.</td></tr>
+        <tr><td data-no-i18n>Swizzle G −Y</td><td data-no-i18n>Normal Map Format · Output template</td><td>OpenGL or DirectX: in Painter the export template writes the format of each engine.</td></tr>
+        <tr><td>Separate objects</td><td data-no-i18n>Match: By Mesh Name</td><td>Painter pairs name_low with name_high, so touching pieces don't bake into each other.</td></tr>
+      </tbody></table></section>
+  </main>
+  <footer><span>Carrot Revolt Labs · Baking Lab</span><a href="https://docs.blender.org/manual/en/latest/render/cycles/baking.html" target="_blank" rel="noopener">Blender: Baking ↗</a><span>Teaching model · simplified crate and ray caster.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=2"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Code Lab 02 for Carrot Revolt: classes, objects, references, lists, Vector3 and Update(), with a heap you can see, on the way to Unity.">
+  <title>Code Lab 02 · Objects · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../csharp/style.css?v=10">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+</head>
+<body data-course="objects">
+  <header class="app-header">
+    <a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a>
+    <div class="app-title"><span class="eyebrow">INTERACTIVE STUDIES / 05</span><h1>Code Lab 02 <span class="title-lang">C#</span></h1></div>
+    <div class="header-actions"><a class="lab-home" href="../../">All labs</a><span class="reference">Objects · towards Unity</span><button id="help" class="quiet">How it works <span aria-hidden="true">?</span></button></div>
+  </header>
+
+  <main class="workspace">
+    <!-- Challenges -->
+    <aside class="challenge-panel" aria-label="Levels and challenges">
+      <nav class="levels" id="levels" aria-label="Levels"></nav>
+      <article class="challenge" id="challenge">
+        <div class="challenge-top"><span class="eyebrow" id="challenge-level">LEVEL 1 · SEQUENCE</span><span class="challenge-count" id="challenge-count">1 / 15</span></div>
+        <span class="type-badge" id="challenge-type"></span>
+        <h2 id="challenge-title">First block</h2>
+        <p class="goal" id="challenge-goal"></p>
+        <div class="brief" id="challenge-brief"></div>
+        <div class="predict" id="predict" hidden>
+          <p class="predict-q" id="predict-q"></p>
+          <div class="predict-options" id="predict-options" role="radiogroup"></div>
+          <p class="predict-note" id="predict-note">Choose an answer, then press Run or Step.</p>
+        </div>
+        <ul class="requirements" id="requirements" aria-label="Goals"></ul>
+        <div class="challenge-actions">
+          <button id="hint-button" class="quiet-btn">Show hint</button>
+          <button id="reset-code" class="quiet-btn">Reset code ↺</button>
+        </div>
+        <p class="hint" id="hint" hidden></p>
+      </article>
+      <details class="toolbox" id="toolbox" open>
+        <summary class="toolbox-head"><h3>Toolbox</h3><span class="small-label">CLICK TO INSERT</span></summary>
+        <div id="toolbox-items"></div>
+      </details>
+    </aside>
+
+    <!-- Code -->
+    <section class="code-panel" aria-label="Program editor">
+      <div class="panel-bar">
+        <div class="file-tab"><span class="file-icon" aria-hidden="true">C#</span>Program.cs</div>
+        <span class="small-label" id="code-stats">0 INSTRUCTIONS</span>
+      </div>
+      <div class="run-bar" role="toolbar" aria-label="Run controls">
+        <button id="run" class="run" title="Run (F5)"><span aria-hidden="true">▶</span> <span id="run-label">Run</span></button>
+        <button id="step" title="Step: run one line (F10)"><span aria-hidden="true">⤼</span> Step</button>
+        <button id="step-into" title="Step Into: follow the program inside a method (F11)" hidden><span aria-hidden="true">↴</span> Step Into</button>
+        <button id="stop" title="Stop (Shift+F5)" disabled><span aria-hidden="true">■</span> Stop</button>
+        <label class="speed"><span>Speed</span><input id="speed" type="range" min="0" max="4" step="1" value="1" aria-label="Execution speed"><output id="speed-label">Normal</output></label>
+      </div>
+      <div class="parsons" id="parsons" hidden>
+        <div class="parsons-col"><div class="parsons-head"><h3>Your program</h3><span class="small-label">DRAG · ↑↓ · ×</span></div><ol class="parsons-list program" id="parsons-program" aria-label="Your program"></ol></div>
+        <div class="parsons-col"><div class="parsons-head"><h3>Available lines</h3><span class="small-label">CLICK TO ADD</span></div><ul class="parsons-list pool" id="parsons-pool" aria-label="Available lines"></ul></div>
+      </div>
+      <div class="classify" id="classify" hidden><div class="classify-list" id="classify-list"></div></div>
+      <div class="editor" id="editor">
+        <div class="gutter" id="gutter" aria-hidden="true"></div>
+        <div class="code-wrap">
+          <pre class="code-layer" id="code-layer" aria-hidden="true"></pre>
+          <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-label="C# code"></textarea>
+        </div>
+      </div>
+      <div class="editing-note" id="editing-note" hidden></div>
+      <section class="console" aria-label="Console">
+        <div class="console-head"><h3>Console</h3><span id="build-status" class="build-status">Ready</span><button id="clear-console" class="tiny">Clear</button></div>
+        <div class="console-body" id="console" role="log" aria-live="polite"></div>
+      </section>
+    </section>
+
+    <!-- World + memory -->
+    <section class="scene-panel" aria-label="World and memory">
+      <div class="panel-bar"><h2>Scene</h2><span class="small-label" id="drone-status">DRONE (0, 0)</span></div>
+      <div class="viewport" id="viewport">
+        <canvas id="scene" aria-label="Isometric view of the voxel world and the drone"></canvas>
+        <div class="progress-chip" id="progress-chip"></div>
+        <div class="result" id="result" hidden></div>
+        <div class="strip" id="strip" hidden></div>
+        <div class="strip lamps" id="lamps" hidden></div>
+      </div>
+      <div class="inspect">
+        <section class="memory" aria-labelledby="memory-title">
+          <div class="inspect-head"><h3 id="memory-title">Memory</h3><span class="small-label">VARIABLES IN SCOPE</span></div>
+          <div class="memory-body" id="memory"></div>
+        </section>
+        <section class="execution" aria-labelledby="exec-title">
+          <div class="inspect-head"><h3 id="exec-title">Execution</h3><span class="small-label" id="step-count">STEP 0</span></div>
+          <div class="now" id="now"></div>
+          <ol class="trace" id="trace" aria-label="Last steps"></ol>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer"><span>Carrot Revolt Labs · Objects, towards Unity</span><span>A teaching subset of C#. Vector3, MonoBehaviour, Time and Debug imitate Unity; Scene.Add and the drone only exist here.</span></footer>
+
+  <dialog id="help-dialog"><button class="dialog-close" aria-label="Close help">×</button><span class="eyebrow">CODE LAB 02 · C#</span><h2>Objects you can see.</h2><p>Classes, objects and references, the way Unity scripts are built. The Memory panel now shows the heap: every object made with new.</p><ol><li><strong>Variables of a class</strong> hold an arrow (→ #3) to an object in the <em>heap</em>. Two variables can point to the same object; <code>null</code> points to nothing.</li><li><strong>Structs</strong> like <code>Vector3</code> are stored inside the variable and copied when assigned.</li><li><strong>Faded objects</strong> in the heap have no arrow pointing to them any more: C# will clean them up (garbage collection).</li><li><strong>Scene.Add</strong> puts a MonoBehaviour in the scene. Then the lab calls <code>Start()</code> once and <code>Update()</code> every frame (20 per second), and draws each object at its <code>transform.position</code>, with a dot for every frame.</li><li><strong>Step Into (F11)</strong> goes inside methods and constructors; <strong>Step (F10)</strong> runs them in one go.</li></ol><p class="muted">Classes go at the end of the file, after the main program, as C# requires. Progress and code are saved in this browser.</p><button class="primary dialog-close-action">Back to the lab</button></dialog>
+  <noscript><p class="no-script">Enable JavaScript to use the Code Lab.</p></noscript>
+  <script type="module" src="../csharp/app.js?v=10"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.header-actions' });</script>
+</body>
+</html>
