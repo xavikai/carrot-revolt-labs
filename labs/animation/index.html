@@ -6,7 +6,7 @@
   <meta name="description" content="Animate a rigged bouncing ball in 3D with a Blender-style Timeline and Graph Editor: timing, squash and stretch with two controls, and weight with F-curves.">
   <title>Animation Lab · Carrot Revolt Labs</title>
   <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./style.css?v=3">
+  <link rel="stylesheet" href="./style.css?v=4">
   <link rel="stylesheet" href="../../blender-ui.css?v=2">
   <script type="module">import { blenderize } from '../../blender-ui.js?v=2'; blenderize();</script>
   <link rel="stylesheet" href="../../lab-brief.css?v=3">
@@ -113,7 +113,7 @@
     <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>The same bounce in Blender</h2><p>This lab shows a simplified Blender: one object, a side camera and a few channels. The curves, handles and keys behave like Blender's F-curves.</p></div><ol><li>Append the ball rig: a <strong>Root</strong> control at the base and two squash & stretch controls, <strong>SS_Top</strong> and <strong>SS_Bottom</strong>. Select it and switch to <strong>Pose Mode</strong>.</li><li>Open the <strong>Animation</strong> workspace. Pose the Root at frame 1 with <strong>G</strong> and key it with <strong>I</strong>; key the contacts and the tops. Move keys in time in the <strong>Timeline</strong> or the <strong>Dope Sheet</strong>.</li><li>In the <strong>Graph Editor</strong>, select all and press <strong>T</strong> › Bezier; select the contacts and press <strong>V</strong> › Vector.</li><li>Make every bounce lower and shorter. Turn on <strong>Motion Paths</strong> (Object properties) to see the spacing.</li><li>Use the rig's squash & stretch controls: the top one at the contacts (pivot at the base), the bottom one to stretch towards the floor. The rig keeps the volume.</li><li>Shape weight with the handles: long at the top for light objects, short and sharp for heavy ones.</li></ol></aside>
   </main>
   <footer><span>Carrot Revolt Labs · Animation Lab</span><a href="https://docs.blender.org/manual/en/latest/editors/graph_editor/fcurves/introduction.html" target="_blank" rel="noopener">Blender: F-Curves ↗</a><span>Teaching model · simplified Graph Editor.</span><a href="../../">All labs ↑</a></footer>
-  <script type="module" src="./app.js?v=5"></script>
+  <script type="module" src="./app.js?v=6"></script>
   <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
 </body>
 </html>

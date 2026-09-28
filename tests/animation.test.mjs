@@ -52,6 +52,18 @@ test('every step starts unsolved and its solution solves it', () => {
   });
 });
 
+test('free animation opens every rig curve in an independent starting scene', () => {
+  const free = STAGES.at(-1);
+  assert.equal(free.id, 'free');
+  assert.equal(free.free, true);
+  assert.deepEqual(free.channels, ['locX', 'locZ', 'topZ', 'botZ', 'rotY']);
+  assert.deepEqual(free.hide, []);
+  assert.deepEqual(Object.keys(startData(free).channels), free.channels);
+  const first = startData(free);
+  first.channels.locZ[0].value = 0;
+  assert.equal(startData(free).channels.locZ[0].value, 4);
+});
+
 test('rotation stage: the ball rolls with its travel', async () => {
   const { STAGES, startData, rollReport, rollAngle } = await import('../labs/animation/stages.js');
   const st = STAGES.find(s => s.id === 'rotation');

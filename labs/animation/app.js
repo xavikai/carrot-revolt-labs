@@ -2,9 +2,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../../vendor/OrbitControls.js';
 import { recalcHandles, evaluate, moveKey, moveHandle, key, contacts, tops, intervals, hangTime, matchScore, INTERPOLATIONS, HANDLE_TYPES } from './fcurve.js';
-import { STAGES, CHANNELS, FPS, RANGE, REFERENCE, BALL, startData, cloneData, shape, channelOf, lowestPoint, firstBounce, rollReport, rollAngle } from './stages.js?v=4';
+import { STAGES, CHANNELS, FPS, RANGE, REFERENCE, BALL, startData, cloneData, shape, channelOf, lowestPoint, firstBounce, rollReport, rollAngle } from './stages.js?v=5';
 import { t, tr, onLangChange, addDictionary } from '../../i18n.js';
-import dictionary from './i18n.js?v=3';
+import dictionary from './i18n.js?v=4';
 addDictionary(dictionary);
 
 const $ = s => document.querySelector(s);
@@ -956,7 +956,7 @@ function currentStep() {
 }
 function renderGuide() {
   const st = stage(), cur = currentStep();
-  const g = $('#guide'); g.classList.toggle('three', st.steps.length === 3);
+  const g = $('#guide'); g.hidden = !!st.free; g.classList.toggle('three', st.steps.length === 3);
   g.innerHTML = st.steps.map((s, i) => `<li data-step="${i}" class="${stepDone(i) ? 'done' : ''}${i === cur ? ' current' : ''}"><b>${stepDone(i) ? '✓' : i + 1}</b><span><strong>${esc(t(s.title))}</strong><small>${esc(t(stepDone(i) ? 'Done' : i === cur ? 'Now' : st.independent ? 'Click to load' : 'Next'))}</small></span></li>`).join('');
 }
 $('#guide').addEventListener('click', e => {
@@ -966,8 +966,20 @@ $('#guide').addEventListener('click', e => {
   else { S.focus = i; renderAll(); }
 });
 function renderStepCard() {
-  const st = stage(), i = currentStep(), s = st.steps[i], ok = stepDone(i);
+  const st = stage();
   const card = $('#step-card');
+  if (st.free) {
+    card.classList.remove('done');
+    card.innerHTML = `<div><span class="control-label">${esc(t('FREE PRACTICE'))}</span><h3>${esc(t('Make your own animation'))}</h3><p>${esc(t('All five curves are available: Root X and Z, SS_Top, SS_Bottom, and Rotation. Your work is saved in this browser.'))}</p></div>
+      <div><span class="control-label">${esc(t('HOW, AS IN BLENDER'))}</span><ol>
+        <li>${t('Select Root and press <kbd>G</kbd> to move it in X or Z. Press <kbd>I</kbd> to key the pose at the current frame.')}</li>
+        <li>${t('Use SS_Top and SS_Bottom for squash and stretch; select Rotation and press <kbd>R</kbd> to turn the ball.')}</li>
+        <li>${t('Select a channel in the Graph Editor to edit its keys and handles. Click an eye to focus on fewer curves; press <kbd>Space</kbd> to play.')}</li>
+      </ol></div>
+      <div class="step-actions"><button type="button" class="mini-link" id="reset-stage">${esc(t('Reset my animation'))}</button></div>`;
+    return;
+  }
+  const i = currentStep(), s = st.steps[i], ok = stepDone(i);
   card.classList.toggle('done', ok);
   card.innerHTML = `<div><span class="control-label">${esc(tr('STAGE {a} · STEP {b} OF {c}', { a: S.stageIndex + 1, b: i + 1, c: st.steps.length }))}</span><h3>${esc(t(s.title))}</h3><p>${esc(t(s.text))}</p><p class="why"><b>${esc(t('Why:'))}</b> ${esc(t(s.why))}</p></div>
     <div><span class="control-label">${esc(t('HOW, AS IN BLENDER'))}</span><ol>${s.how.map(h => `<li>${t(h)}</li>`).join('')}</ol></div>
@@ -998,7 +1010,9 @@ $('#step-card').addEventListener('click', e => {
 
 let lastDone = null;
 function checkProgress() {
-  const st = stage(), cur = currentStep();
+  const st = stage();
+  if (st.free) return;
+  const cur = currentStep();
   const states = st.steps.map((_, i) => stepDone(i));
   if (st.independent && states[S.step]) S.done[`${st.id}-${S.step}`] = true;
   store.set('done', S.done);

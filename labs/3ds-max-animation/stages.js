@@ -216,6 +216,18 @@ export const STAGES = [
       },
     ],
   },
+  {
+    id: 'free', name: 'Your animation', sub: 'All controls and curves', free: true,
+    channels: ['locX', 'locZ', 'topZ', 'botZ', 'rotY'], hide: [], active: 'locZ',
+    start: () => ({ channels: {
+      locX: curve([[1, 0], [72, 0]]),
+      locZ: curve([[1, 4], [72, 4]]),
+      topZ: curve([[1, 0], [72, 0]]),
+      botZ: curve([[1, 0], [72, 0]]),
+      rotY: curve([[1, 0], [72, 0]]),
+    } }),
+    steps: [],
+  },
 ];
 
 // How well the Rotation follows the travel: the rotation the ball needs at each frame to roll without sliding.

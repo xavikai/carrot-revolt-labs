@@ -47,6 +47,7 @@ main{max-width:1680px;margin:auto}
 
 /* Step guide */
 .guide{list-style:none;margin:0 clamp(16px,3vw,40px) 10px;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.guide[hidden]{display:none}
 .guide li{display:flex;gap:10px;align-items:center;padding:6px 11px;border:1px solid #3b4148;border-radius:7px;background:#20242a;color:#9aa4af;transition:border-color .2s,background .2s}
 .guide li b{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:.72rem;background:#353b43;color:#cfd6de}
 .guide li strong{display:block;font-size:.8rem;color:#d6dce3}
