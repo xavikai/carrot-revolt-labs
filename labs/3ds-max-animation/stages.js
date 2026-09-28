@@ -12,6 +12,7 @@ export const BONES = ['Root', 'SS_Top', 'SS_Bottom', 'Rotation'];
 export const CHANNELS = {
   locX: { name: 'X Position', bone: 'Root', color: '#ff6464', axis: 'X' },
   locZ: { name: 'Z Position', bone: 'Root', color: '#4aa3ff', axis: 'Z' },
+  scale: { name: 'Uniform Scale', bone: 'Root', color: '#f4d35e', axis: 'XYZ' },
   topZ: { name: 'Z Position', bone: 'SS_Top', color: '#7ee07e', axis: 'Z' },
   botZ: { name: 'Z Position', bone: 'SS_Bottom', color: '#e07ee0', axis: 'Z' },
   rotY: { name: 'Y Rotation', bone: 'Rotation', color: '#ffb347', axis: 'Y', rot: true },
@@ -45,7 +46,8 @@ export function shape(d, f, over = {}) {
   const root = over.locZ ?? chanAt(d, 'locZ', f), top = over.topZ ?? chanAt(d, 'topZ', f), bot = over.botZ ?? chanAt(d, 'botZ', f);
   const bottom = root + bot, topP = root + BALL + top, h = Math.max(0.1 * BALL, topP - bottom);
   const sz = h / BALL;
-  return { root, bottom, top: bottom + h, center: bottom + h / 2, sz, sx: 1 / Math.sqrt(sz) };
+  const uniform = d.channels.scale ? Math.max(0.1, over.scale ?? chanAt(d, 'scale', f)) : 1;
+  return { root, bottom, top: bottom + h * uniform, center: bottom + h * uniform / 2, sz: sz * uniform, sx: uniform / Math.sqrt(sz) };
 }
 export const scaleZ = (d, f) => shape(d, f).sz;
 export const scaleX = (d, f) => shape(d, f).sx;
@@ -218,10 +220,11 @@ export const STAGES = [
   },
   {
     id: 'free', name: 'Your animation', sub: 'All controls and curves', free: true,
-    channels: ['locX', 'locZ', 'topZ', 'botZ', 'rotY'], hide: [], active: 'locZ',
+    channels: ['locX', 'locZ', 'scale', 'topZ', 'botZ', 'rotY'], hide: [], active: 'locZ',
     start: () => ({ channels: {
       locX: curve([[1, 0], [72, 0]]),
       locZ: curve([[1, 4], [72, 4]]),
+      scale: curve([[1, 1], [72, 1]]),
       topZ: curve([[1, 0], [72, 0]]),
       botZ: curve([[1, 0], [72, 0]]),
       rotY: curve([[1, 0], [72, 0]]),

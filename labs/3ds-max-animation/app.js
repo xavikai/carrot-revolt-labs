@@ -2,10 +2,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../../vendor/OrbitControls.js';
 import { recalcHandles, evaluate, moveKey, moveHandle, key, contacts, tops, intervals, hangTime, matchScore, INTERPOLATIONS, HANDLE_TYPES } from './fcurve.js';
-import { STAGES, CHANNELS, FPS, RANGE, REFERENCE, BALL, startData, cloneData, shape, channelOf, lowestPoint, firstBounce, rollReport, rollAngle } from './stages.js?v=5';
+import { STAGES, CHANNELS, FPS, RANGE, REFERENCE, BALL, startData, cloneData, shape, channelOf, lowestPoint, firstBounce, rollReport, rollAngle } from './stages.js?v=6';
 import { t, tr, onLangChange, addDictionary } from '../../i18n.js';
-import blenderConcepts from '../animation/i18n.js?v=4';
-import maxDictionary from './max-i18n.js?v=2';
+import blenderConcepts from '../animation/i18n.js?v=5';
+import maxDictionary from './max-i18n.js?v=3';
 addDictionary({ ...blenderConcepts, ...maxDictionary });
 
 const $ = s => document.querySelector(s);
@@ -34,6 +34,7 @@ function saveData() { store.set(`data-${stage().id}-${stage().independent ? S.st
 function loadData() {
   const saved = store.get(`data-${stage().id}-${stage().independent ? S.step : 0}`, null);
   S.data = saved && saved.channels ? saved : startData(stage(), S.step);
+  if (stage().free && !S.data.channels.scale) S.data.channels.scale = startData(stage()).channels.scale;
   for (const k of Object.values(S.data.channels)) { k.forEach(q => { q.select = false; }); recalcHandles(k); }
   S.activeKey = null; S.undo = []; S.redo = [];
 }
@@ -293,7 +294,8 @@ function startVGrab() {
 function startVScale() {
   if (!S.toggles.ctrls) return msg('Helpers are hidden: turn on Helpers in the viewport header.', true);
   if (!S.vpointer) S.vpointer = { x: viewCanvas.clientWidth / 2, y: viewCanvas.clientHeight / 2 };
-  S.vscale = { start: S.override.previewScale ?? 1, x0: S.vpointer.x, y0: S.vpointer.y, num: '', prev: { ...S.override } };
+  if (stage().free) { S.active = 'scale'; S.bone = 'Root'; S.hidden.delete('scale'); renderChannels(); drawGraph(); }
+  S.vscale = { start: stage().free ? S.override.scale ?? valueAt('scale', S.frame) : S.override.previewScale ?? 1, x0: S.vpointer.x, y0: S.vpointer.y, num: '', prev: { ...S.override } };
   viewHost.classList.add('modal'); updateVScale();
 }
 function updateVScale() {
@@ -301,14 +303,19 @@ function updateVScale() {
   const typed = g.num !== '' && g.num !== '-' && !isNaN(+g.num) ? +g.num / 100 : null;
   const drag = Math.max(.1, g.start + -(S.vpointer.y - g.y0) * .01);
   const factor = Math.max(.1, typed ?? drag);
-  S.override = { ...g.prev, previewScale: +factor.toFixed(3) };
+  S.override = { ...g.prev, [stage().free ? 'scale' : 'previewScale']: +factor.toFixed(3) };
   $('#view-readout').hidden = false; $('#view-readout').textContent = `${t('Scale')}  ${Math.round(factor * 100)}%${g.num ? `  [${g.num}%]` : ''} · ${t('uniform')}`;
   drawView(); renderSidebar();
 }
 function endVScale(ok) {
   const g = S.vscale; if (!g) return;
   S.vscale = null; viewHost.classList.remove('modal'); $('#view-readout').hidden = true;
-  if (!ok) S.override = g.prev; else msg('Preview scale applied. Click another frame to clear it; scale keys are not part of this rig.');
+  if (!ok) S.override = g.prev;
+  else if (stage().free) {
+    if (Math.abs(S.override.scale - valueAt('scale', S.frame)) < 1e-4) delete S.override.scale;
+    else if (S.keyMode === 'auto') keyScale();
+    else msg('Scaled. Click Set Keys to save the scale before changing frame.');
+  } else msg('Preview scale applied. Click another frame to clear it; scale keys are not part of this rig.');
   drawView(); renderSidebar();
 }
 function updateVGrab() {
@@ -424,6 +431,19 @@ function keyControl() {
   S.activeKey = last; S.active = ch;
   msg(tr('Inserted a keyframe on {c} at frame {n}.', { c: ch === 'rotY' ? 'Rotation · Y Rotation' : `${S.bone} · ${[...chans].sort().map(c => CHANNELS[c].axis).join(', ')} Position`, n: f })); changed(true);
 }
+function keyScale() {
+  if (!stage().free) return;
+  const f = Math.round(S.frame), ks = S.data.channels.scale;
+  pushUndo(); clearSelection();
+  const v = +(S.override.scale ?? valueAt('scale', f)).toFixed(3);
+  let k = ks.find(q => q.frame === f);
+  if (k) moveKey(k, f, v);
+  else { k = key(f, v); ks.push(k); }
+  delete S.override.scale;
+  k.select = true; S.activeKey = k; S.active = 'scale'; S.bone = 'Root';
+  recalcHandles(ks);
+  msg(tr('Inserted a keyframe on {c} at frame {n}.', { c: CHANNELS.scale.name, n: f })); changed(true);
+}
 function syncTransformTools() {
   document.querySelectorAll('.max-transform').forEach(b => { const active = b.dataset.tool === S.tool; b.classList.toggle('active', active); b.setAttribute('aria-pressed', String(active)); });
   document.querySelectorAll('.max-axis-constraints button').forEach(b => b.setAttribute('aria-pressed', String(S.axis === b.dataset.axis)));
@@ -461,10 +481,15 @@ function chooseKeyMode(mode) {
 }
 $('#auto-key').onclick = () => chooseKeyMode('auto');
 $('#set-key-mode').onclick = () => chooseKeyMode('set');
-$('#set-keys').onclick = () => keyControl();
+$('#set-keys').onclick = () => S.override.scale != null && stage().free ? keyScale() : keyControl();
 $('#reset-control').onclick = () => clearControl();
 syncKeyMode(); syncTransformTools();
 function clearControl() {
+  if (stage().free && S.tool === 'scale') {
+    S.override.scale = 1; drawView(); renderSidebar();
+    if (S.keyMode === 'auto') keyScale(); else msg('Scaled. Click Set Keys to save the scale before changing frame.');
+    return;
+  }
   const ch = channelOf(S.bone);
   if (!stage().channels.includes(ch)) return;
   if (ch === 'locZ') return msg('Resetting the Root would send the ball to the origin (X 0, Z 0). Move it instead.');
@@ -1099,11 +1124,12 @@ function renderStepCard() {
   const card = $('#step-card');
   if (st.free) {
     card.classList.remove('done');
-    card.innerHTML = `<div><span class="control-label">${esc(t('FREE PRACTICE'))}</span><h3>${esc(t('Make your own animation'))}</h3><p>${esc(t('All five curves are available: Root X and Z, SS_Top, SS_Bottom, and Rotation. Your work is saved in this browser.'))}</p></div>
+    card.innerHTML = `<div><span class="control-label">${esc(t('FREE PRACTICE'))}</span><h3>${esc(t('Make your own animation'))}</h3><p>${esc(t('All six curves are available: Root X and Z, Uniform Scale, SS_Top, SS_Bottom, and Rotation. Your work is saved in this browser.'))}</p></div>
       <div><span class="control-label">${esc(t('HOW, IN 3DS MAX'))}</span><ol>
         <li>${t('Select Root, choose Select and Move (<kbd>W</kbd>), and use Auto Key or Set Keys to create keys.')}</li>
         <li>${t('Use SS_Top and SS_Bottom for squash and stretch; select Rotation and choose Select and Rotate (<kbd>E</kbd>).')}</li>
-        <li>${t('Edit all five tracks and tangents in Track View – Curve Editor; click an eye to focus on fewer curves, then play the animation.')}</li>
+        <li>${t('Use Select and Uniform Scale (<kbd>R</kbd>) with Auto Key or Set Keys, or edit its curve in Track View.')}</li>
+        <li>${t('Edit all six tracks and tangents in Track View – Curve Editor; click an eye to focus on fewer curves, then play the animation.')}</li>
       </ol></div>
       <div class="step-actions"><button type="button" class="mini-link" id="reset-stage">${esc(t('Reset my animation'))}</button></div>`;
     return;

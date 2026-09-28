@@ -54,7 +54,7 @@
 
         <section class="editor" aria-label="Track View Curve Editor">
           <div class="editor-header">
-            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 13C5 13 5 3 8 3s3 10 6.5 10" fill="none" stroke="currentColor"/><circle cx="8" cy="3" r="1.4" fill="currentColor"/></svg>Track View – Curve Editor</span><span class="editor-role">POSITION / ROTATION CONTROLLERS</span>
+            <span class="editor-type"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 13C5 13 5 3 8 3s3 10 6.5 10" fill="none" stroke="currentColor"/><circle cx="8" cy="3" r="1.4" fill="currentColor"/></svg>Track View – Curve Editor</span><span class="editor-role">POSITION / ROTATION / SCALE CONTROLLERS</span>
             <div class="menubar">
               <button type="button" class="menu-button" data-menu="view" aria-haspopup="menu">View</button>
               <button type="button" class="menu-button" data-menu="select" aria-haspopup="menu">Select</button>
@@ -113,10 +113,10 @@
       </dl>
     </section>
 
-    <aside class="max-bridge"><div><span class="eyebrow">IN 3DS MAX</span><h2>Rebuild the bounce in 3ds Max</h2><p>This lab simplifies the application to the controllers needed for one ball. In a Max scene, use named helper objects or a custom rig, then animate their Position and Rotation tracks.</p></div><ol><li>Create a ball and a helper hierarchy: <strong>Root</strong> for the path, <strong>SS_Top</strong> and <strong>SS_Bottom</strong> for deformation, and <strong>Rotation</strong> for rolling.</li><li>Use the <strong>Time Slider</strong> to choose frames. Enable <strong>Auto Key</strong> to record changed transforms, or use <strong>Set Key Mode</strong> and <strong>Set Keys</strong> after posing.</li><li>Open <strong>Track View – Curve Editor</strong>. Select the Z Position keys in the Controller Window; use smooth tangents near the tops and break/linear tangents at the contacts.</li><li>Use <strong>Track View – Dope Sheet</strong> or the <strong>Track Bar</strong> to move keys closer together after each contact.</li><li>Right-click the ball and choose <strong>Show Motion Paths</strong> to inspect spacing. Keep the ball above the floor while squashing and stretching.</li><li>Match Y Rotation to X travel so the ball rolls without sliding.</li></ol></aside>
+    <aside class="max-bridge"><div><span class="eyebrow">IN 3DS MAX</span><h2>Rebuild the bounce in 3ds Max</h2><p>This lab simplifies the application to the controllers needed for one ball. In a Max scene, use named helper objects or a custom rig, then animate their Position, Rotation and Scale tracks.</p></div><ol><li>Create a ball and a helper hierarchy: <strong>Root</strong> for the path, <strong>SS_Top</strong> and <strong>SS_Bottom</strong> for deformation, and <strong>Rotation</strong> for rolling.</li><li>Use the <strong>Time Slider</strong> to choose frames. Enable <strong>Auto Key</strong> to record changed transforms, or use <strong>Set Key Mode</strong> and <strong>Set Keys</strong> after posing.</li><li>Open <strong>Track View – Curve Editor</strong>. Select the Z Position keys in the Controller Window; use smooth tangents near the tops and break/linear tangents at the contacts.</li><li>Use <strong>Track View – Dope Sheet</strong> or the <strong>Track Bar</strong> to move keys closer together after each contact.</li><li>Right-click the ball and choose <strong>Show Motion Paths</strong> to inspect spacing. Keep the ball above the floor while squashing and stretching.</li><li>Match Y Rotation to X travel so the ball rolls without sliding.</li></ol></aside>
   </main>
   <footer><span>Carrot Revolt Labs · 3ds Max Animation Lab</span><a href="https://help.autodesk.com/cloudhelp/2023/ENU/3DSMax-Animation/files/GUID-818205DD-D58A-495E-BD0C-DC69BDE8DAC2.htm" target="_blank" rel="noopener">Autodesk: Animation Controls ↗</a><span>Teaching model · simplified Track View.</span><a href="../../#max">3ds Max labs ↑</a></footer>
-  <script type="module" src="./app.js?v=6"></script>
+  <script type="module" src="./app.js?v=7"></script>
   <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
 </body>
 </html>

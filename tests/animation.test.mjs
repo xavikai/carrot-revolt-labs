@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { key, recalcHandles, evaluate, moveHandle, contacts, tops, hangTime, matchScore, sharpContact } from '../labs/animation/fcurve.js';
-import { STAGES, startData, REFERENCE } from '../labs/animation/stages.js';
+import { STAGES, startData, REFERENCE, shape } from '../labs/animation/stages.js';
 
 const curve = (pts, interp = 'BEZIER', handle = 'AUTO_CLAMPED') => recalcHandles(pts.map(([f, v]) => key(f, v, interp, handle)));
 
@@ -56,12 +56,15 @@ test('free animation opens every rig curve in an independent starting scene', ()
   const free = STAGES.at(-1);
   assert.equal(free.id, 'free');
   assert.equal(free.free, true);
-  assert.deepEqual(free.channels, ['locX', 'locZ', 'topZ', 'botZ', 'rotY']);
+  assert.deepEqual(free.channels, ['locX', 'locZ', 'scale', 'topZ', 'botZ', 'rotY']);
   assert.deepEqual(free.hide, []);
   assert.deepEqual(Object.keys(startData(free).channels), free.channels);
   const first = startData(free);
   first.channels.locZ[0].value = 0;
   assert.equal(startData(free).channels.locZ[0].value, 4);
+  assert.equal(shape(startData(free), 1).sx, 1);
+  first.channels.scale[0].value = 2;
+  assert.equal(shape(first, 1).sx, 2);
 });
 
 test('rotation stage: the ball rolls with its travel', async () => {

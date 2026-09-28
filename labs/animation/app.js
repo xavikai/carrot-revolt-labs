@@ -2,9 +2,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../../vendor/OrbitControls.js';
 import { recalcHandles, evaluate, moveKey, moveHandle, key, contacts, tops, intervals, hangTime, matchScore, INTERPOLATIONS, HANDLE_TYPES } from './fcurve.js';
-import { STAGES, CHANNELS, FPS, RANGE, REFERENCE, BALL, startData, cloneData, shape, channelOf, lowestPoint, firstBounce, rollReport, rollAngle } from './stages.js?v=5';
+import { STAGES, CHANNELS, FPS, RANGE, REFERENCE, BALL, startData, cloneData, shape, channelOf, lowestPoint, firstBounce, rollReport, rollAngle } from './stages.js?v=6';
 import { t, tr, onLangChange, addDictionary } from '../../i18n.js';
-import dictionary from './i18n.js?v=4';
+import dictionary from './i18n.js?v=5';
 addDictionary(dictionary);
 
 const $ = s => document.querySelector(s);
@@ -31,6 +31,7 @@ function saveData() { store.set(`data-${stage().id}-${stage().independent ? S.st
 function loadData() {
   const saved = store.get(`data-${stage().id}-${stage().independent ? S.step : 0}`, null);
   S.data = saved && saved.channels ? saved : startData(stage(), S.step);
+  if (stage().free && !S.data.channels.scale) S.data.channels.scale = startData(stage()).channels.scale;
   for (const k of Object.values(S.data.channels)) { k.forEach(q => { q.select = false; }); recalcHandles(k); }
   S.activeKey = null; S.undo = []; S.redo = [];
 }
@@ -970,11 +971,12 @@ function renderStepCard() {
   const card = $('#step-card');
   if (st.free) {
     card.classList.remove('done');
-    card.innerHTML = `<div><span class="control-label">${esc(t('FREE PRACTICE'))}</span><h3>${esc(t('Make your own animation'))}</h3><p>${esc(t('All five curves are available: Root X and Z, SS_Top, SS_Bottom, and Rotation. Your work is saved in this browser.'))}</p></div>
+    card.innerHTML = `<div><span class="control-label">${esc(t('FREE PRACTICE'))}</span><h3>${esc(t('Make your own animation'))}</h3><p>${esc(t('All six curves are available: Root X and Z, Uniform Scale, SS_Top, SS_Bottom, and Rotation. Your work is saved in this browser.'))}</p></div>
       <div><span class="control-label">${esc(t('HOW, AS IN BLENDER'))}</span><ol>
         <li>${t('Select Root and press <kbd>G</kbd> to move it in X or Z. Press <kbd>I</kbd> to key the pose at the current frame.')}</li>
         <li>${t('Use SS_Top and SS_Bottom for squash and stretch; select Rotation and press <kbd>R</kbd> to turn the ball.')}</li>
         <li>${t('Select a channel in the Graph Editor to edit its keys and handles. Click an eye to focus on fewer curves; press <kbd>Space</kbd> to play.')}</li>
+        <li>${t('Edit Root Uniform Scale in the Graph Editor to make the whole ball grow or shrink over time.')}</li>
       </ol></div>
       <div class="step-actions"><button type="button" class="mini-link" id="reset-stage">${esc(t('Reset my animation'))}</button></div>`;
     return;

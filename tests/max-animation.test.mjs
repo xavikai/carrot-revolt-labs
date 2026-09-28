@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { STAGES, startData, CHANNELS } from '../labs/3ds-max-animation/stages.js';
+import { STAGES, startData, CHANNELS, shape } from '../labs/3ds-max-animation/stages.js';
 import commonDictionary from '../labs/animation/i18n.js';
 import maxDictionary from '../labs/3ds-max-animation/max-i18n.js';
 
@@ -19,12 +19,14 @@ test('Max bouncing-ball stages have working start states and solutions', () => {
 test('Max free animation makes every controller track available', () => {
   const free = STAGES.at(-1);
   assert.equal(free.free, true);
-  assert.deepEqual(free.channels, ['locX', 'locZ', 'topZ', 'botZ', 'rotY']);
+  assert.deepEqual(free.channels, ['locX', 'locZ', 'scale', 'topZ', 'botZ', 'rotY']);
   assert.deepEqual(free.hide, []);
   assert.deepEqual(Object.keys(startData(free).channels), free.channels);
   const first = startData(free);
   first.channels.rotY[0].value = 90;
   assert.equal(startData(free).channels.rotY[0].value, 0);
+  first.channels.scale[0].value = 2;
+  assert.equal(shape(first, 1).sx, 2);
 });
 
 test('Max lesson uses Position and Rotation controllers and every step has Catalan and Spanish text', () => {
