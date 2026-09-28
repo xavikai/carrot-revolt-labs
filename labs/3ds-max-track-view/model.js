@@ -39,6 +39,32 @@ export const track = (scene, id) => scene.tracks[id];
 export const findKey = (scene, id) => Object.values(scene.tracks).flat().find(k => k.id === id);
 export const trackForKey = (scene, id) => Object.keys(scene.tracks).find(t => scene.tracks[t].some(k => k.id === id));
 
+export function setTimelineRange(scene, start, end) {
+  start = Math.round(start); end = Math.round(end);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end > 250 || start >= end) return false;
+  scene.start = start; scene.end = end;
+  return true;
+}
+
+export function panTimelineRange(scene, offset) {
+  const span = scene.end - scene.start;
+  const start = Math.max(0, Math.min(250 - span, scene.start + Math.round(offset)));
+  return setTimelineRange(scene, start, start + span);
+}
+
+export function zoomTimelineRange(scene, factor, anchor = (scene.start + scene.end) / 2) {
+  const span = Math.max(5, Math.min(250, Math.round((scene.end - scene.start) * factor)));
+  const ratio = (anchor - scene.start) / (scene.end - scene.start);
+  const start = Math.max(0, Math.min(250 - span, Math.round(anchor - ratio * span)));
+  return setTimelineRange(scene, start, start + span);
+}
+
+export function fitTimelineRange(scene) {
+  const frames = Object.values(scene.tracks).flat().map(k => k.frame);
+  if (!frames.length) return false;
+  return setTimelineRange(scene, Math.max(0, Math.min(...frames) - 3), Math.min(250, Math.max(...frames) + 3));
+}
+
 export function valueAt(scene, id, frame) {
   const keys = track(scene, id);
   if (!keys?.length) return id === 'scale' ? 1 : 0;
@@ -136,6 +162,7 @@ export function dragTangent(scene, id, side, frame, value) {
 
 export function checkLesson(id, scene, frame = scene.start) {
   if (id === 'timeline') return scene.tracks.x.some(k => k.frame > 0 && k.frame < 60 && k.value >= 3);
+  if (id === 'range') return scene.start >= 8 && scene.end <= 55;
   if (id === 'curves') return scene.tracks.x.some(k => k.frame > 0 && k.frame < 60 && k.value >= 6 && k.interp === 'BEZIER');
   if (id === 'dope') return scene.tracks.rotation.some(k => k.frame > 0 && k.frame <= 25) && scene.tracks.scale.length >= 4;
   if (id === 'loops') return scene.out === 'loop' && frame >= 60 && valueAt(scene, 'rotation', 60) >= 1079;

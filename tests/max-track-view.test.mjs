@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createLesson, track, valueAt, addKey, moveKeys, moveGraphKey, setTangent, checkLesson } from '../labs/3ds-max-track-view/model.js';
+import { createLesson, track, valueAt, addKey, moveKeys, moveGraphKey, setTangent, checkLesson, setTimelineRange, panTimelineRange, zoomTimelineRange, fitTimelineRange } from '../labs/3ds-max-track-view/model.js';
 
 test('each Track View exercise starts unfinished and can be completed with its actual controls', () => {
   const timeline = createLesson('timeline');
@@ -57,4 +57,21 @@ test('interpolation and out-of-range types have distinct results', () => {
   assert.equal(valueAt(curves, 'x', 10), 0);
   setTangent(curves, [first.id], 'linear');
   assert.ok(valueAt(curves, 'x', 10) > 0);
+});
+
+test('Timeline range can move and zoom without deleting keys outside the visible range', () => {
+  const scene = createLesson('range');
+  const keyIds = scene.tracks.x.map(k => k.id);
+  assert.equal(checkLesson('range', scene), false);
+  assert.equal(setTimelineRange(scene, 10, 50), true);
+  assert.equal(checkLesson('range', scene), true);
+  assert.equal(setTimelineRange(scene, 50, 10), false);
+  assert.deepEqual([scene.start, scene.end], [10, 50]);
+  panTimelineRange(scene, 12);
+  assert.deepEqual([scene.start, scene.end], [22, 62]);
+  zoomTimelineRange(scene, .5, 42);
+  assert.deepEqual([scene.start, scene.end], [32, 52]);
+  fitTimelineRange(scene);
+  assert.deepEqual([scene.start, scene.end], [0, 63]);
+  assert.deepEqual(scene.tracks.x.map(k => k.id), keyIds);
 });

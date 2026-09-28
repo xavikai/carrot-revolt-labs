@@ -1,4 +1,4 @@
-import { TRACKS, createLesson, track, findKey, trackForKey, valueAt, addKey, moveKeys, deleteKeys, moveGraphKey, setTangent, dragTangent, checkLesson } from './model.js';
+import { TRACKS, createLesson, track, findKey, trackForKey, valueAt, addKey, moveKeys, deleteKeys, moveGraphKey, setTangent, dragTangent, checkLesson, setTimelineRange, panTimelineRange, zoomTimelineRange, fitTimelineRange } from './model.js?v=2';
 
 const $ = s => document.querySelector(s);
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -7,9 +7,10 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 const meta = id => TRACKS.find(t => t.id === id);
 const LESSONS = {
   timeline: { index: 'EXERCICI 01 · TIME SLIDER', title: 'Timeline i fotogrames clau', summary: 'El Time Slider marca el fotograma actual; el Track Bar mostra les claus de l’objecte. Configura el rang, prova el player i crea una clau amb Auto Key o Set Keys. Els filtres decideixen quines pistes grava Set Keys.', task: 'Ves a un fotograma entre 1 i 59. Activa Auto Key i posa X Position a 5 m, o prepara el valor i prem Set Keys. Després arrossega la nova clau al Track Bar.', success: 'Clau intermèdia creada. Prova de moure-la o duplicar-la amb Shift.' },
-  curves: { index: 'EXERCICI 02 · KEY WINDOW', title: 'Curve Editor i interpolacions', summary: 'A la gràfica, X és temps i Y és valor. La pendent mostra com de ràpid canvia la posició. Compara Linear, Smooth i Step; selecciona una clau per aplanar o trencar-ne les tangents.', task: 'A X Position, puja la clau central per sobre de 6 m i aplica Smooth. Arrossega-la o escriu el seu valor al panell Selected Key. Després prova Flat i Break.', success: 'Has canviat el valor i la interpolació: observa com varia la velocitat al viewport.' },
-  dope: { index: 'EXERCICI 03 · PISTES', title: 'Dope Sheet i timing', summary: 'El Dope Sheet separa les claus en files: Position, Rotation i Scale. Aquí mous el temps de les claus sense modificar-ne el valor. Amb Shift i arrossegant, en fas una còpia.', task: 'Obre Dope Sheet. Mou la clau central de Y Rotation del fotograma 30 a un fotograma 25 o anterior. Després duplica la clau central de Uniform Scale amb Shift i arrossegant, o amb Copy to Frame.', success: 'Has canviat el ritme de dues pistes sense canviar-ne els valors.' },
-  loops: { index: 'EXERCICI 04 · OUT-OF-RANGE TYPES', title: 'Cycle, Loop i Ping Pong', summary: 'Quan el temps surt del rang de claus, 3ds Max pot mantenir l’últim valor, repetir-lo, continuar-lo o invertir-lo. En aquesta escena la rotació té claus a 0° i 360° entre els fotogrames 0 i 20.', task: 'Al panell Out-of-Range Types, compara Cycle, Loop i Ping Pong. Tria Loop i ves al fotograma 60: el valor de Y Rotation ha de ser 1080°.', success: 'Loop conserva la continuïtat: 360° per volta, 1080° al fotograma 60.' },
+  range: { index: 'EXERCICI 02 · AJUSTAR EL TIMELINE', title: 'Mou i redimensiona el rang', summary: 'El rang del Time Slider determina quins fotogrames veus i reprodueixes. Pots canviar-ne l’inici i el final, desplaçar-lo sencer o ampliar i reduir la vista. Les claus que queden fora del rang es conserven.', task: 'Deixa l’inici al fotograma 10 o més tard i el final al 55 o abans. Fes-ho amb els camps, els botons o Ctrl+Alt i arrossegant els extrems del Track Bar. Després prova Mou i Enquadra claus.', success: 'Has ajustat els dos extrems del Timeline. Les claus fora del rang segueixen al projecte.' },
+  curves: { index: 'EXERCICI 03 · KEY WINDOW', title: 'Curve Editor i interpolacions', summary: 'A la gràfica, X és temps i Y és valor. La pendent mostra com de ràpid canvia la posició. Compara Linear, Smooth i Step; selecciona una clau per aplanar o trencar-ne les tangents.', task: 'A X Position, puja la clau central per sobre de 6 m i aplica Smooth. Arrossega-la o escriu el seu valor al panell Selected Key. Després prova Flat i Break.', success: 'Has canviat el valor i la interpolació: observa com varia la velocitat al viewport.' },
+  dope: { index: 'EXERCICI 04 · PISTES', title: 'Dope Sheet i timing', summary: 'El Dope Sheet separa les claus en files: Position, Rotation i Scale. Aquí mous el temps de les claus sense modificar-ne el valor. Amb Shift i arrossegant, en fas una còpia.', task: 'Obre Dope Sheet. Mou la clau central de Y Rotation del fotograma 30 a un fotograma 25 o anterior. Després duplica la clau central de Uniform Scale amb Shift i arrossegant, o amb Copy to Frame.', success: 'Has canviat el ritme de dues pistes sense canviar-ne els valors.' },
+  loops: { index: 'EXERCICI 05 · OUT-OF-RANGE TYPES', title: 'Cycle, Loop i Ping Pong', summary: 'Quan el temps surt del rang de claus, 3ds Max pot mantenir l’últim valor, repetir-lo, continuar-lo o invertir-lo. En aquesta escena la rotació té claus a 0° i 360° entre els fotogrames 0 i 20.', task: 'Al panell Out-of-Range Types, compara Cycle, Loop i Ping Pong. Tria Loop i ves al fotograma 60: el valor de Y Rotation ha de ser 1080°.', success: 'Loop conserva la continuïtat: 360° per volta, 1080° al fotograma 60.' },
   free: { index: 'EXPLORACIÓ LLIURE', title: 'Construeix la teva animació', summary: 'Tens accés als controls de Position, Rotation i Scale, al Time Slider, al Dope Sheet i al Curve Editor. Afegeix, mou, copia o elimina claus i observa com canvia l’objecte.', task: 'Prova d’animar la pilota com vulguis. Canvia els filtres de Set Keys, compara tangents i fes una rotació que es repeteixi.', success: 'Segueix experimentant amb les pistes i els fotogrames.' },
 };
 const OUT_TEXT = { constant: 'Manté el primer o l’últim valor.', cycle: 'Repeteix el mateix tram i torna al valor inicial.', loop: 'Repeteix el tram sumant la diferència de cada volta.', pingpong: 'Alterna endavant i enrere entre les claus.' };
@@ -23,7 +24,7 @@ const notify = msg => { S.status = msg; $('#status-message').textContent = msg; 
 
 function enterLesson(id) {
   stop(); S.lesson = id; S.scene = scenes.get(id) || createLesson(id); scenes.set(id, S.scene);
-  S.frame = 0; S.playFloat = 0; S.active = id === 'loops' ? 'rotation' : 'x'; S.selected = []; S.view = id === 'dope' ? 'dope' : 'curve'; S.tool = 'move'; S.auto = false; S.setMode = true; S.keyMode = false; S.graphStart = S.scene.start; S.graphEnd = S.scene.end; cleanPending();
+  S.frame = S.scene.start; S.playFloat = S.frame; S.active = id === 'loops' ? 'rotation' : 'x'; S.selected = []; S.view = id === 'dope' ? 'dope' : 'curve'; S.tool = 'move'; S.auto = false; S.setMode = true; S.keyMode = false; S.graphStart = S.scene.start; S.graphEnd = S.scene.end; cleanPending();
   document.querySelectorAll('[data-lesson]').forEach(b => b.setAttribute('aria-current', String(b.dataset.lesson === id)));
   const lesson = LESSONS[id];
   $('#lesson-index').textContent = lesson.index; $('#lesson-title').textContent = lesson.title;
@@ -46,6 +47,11 @@ function selectKey(id, additive = false) {
 function setFrame(f) {
   S.frame = clamp(Math.round(f), S.scene.start, S.scene.end); S.playFloat = S.frame;
   cleanPending(); render();
+}
+function refreshTimelineRange(message) {
+  S.frame=clamp(S.frame,S.scene.start,S.scene.end);S.playFloat=S.frame;
+  if(message)notify(`${message} · ${S.scene.start}–${S.scene.end}`);
+  render();
 }
 function record(changedIds) {
   if (!S.auto) return;
@@ -160,10 +166,12 @@ function drawViewport() {
 function render() {
   if(!S.scene)return;
   $('#viewport-frame').textContent=`Frame ${S.frame}`;$('#current-frame').value=S.frame;$('#time-readout').textContent=`${(S.frame/S.scene.fps).toFixed(2)} s`;
+  if(document.activeElement!==$('#range-start'))$('#range-start').value=S.scene.start;
+  if(document.activeElement!==$('#range-end'))$('#range-end').value=S.scene.end;
   $('#out-type').value=S.scene.out;$('#out-explain').textContent=OUT_TEXT[S.scene.out];
   $('#track-title').textContent=`Track View - ${S.view==='curve'?'Curve Editor':'Dope Sheet'}`;
   $('#curve-svg').toggleAttribute('hidden',S.view!=='curve');$('#dope-svg').toggleAttribute('hidden',S.view!=='dope');
-  $('#edit-axis-label').textContent=S.view==='curve'?'Temps (fotogrames) →  ·  valor ↑':'Temps (fotogrames) →  ·  una fila per pista';
+  $('#edit-axis-label').textContent=S.view==='curve'?'Temps → · valor ↑ · roda: zoom · botó central: mou':'Temps (fotogrames) → · una fila per pista';
   document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===S.view)));
   document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===S.tool));
   $('#auto-key').setAttribute('aria-pressed',String(S.auto));$('#set-key-mode').setAttribute('aria-pressed',String(S.setMode));$('#key-mode').setAttribute('aria-pressed',String(S.keyMode));$('#play').setAttribute('aria-pressed',String(S.playing));$('#play').textContent=S.playing?'■':'▶';
@@ -177,9 +185,10 @@ function togglePlay(){if(S.playing){stop();return;}cleanPending();S.playing=true
 function previous(direction){const f=S.frame;if(!S.keyMode){setFrame(f+direction);return;}const frames=[...new Set(Object.values(S.scene.tracks).flat().map(k=>k.frame))].sort((a,b)=>a-b);const to=direction<0?frames.filter(n=>n<f).at(-1):frames.find(n=>n>f);if(to!=null)setFrame(to);}
 
 function svgFrame(svg,x){return Math.round(+svg.dataset.f0+(x-(+svg.dataset.x0))/(+svg.dataset.x1-(+svg.dataset.x0))*(+svg.dataset.f1-(+svg.dataset.f0)));}
-function attachTimeSvg(svg){svg.addEventListener('pointerdown',e=>{const target=e.target.closest('[data-key]'),p=point(svg,e);if(target){const id=target.dataset.key;if(e.ctrlKey){selectKey(id,true);return;}if(!S.selected.includes(id)||S.selected.length===0)selectKey(id);S.drag={kind:'keys',svg,start:p.x,df:0,duplicate:e.shiftKey,ids:[...S.selected]};svg.setPointerCapture(e.pointerId);e.preventDefault();return;}if(svg.id==='trackbar'&&e.target.closest('[data-scrub]')){S.drag={kind:'scrub',svg};svg.setPointerCapture(e.pointerId);setFrame(svgFrame(svg,p.x));e.preventDefault();}});
-  svg.addEventListener('pointermove',e=>{const d=S.drag;if(!d||d.svg!==svg)return;const p=point(svg,e);if(d.kind==='scrub'){setFrame(svgFrame(svg,p.x));return;}d.df=svgFrame(svg,p.x)-svgFrame(svg,d.start);$('#drag-readout').textContent=`Offset ${d.df>=0?'+':''}${d.df} frames${d.duplicate?' · copy':''}`;});
-  svg.addEventListener('pointerup',e=>{const d=S.drag;if(!d||d.svg!==svg)return;S.drag=null;$('#drag-readout').textContent='';if(d.kind==='keys'&&d.df){const ok=moveKeys(S.scene,d.ids,d.df,d.duplicate);notify(ok?`${d.duplicate?'Claus duplicades':'Claus mogudes'} · Offset ${d.df>=0?'+':''}${d.df}`:'No es pot posar una clau en un fotograma ocupat o fora del rang.');if(ok&&d.duplicate)S.selected=[];render();}else if(d.kind==='keys')render();svg.releasePointerCapture(e.pointerId);});}
+function attachTimeSvg(svg){svg.addEventListener('pointerdown',e=>{const target=e.target.closest('[data-key]'),p=point(svg,e);if(svg.id==='trackbar'&&e.ctrlKey&&e.altKey&&e.button<=2){S.drag={kind:'range',svg,button:e.button,startX:p.x,start:S.scene.start,end:S.scene.end,x0:+svg.dataset.x0,x1:+svg.dataset.x1};svg.setPointerCapture(e.pointerId);e.preventDefault();return;}if(target){const id=target.dataset.key;if(e.ctrlKey){selectKey(id,true);return;}if(!S.selected.includes(id)||S.selected.length===0)selectKey(id);S.drag={kind:'keys',svg,start:p.x,df:0,duplicate:e.shiftKey,ids:[...S.selected]};svg.setPointerCapture(e.pointerId);e.preventDefault();return;}if(svg.id==='trackbar'&&e.target.closest('[data-scrub]')){S.drag={kind:'scrub',svg};svg.setPointerCapture(e.pointerId);setFrame(svgFrame(svg,p.x));e.preventDefault();}});
+  svg.addEventListener('pointermove',e=>{const d=S.drag;if(!d||d.svg!==svg)return;const p=point(svg,e);if(d.kind==='scrub'){setFrame(svgFrame(svg,p.x));return;}if(d.kind==='range'){const df=Math.round((p.x-d.startX)/(d.x1-d.x0)*(d.end-d.start));if(d.button===0)setTimelineRange(S.scene,d.start+df,d.end);if(d.button===2)setTimelineRange(S.scene,d.start,d.end+df);if(d.button===1){const span=d.end-d.start,start=clamp(d.start+df,0,250-span);setTimelineRange(S.scene,start,start+span);}refreshTimelineRange();return;}d.df=svgFrame(svg,p.x)-svgFrame(svg,d.start);$('#drag-readout').textContent=`Offset ${d.df>=0?'+':''}${d.df} frames${d.duplicate?' · copy':''}`;});
+  svg.addEventListener('pointerup',e=>{const d=S.drag;if(!d||d.svg!==svg)return;S.drag=null;$('#drag-readout').textContent='';if(d.kind==='range')refreshTimelineRange('Rang ajustat');if(d.kind==='keys'&&d.df){const ok=moveKeys(S.scene,d.ids,d.df,d.duplicate);notify(ok?`${d.duplicate?'Claus duplicades':'Claus mogudes'} · Offset ${d.df>=0?'+':''}${d.df}`:'No es pot posar una clau en un fotograma ocupat o fora del rang.');if(ok&&d.duplicate)S.selected=[];render();}else if(d.kind==='keys')render();svg.releasePointerCapture(e.pointerId);});
+  if(svg.id==='trackbar')svg.addEventListener('contextmenu',e=>{if(e.ctrlKey&&e.altKey)e.preventDefault();});}
 
 const graph=$('#curve-svg');
 graph.addEventListener('pointerdown',e=>{const hit=e.target.closest('[data-key]');if(!hit){if(e.button===1){S.drag={kind:'pan',svg:graph,start:point(graph,e).x,a:S.graphStart,b:S.graphEnd};graph.setPointerCapture(e.pointerId);e.preventDefault();}return;}const id=hit.dataset.key;if(e.ctrlKey){selectKey(id,true);return;}if(!S.selected.includes(id))selectKey(id);const p=point(graph,e),k=findKey(S.scene,id);S.drag={kind:hit.dataset.handle?'handle':'graphkey',svg:graph,id,side:hit.dataset.handle,start:p,frame:k.frame,value:k.value};graph.setPointerCapture(e.pointerId);e.preventDefault();});
@@ -204,9 +213,19 @@ $('#set-keys').onclick=setKeysFromFilters;
 $('#first').onclick=()=>setFrame(S.scene.start);$('#last').onclick=()=>setFrame(S.scene.end);
 $('#prev').onclick=()=>previous(-1);$('#next').onclick=()=>previous(1);$('#key-mode').onclick=()=>{S.keyMode=!S.keyMode;notify(S.keyMode?'Key Mode: les fletxes salten entre claus.':'Frame Mode: les fletxes avancen d’un fotograma.');render();};
 $('#play').onclick=togglePlay;$('#current-frame').onchange=e=>setFrame(+e.target.value);
+function editRangeField(e){const start=e.target.id==='range-start'?+e.target.value:S.scene.start,end=e.target.id==='range-end'?+e.target.value:S.scene.end;if(e.target.value!==''&&setTimelineRange(S.scene,start,end))refreshTimelineRange();}
+$('#range-start').addEventListener('input',editRangeField);
+$('#range-end').addEventListener('input',editRangeField);
+$('#range-start').onchange=e=>{if(+e.target.value!==S.scene.start){e.target.value=S.scene.start;notify('L’inici ha de ser anterior al final, entre 0 i 249.');}};
+$('#range-end').onchange=e=>{if(+e.target.value!==S.scene.end){e.target.value=S.scene.end;notify('El final ha de ser posterior a l’inici, entre 1 i 250.');}};
+$('#range-zoom-in').onclick=()=>{zoomTimelineRange(S.scene,.8,S.frame);refreshTimelineRange('Timeline ampliat');};
+$('#range-zoom-out').onclick=()=>{zoomTimelineRange(S.scene,1.25,S.frame);refreshTimelineRange('Timeline reduït');};
+$('#range-pan-left').onclick=()=>{panTimelineRange(S.scene,-Math.max(1,Math.round((S.scene.end-S.scene.start)*.1)));refreshTimelineRange('Timeline desplaçat');};
+$('#range-pan-right').onclick=()=>{panTimelineRange(S.scene,Math.max(1,Math.round((S.scene.end-S.scene.start)*.1)));refreshTimelineRange('Timeline desplaçat');};
+$('#range-fit').onclick=()=>{fitTimelineRange(S.scene);refreshTimelineRange('Claus enquadrades');};
 $('#add-key').onclick=()=>{const k=addKey(S.scene,S.active,S.frame,current(S.active));S.selected=[k.id];notify(`Add Keys · ${meta(S.active).name} · frame ${S.frame}`);render();};
 $('#delete-key').onclick=()=>{if(!S.selected.length){notify('Selecciona una clau per suprimir-la.');return;}deleteKeys(S.scene,S.selected);S.selected=[];notify('Claus seleccionades suprimides.');render();};
-$('#fit-keys').onclick=()=>{const k=track(S.scene,S.active);S.graphStart=Math.min(S.scene.start,k[0]?.frame??S.scene.start);S.graphEnd=Math.max(S.scene.end,k.at(-1)?.frame??S.scene.end);notify('Vista ajustada al rang de claus.');render();};
+$('#fit-keys').onclick=()=>{const selected=selectedKeys().filter(k=>track(S.scene,S.active).includes(k));const keys=selected.length?selected:track(S.scene,S.active);if(!keys.length){notify('Aquesta pista no té claus per enquadrar.');return;}const lo=Math.min(...keys.map(k=>k.frame)),hi=Math.max(...keys.map(k=>k.frame)),pad=Math.max(3,Math.ceil((hi-lo)*.1));S.graphStart=Math.max(0,lo-pad);S.graphEnd=Math.min(250,Math.max(S.graphStart+6,hi+pad));notify(selected.length?'Vista ajustada a les claus seleccionades.':'Vista ajustada a totes les claus de la pista.');render();};
 $('#track-list').addEventListener('click',e=>{const b=e.target.closest('[data-track-id]');if(!b)return;S.active=b.dataset.trackId;S.selected=[];render();});
 $('#key-properties').addEventListener('change',e=>{if(e.target.id==='copy-frame')return;const k=selectedKeys()[0];if(!k)return;if(e.target.id==='key-frame'){const ok=moveGraphKey(S.scene,k.id,+e.target.value,k.value);notify(ok?'Fotograma actualitzat.':'Ja hi ha una clau en aquest fotograma.');}if(e.target.id==='key-value')moveGraphKey(S.scene,k.id,k.frame,+e.target.value);if(e.target.id==='key-interp')setTangent(S.scene,[k.id],e.target.value);render();});
 $('#key-properties').addEventListener('click',e=>{if(e.target.id!=='copy-key')return;const k=selectedKeys()[0];if(!k)return;const frame=+$('#copy-frame').value,t=trackForKey(S.scene,k.id);if(!Number.isInteger(frame)||!moveKeys(S.scene,[k.id],frame-k.frame,true)){notify('Tria un fotograma lliure diferent de l’original.');return;}S.selected=[track(S.scene,t).find(other=>other.frame===frame&&other.id!==k.id).id];notify(`Clau duplicada al fotograma ${frame}.`);render();});
