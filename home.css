@@ -61,3 +61,30 @@
 .primary-link:hover,.card-bottom a:hover{background:#ffa13b}
 @media(max-width:760px){.hero-visual{background-position:center;min-height:390px}}
 @media(max-width:520px){.hero-visual{min-height:330px}}
+
+/* Learning areas sit above the individual Blender topics. */
+.area-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin:36px 0 16px}
+.area-card{min-height:245px;display:flex;flex-direction:column;padding:25px;border:1px solid #41494a;border-radius:12px;background:linear-gradient(150deg,#242a2a,#1d2222);transition:border-color .18s,transform .18s,background .18s}
+.area-card:hover{border-color:#ff8614;transform:translateY(-3px)}
+.area-card:focus-visible{outline:2px solid #ff8614;outline-offset:3px}
+.area-card-featured{background:radial-gradient(circle at 88% 12%,#47792338,transparent 48%),linear-gradient(145deg,#2a211a,#1b2320)}
+.area-card-planned{background:radial-gradient(circle at 88% 12%,#85af4530,transparent 48%),linear-gradient(145deg,#20271f,#1c2221)}
+.area-card-top{display:flex;justify-content:space-between;gap:10px;color:#a7d766;font-size:.67rem;font-weight:750;letter-spacing:.14em}
+.area-card-top span{color:#ff8614;font-size:1.05rem;line-height:.6}
+.area-card-icon{display:flex;align-items:center;justify-content:center;width:43px;height:43px;margin-top:22px;border:1px solid #ff861480;border-radius:9px;color:#ff9a35;font-size:1.05rem;font-weight:800;letter-spacing:-.04em}
+.area-card h3{margin-top:17px;font-size:1.55rem;letter-spacing:-.035em}
+.area-card p{margin-top:8px;color:#b8c1c0;font-size:.86rem;line-height:1.5}
+.area-card-count{margin-top:auto;padding-top:22px;color:#a7d766;font-size:.71rem;font-weight:750;letter-spacing:.06em;text-transform:uppercase}
+.area-card-planned .area-card-count{color:#c4c8c5}
+.area-section{scroll-margin-top:28px;margin-top:84px;padding-top:26px;border-top:1px solid #3b4440}
+.area-heading{display:flex;align-items:end;justify-content:space-between;gap:32px;margin-bottom:22px}
+.area-heading h2{font-size:clamp(2.6rem,5vw,4.7rem);font-weight:650;letter-spacing:-.055em;margin-top:9px}
+.area-heading>p{max-width:58ch;color:#adb8b6;font-size:.9rem;line-height:1.6}
+.area-section .topic-nav{margin-top:8px}
+.area-section .topic:first-of-type{margin-top:18px}
+.coming-panel{display:flex;align-items:end;justify-content:space-between;gap:30px;padding:32px;border:1px dashed #728861;border-radius:12px;background:linear-gradient(110deg,#252d24,#202626)}
+.coming-panel h3{font-size:1.7rem;margin:11px 0 8px}
+.coming-panel p:last-child{max-width:67ch;color:#b8c3b6;font-size:.9rem;line-height:1.6}
+.concept-tags{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;max-width:290px;flex:none}
+.concept-tags span{border:1px solid #64795b;border-radius:999px;padding:7px 11px;color:#bbdca0;font-size:.76rem}
+@media(max-width:760px){.area-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}.area-heading,.coming-panel{display:block}.area-heading>p{margin-top:10px}.concept-tags{justify-content:flex-start;max-width:none;margin-top:25px}.area-section{margin-top:60px}}

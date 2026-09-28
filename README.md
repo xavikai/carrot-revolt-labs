@@ -2,6 +2,12 @@
 
 Interactive browser labs for learning by experimenting. This independent collection begins with 3D, game development, design, and stage topics and can grow into other subjects.
 
+## Learning areas
+
+The home page groups labs by their **main teaching interface**. Blender has its own track (14 labs) with basics, modeling and UVs, materials, light and camera, and rigging and animation. Unity-focused work sits under Game engines; C#, video grading, scenography and graphic design have separate areas. All 22 existing lab URLs remain unchanged.
+
+The 3ds Max area is a visible placeholder. Its future labs can reuse the learning goals and concepts from the Blender track, while presenting 3ds Max controls, terminology, examples and screenshots. New application-specific labs should have their own directories under `labs/`; do not copy a Blender interface into the 3ds Max track or link to a Blender lab as though it were a 3ds Max lesson.
+
 - Live collection: https://xavikai.github.io/carrot-revolt-labs/
 - Material Lab: https://xavikai.github.io/carrot-revolt-labs/labs/materials/
 - UV Unwrap Lab: https://xavikai.github.io/carrot-revolt-labs/labs/uv-unwrapping/
