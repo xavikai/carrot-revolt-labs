@@ -93,13 +93,10 @@ const scene3 = new THREE.Scene();
 const cam3 = new THREE.PerspectiveCamera(30, 1, 0.1, 200);
 scene3.add(new THREE.HemisphereLight(0xffffff, 0x505050, 1.9));
 const sun3 = new THREE.DirectionalLight(0xffffff, 1.6); sun3.position.set(-3, 8, 6); scene3.add(sun3);
-const floorTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); g.fillStyle = '#5a5a5a'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#525252'; g.fillRect(0, 0, 32, 32); g.fillRect(32, 32, 32, 32); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(20, 8); t.colorSpace = THREE.SRGBColorSpace; t.magFilter = THREE.NearestFilter; return t; })();
+const floorTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); g.fillStyle = '#393939'; g.fillRect(0, 0, 64, 64); g.strokeStyle = '#626262'; g.lineWidth = 1; for (const n of [0, 32, 63]) { g.beginPath(); g.moveTo(n + .5, 0); g.lineTo(n + .5, 64); g.moveTo(0, n + .5); g.lineTo(64, n + .5); g.stroke(); } const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(20, 8); t.colorSpace = THREE.SRGBColorSpace; t.magFilter = THREE.LinearFilter; return t; })();
 const floor3 = new THREE.Mesh(new THREE.PlaneGeometry(40, 16), new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.95 }));
 floor3.rotation.x = -Math.PI / 2; floor3.position.set(4.5, 0, -4); scene3.add(floor3);
-const backTex = (() => { const c = document.createElement('canvas'); c.width = 512; c.height = 128; const g = c.getContext('2d'); g.fillStyle = '#44474c'; g.fillRect(0, 0, 512, 128); g.strokeStyle = '#6d727a'; g.lineWidth = 1; for (let x = 0; x <= 512; x += 512 / 16) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 128); g.stroke(); } for (let y = 0; y <= 128; y += 128 / 4) { g.beginPath(); g.moveTo(0, y); g.lineTo(512, y); g.stroke(); } const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
-const back3 = new THREE.Mesh(new THREE.PlaneGeometry(16, 4), new THREE.MeshStandardMaterial({ map: backTex, roughness: 1 }));
-back3.position.set(4.5, 2, -1.2); scene3.add(back3); // a 1 m grid wall behind the ball, to read heights
-const ballTex = (() => { const c = document.createElement('canvas'); c.width = 256; c.height = 128; const g = c.getContext('2d'); const cols = ['#f0a020', '#fff3d6', '#e0582a', '#fff3d6']; for (let i = 0; i < 8; i++) { g.fillStyle = cols[i % 4]; g.fillRect(i * 32, 0, 32, 128); } const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const ballTex = (() => { const c = document.createElement('canvas'); c.width = 256; c.height = 128; const g = c.getContext('2d'); const cols = ['#e83c32', '#f5f2e9', '#1971d4', '#f6d123', '#f5f2e9', '#e83c32', '#f5f2e9', '#1971d4']; for (let i = 0; i < 8; i++) { g.fillStyle = cols[i]; g.fillRect(i * 32, 0, 32, 128); } const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
 const ball3 = new THREE.Mesh(new THREE.SphereGeometry(0.5, 40, 24), new THREE.MeshStandardMaterial({ map: ballTex, roughness: 0.45 }));
 const ballGroup = new THREE.Group(); ballGroup.add(ball3); scene3.add(ballGroup); // the group squashes (world vertical), the ball turns inside it
 const shadow3 = new THREE.Mesh(new THREE.CircleGeometry(0.5, 32), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false }));
@@ -163,13 +160,18 @@ refBall.computeLineDistances(); refGroup.add(refBall);
 const controls3 = new OrbitControls(cam3, viewCanvas);
 controls3.mouseButtons = { LEFT: null, MIDDLE: THREE.MOUSE.ROTATE, RIGHT: null };
 controls3.addEventListener('change', () => render3());
+let cameraFollowsBall = true, lastCameraFrame = null;
+controls3.addEventListener('start', () => { cameraFollowsBall = false; });
 viewHost.addEventListener('pointerdown', e => { controls3.mouseButtons.LEFT = e.button === 0 && e.altKey ? THREE.MOUSE.ROTATE : null; }, true);
 function frameView3(side = false) {
   const fit = Math.max(1, 1.55 / Math.max(0.6, cam3.aspect));
-  controls3.target.set(4.2, 2.0, 0);
-  cam3.position.set(side ? 4.5 : 2.6, side ? 1.7 : 2.6, (side ? 14 : 13.2) * fit);
+  const x = S.data?.channels ? valueAt('locX', S.frame) : 0;
+  controls3.target.set(x, 2.6, 0);
+  cam3.position.set(x + (side ? 0 : -1.5), side ? 3.0 : 3.2, (side ? 10.2 : 9.7) * fit);
   cam3.up.set(0, 1, 0); cam3.lookAt(controls3.target); controls3.update(); render3();
+  cameraFollowsBall = true; lastCameraFrame = null;
 }
+$('#max-front-view').onclick = () => frameView3(true);
 let framed3 = false;
 function resize3() {
   const r = viewHost.getBoundingClientRect(); if (!r.width || !r.height) return;
@@ -182,6 +184,17 @@ const toRad = deg => -deg * Math.PI / 180;
 let lastPathKey = '';
 function drawView() {
   const p = pose(S.frame);
+  const currentFrame = Math.round(S.frame);
+  if (cameraFollowsBall && lastCameraFrame !== currentFrame) {
+    const dx = p.x - controls3.target.x;
+    controls3.target.x += dx; cam3.position.x += dx; controls3.update();
+    lastCameraFrame = currentFrame;
+  }
+  for (const node of document.querySelectorAll('.max-scene-node')) node.setAttribute('aria-pressed', String(node.dataset.bone === S.bone));
+  $('#max-selected-helper').textContent = S.bone;
+  $('#max-pos-x').textContent = `${p.x.toFixed(2)} m`;
+  $('#max-pos-z').textContent = `${(S.bone === 'SS_Top' ? p.top : S.bone === 'SS_Bottom' ? p.bottom : S.bone === 'Rotation' ? p.center : p.root).toFixed(2)} m`;
+  $('#max-scale').textContent = (p.previewScale * p.sx).toFixed(2);
   ballGroup.position.set(p.x, p.center, p.previewDepth); ballGroup.scale.set(p.sx * p.previewScale, p.sz * p.previewScale, p.sx * p.previewScale); ball3.rotation.set(0, 0, toRad(p.rot));
   const sh = Math.max(0.25, 1 - Math.max(0, p.bottom) / 6);
   shadow3.position.x = p.x; shadow3.scale.setScalar(p.sx * (0.6 + 0.4 * sh)); shadow3.material.opacity = 0.35 * sh;
@@ -252,11 +265,15 @@ function pickGizmoAxis(e) {
   return ray3.intersectObjects(gizmoPickParts, false)[0]?.object.userData.axis || null;
 }
 function selectBone(bone) {
+  if (S.vgrab) endVGrab(false);
+  if (S.vrot) endVRot(false);
+  if (S.vscale) endVScale(false);
   S.bone = bone;
   const ch = channelOf(bone);
   if (stage().channels.includes(ch)) { S.active = ch; S.hidden.delete(ch); }
   renderAll();
 }
+document.querySelectorAll('.max-scene-node').forEach(node => node.onclick = () => selectBone(node.dataset.bone));
 viewCanvas.addEventListener('pointerdown', e => {
   closeMenu();
   if (e.button === 0) {
