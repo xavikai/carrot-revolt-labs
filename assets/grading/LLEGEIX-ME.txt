@@ -1,0 +1,9 @@
+Color Grading Lab — fotos que calen (JPG, llicència lliure: teves, Pexels o Unsplash)
+
+1. entrevista-a.jpg  Entrevista, pla mitjà: persona asseguda en un interior, finestra
+                     clara a un costat i una zona fosca (prestatgeria, mobles) a l'altre.
+2. entrevista-b.jpg  La mateixa persona (o una sessió semblant) en primer pla.
+3. exterior.jpg      Un exterior amb cel blau i alguna cosa de color (edificis, arbres).
+
+Millor si són fotos "normals", ben exposades: el lab ja les converteix a un aspecte
+pla tipus log perquè els alumnes les graduin. Horitzontals, 1920 px d'ample o més.

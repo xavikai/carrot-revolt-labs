@@ -1,0 +1,11 @@
+Photo Lab — fotos que calen (JPG o PNG, llicència lliure: teves, Pexels o Unsplash)
+
+1. fons.jpg      Un carrer o un parc amb profunditat (a prop, mig i lluny), tot nítid,
+                 sense persones al centre. Horitzontal, 3000 px d'ample o més.
+2. persona.png   Una persona dreta de cos sencer, retallada amb fons transparent
+                 (Select Subject + Layer Mask a Photoshop). Llum semblant a la del fons.
+3. moviment.png  Un objecte que es mou de costat (ciclista, patinador, cotxe),
+                 retallat amb fons transparent, vist de perfil.
+
+Si tens la foto original de la persona i del ciclista sense retallar, també serveix:
+posa-la amb el nom persona-original.jpg / moviment-original.jpg.

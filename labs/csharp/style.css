@@ -271,3 +271,28 @@ dialog::backdrop{background:#0b0c0ecc}dialog h2{font-size:1.6rem;letter-spacing:
 .scope.heap-obj.hot{box-shadow:0 0 0 2px hsl(var(--h) 70% 60%)}
 .scope.heap-obj.garbage{opacity:.45;border-style:dashed}
 .arr .cell .vl.ref{min-width:0;padding:0 4px;font-size:.66rem}
+/* ─── The challenge above the editor and the scene (read first, then code) ─── */
+.workspace{grid-template-rows:auto minmax(560px,calc(100dvh - 150px));height:auto}
+.challenge-panel{grid-column:1;grid-row:1/3}
+.challenge{grid-column:2/4;grid-row:1;margin:0;border:0;border-bottom:2px solid #5b4a22;border-radius:0;padding:14px 20px 16px;background:linear-gradient(90deg,#ffbf000f,var(--panel) 55%);display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) auto;gap:6px 24px;align-items:start;max-height:42vh;overflow:auto;position:relative}
+.ch-main,.ch-side{min-width:0}
+.ch-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px}
+.ch-title .type-badge{margin:0}
+.challenge h2{margin:2px 0 8px;font-size:1.35rem}
+.challenge .brief{margin-top:10px}
+.ch-side .requirements{margin-top:2px}
+.ch-side .predict{margin-top:0}
+.challenge-actions{grid-column:3;grid-row:1;flex-direction:column;align-items:stretch;margin-top:0;min-width:150px}
+.ch-fold{background:#ffbf00;color:#17191b;border:0;border-radius:6px;font-weight:750;font-size:.76rem;padding:7px 12px;cursor:pointer;box-shadow:0 3px 10px #0006}
+.ch-fold:hover{background:#ffd255}
+.challenge.folded{max-height:none}
+.challenge.folded .brief,.challenge.folded .goal{display:none}
+/* Keep the long level list from stretching the challenge row above the editor. */
+@media(min-width:1181px){.challenge-panel{height:calc(100dvh - 86px);max-height:calc(100dvh - 86px);align-self:start}}
+@media(max-width:1180px){
+  .workspace{grid-template-rows:auto auto auto}
+  .challenge{grid-column:1/-1;grid-row:auto;grid-template-columns:1fr 1fr;max-height:none}
+  .challenge-actions{grid-column:1/-1;grid-row:auto;flex-direction:row}
+  .challenge-panel{grid-row:auto}
+}
+@media(max-width:760px){.challenge{grid-template-columns:1fr;margin:0}}

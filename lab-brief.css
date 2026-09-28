@@ -1,0 +1,24 @@
+/* The step explanation above the workspace (lab-brief.js) */
+.below.brief{position:relative;padding:0 clamp(16px,3vw,40px) 30px;display:block}
+.below.brief .step-card{padding:14px 18px 12px}
+.below.brief .step-card h3{margin-top:4px}
+.below.brief{padding-bottom:40px}
+.brief-toggle{position:absolute;right:calc(clamp(16px,3vw,40px) + 14px);bottom:6px;display:inline-flex;align-items:center;gap:6px;background:#ffbf00;border:0;border-radius:6px;color:#17191b;font-size:.78rem;font-weight:750;padding:6px 14px;cursor:pointer;z-index:2;box-shadow:0 3px 10px #0006}
+.brief-toggle span{font-size:.9rem}
+.brief-toggle:hover{background:#ffd255}
+.brief-toggle:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.below.brief.folded .brief-toggle{animation:brief-nudge 1.6s ease 2}
+@keyframes brief-nudge{50%{box-shadow:0 0 0 6px #ffbf0040}}
+/* Restart the lab (header) */
+.lab-reset{margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:none;border:1px solid #5a616b;border-radius:6px;color:#dfe5ec;font:600 .78rem/1 Inter,'Segoe UI',Arial,sans-serif;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.lab-reset span{font-size:1rem}
+.lab-reset:hover{border-color:#ffbf00;color:#fff}
+.lab-reset.armed{background:#b3261e;border-color:#b3261e;color:#fff}
+.site-header .lab-reset + .home-link{margin-left:14px}
+@media(max-width:640px){.lab-reset{padding:6px 8px;font-size:.7rem}}
+.below.brief.folded .step-card{grid-template-columns:1fr auto;align-items:center;padding:9px 18px}
+.below.brief.folded .step-card>div:first-child>p,.below.brief.folded .step-card>div:nth-child(2){display:none}
+.below.brief.folded .step-card h3{margin:2px 0 0;font-size:.95rem}
+.below.brief.folded .step-actions{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-end;min-width:0}
+@media(max-width:900px){.below.brief.folded .step-card{grid-template-columns:1fr}.below.brief.folded .step-actions{justify-content:flex-start}}
+.header-actions .lab-reset{margin-left:0}

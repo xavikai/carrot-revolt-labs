@@ -7,7 +7,9 @@
   <meta name="description" content="A hands-on C# lab for Carrot Revolt. Program a drone that builds voxel sculptures and watch variables, loops and conditions run step by step.">
   <title>Code Lab · C# · Carrot Revolt Labs</title>
   <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./style.css?v=10">
+  <link rel="stylesheet" href="./style.css?v=11">
+  <link rel="stylesheet" href="../../lab-brief.css?v=3">
+  <script type="module" src="../../lab-brief.js?v=3"></script>
   <link rel="stylesheet" href="../../brand.css?v=1">
 </head>
 <body>
@@ -18,27 +20,31 @@
   </header>
 
   <main class="workspace">
-    <!-- Challenges -->
-    <aside class="challenge-panel" aria-label="Levels and challenges">
-      <nav class="levels" id="levels" aria-label="Levels"></nav>
-      <article class="challenge" id="challenge">
+    <!-- The challenge: above the editor and the scene, read it first -->
+    <article class="challenge" id="challenge">
+      <div class="ch-main">
         <div class="challenge-top"><span class="eyebrow" id="challenge-level">LEVEL 1 · SEQUENCE</span><span class="challenge-count" id="challenge-count">1 / 15</span></div>
-        <span class="type-badge" id="challenge-type"></span>
-        <h2 id="challenge-title">First block</h2>
+        <div class="ch-title"><span class="type-badge" id="challenge-type"></span><h2 id="challenge-title">First block</h2></div>
         <p class="goal" id="challenge-goal"></p>
         <div class="brief" id="challenge-brief"></div>
+      </div>
+      <div class="ch-side">
         <div class="predict" id="predict" hidden>
           <p class="predict-q" id="predict-q"></p>
           <div class="predict-options" id="predict-options" role="radiogroup"></div>
           <p class="predict-note" id="predict-note">Choose an answer, then press Run or Step.</p>
         </div>
         <ul class="requirements" id="requirements" aria-label="Goals"></ul>
-        <div class="challenge-actions">
+        <p class="hint" id="hint" hidden></p>
+      </div>
+      <div class="challenge-actions">
           <button id="hint-button" class="quiet-btn">Show hint</button>
           <button id="reset-code" class="quiet-btn">Reset code ↺</button>
         </div>
-        <p class="hint" id="hint" hidden></p>
-      </article>
+    </article>
+    <!-- Challenges -->
+    <aside class="challenge-panel" aria-label="Levels and challenges">
+      <nav class="levels" id="levels" aria-label="Levels"></nav>
       <details class="toolbox" id="toolbox" open>
         <summary class="toolbox-head"><h3>Toolbox</h3><span class="small-label">CLICK TO INSERT</span></summary>
         <div id="toolbox-items"></div>

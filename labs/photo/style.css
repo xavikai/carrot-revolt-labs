@@ -519,3 +519,38 @@ footer span:nth-child(3){margin-left:auto}
 .bl-off{opacity:.4;pointer-events:none}
 @media(max-width:1280px){.photo-body{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}.photo-body .props{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));border-left:0;border-top:1px solid var(--b-border)}.guide.five{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:900px){.photo-body{grid-template-columns:1fr}.guide.five{grid-template-columns:1fr 1fr}.dslr-host{min-height:340px}.photo-host canvas.hist{width:128px;height:44px}.photo-host .reference canvas{width:120px}}
+/* ─── Stages 1–2: a photography program (tethered capture, Lightroom / Capture One style) ─── */
+#workspace.lr{--lr-bg:#1f1f1f;--lr-panel:#2e2e2e;--lr-head:#262626;--lr-line:#141414;--lr-text:#cfcfcf;--lr-dim:#8e8e8e;--lr-accent:#e8e8e8;background:var(--lr-line);font-family:'Segoe UI','Myriad Pro',Inter,Arial,sans-serif}
+#workspace.lr .photo-body{background:var(--lr-line)}
+#workspace.lr .editor{background:var(--lr-bg)}
+#workspace.lr .editor-header{background:var(--lr-head);border-bottom:1px solid var(--lr-line);min-height:32px}
+#workspace.lr .editor-type{color:#ddd;font-weight:600;letter-spacing:.2px}
+#workspace.lr .editor-type svg{color:#bdbdbd}
+#workspace.lr .live-toggle{color:var(--lr-dim)}
+#workspace.lr .dslr-host{background:radial-gradient(ellipse at 50% 45%,#3b3b3b,#1d1d1d 75%)}
+#workspace.lr .photo-host{background:#161616}
+#workspace.lr .finder{background:#101010;color:#e6e6e6;font-family:'Segoe UI',Inter,Arial,sans-serif;font-weight:600}
+#workspace.lr .shots{background:#191919;border-top:1px solid #0c0c0c;padding:8px 10px 10px;gap:6px}
+#workspace.lr .shots figure{background:#2a2a2a;padding:5px 5px 4px;border-radius:2px;border:1px solid #111}
+#workspace.lr .shots img{border-radius:0;border-color:#0c0c0c}
+#workspace.lr .shots figcaption{font-family:'Segoe UI',Inter,Arial,sans-serif;color:#a9a9a9;font-size:10px}
+#workspace.lr .props{background:var(--lr-panel);border-left:1px solid var(--lr-line)}
+#workspace.lr .panel{border-bottom:1px solid var(--lr-line);padding:0 12px 10px;background:var(--lr-panel)}
+#workspace.lr .panel h4{margin:0 -12px 9px;padding:7px 12px;background:var(--lr-head);border-bottom:1px solid #1a1a1a;color:#dcdcdc;font-size:12px;font-weight:600;letter-spacing:.2px;text-transform:none;justify-content:space-between;gap:10px}
+#workspace.lr .panel h4::before{content:"▾";color:#9a9a9a;font-size:10px;margin-right:-4px}
+#workspace.lr .panel h4 small{margin-left:auto;color:var(--lr-dim)}
+#workspace.lr .seg{gap:0;border:1px solid #111;border-radius:3px;overflow:hidden}
+#workspace.lr .seg button{background:#3a3a3a;border:0;border-right:1px solid #1d1d1d;border-radius:0;font-weight:600;color:#cfcfcf}
+#workspace.lr .seg button:last-child{border-right:0}
+#workspace.lr .seg button[aria-pressed="true"]{background:#d9d9d9;color:#1a1a1a}
+#workspace.lr .st-row b{font-family:'Segoe UI',Inter,Arial,sans-serif;font-size:15px;color:#f0f0f0;font-weight:600}
+#workspace.lr .st-row button{background:#3a3a3a;border:1px solid #151515;color:#ddd;border-radius:3px}
+#workspace.lr .st-row button:hover:not(:disabled){background:#4a4a4a}
+#workspace.lr .sl-row input[type=range],#workspace.lr .sl-row input[type=range]:disabled{-webkit-appearance:none;appearance:none;height:14px;background:transparent}
+#workspace.lr .sl-row input[type=range]::-webkit-slider-runnable-track{height:2px;background:#8a8a8a}
+#workspace.lr .sl-row input[type=range]::-moz-range-track{height:2px;background:#8a8a8a}
+#workspace.lr .sl-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid #e0e0e0;margin-top:-4px;background:none}
+#workspace.lr .sl-row input[type=range]::-moz-range-thumb{width:10px;height:10px;border:0;background:#e0e0e0;clip-path:polygon(50% 100%,0 0,100% 0)}
+#workspace.lr .sel-row select{background:#3a3a3a;border-color:#151515;border-radius:3px;color:#e6e6e6}
+#workspace.lr .sb-stat b{font-family:'Segoe UI',Inter,Arial,sans-serif}
+#workspace.lr .statusbar{background:#1a1a1a;border-top-color:#0c0c0c}

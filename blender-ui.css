@@ -59,3 +59,15 @@
 .bo-tg .bi{width:14px;height:14px}
 .bo-tg.off{color:#7a7a7a}
 .bo-tg[data-ol-tg]:hover{background:#ffffff14;cursor:pointer}
+
+/* blenderize(): editor-type labels become Blender's Editor Type button */
+.editor-type.bz{gap:4px;padding-right:0;position:relative}
+.editor-type.bz .bz-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.editor-type.bz .bz-editor .bi{color:#d9d9d9}
+.editor-type.bz-has-select .bz-editor{position:absolute;left:5px;top:50%;transform:translateY(-50%);padding:0;background:none;border:0;pointer-events:none;height:auto}
+.editor-type.bz-has-select select{padding-left:26px!important}
+.bz-hidden{display:none!important}
+.mode-pill.bz{background:#282828;border:1px solid #1b1b1b;padding:0 6px 0 5px;height:24px;font-size:12px;color:#e6e6e6;border-radius:4px}
+.mode-select.bz-mode-select{display:inline-flex;align-items:center;gap:2px;height:26px;padding:0 0 0 6px;background:#282828;border:1px solid #1b1b1b;border-radius:4px}
+.mode-select.bz-mode-select .bz-mode-ic .bi{color:#d9d9d9}
+.mode-select.bz-mode-select select{background:transparent!important;border:0!important;height:24px;padding:0 6px 0 3px!important;color:#e6e6e6;box-shadow:none!important}

@@ -467,10 +467,10 @@ function enterStep() {
   $('#photo-title').textContent = t(step().blender ? 'Render (Blender camera)' : 'Photo');
   renderReference();
   lastOk = stepDone(S.step);
-  renderStageSwitch(); renderGuide(); renderStepCard(); renderProps(); renderFinder(); renderShots();
+  $('#workspace').classList.toggle('lr', !step().blender); renderStageSwitch(); renderGuide(); renderStepCard(); renderProps(); renderFinder(); renderShots();
   renderPhoto(40); updateDslr();
 }
-function renderAll() { renderStageSwitch(); renderGuide(); renderStepCard(); renderProps(); renderFinder(); renderShots(); renderDslr(); $('#photo-title').textContent = t(step().blender ? 'Render (Blender camera)' : 'Photo'); translateTitles(); }
+function renderAll() { $('#workspace').classList.toggle('lr', !step().blender); renderStageSwitch(); renderGuide(); renderStepCard(); renderProps(); renderFinder(); renderShots(); renderDslr(); $('#photo-title').textContent = t(step().blender ? 'Render (Blender camera)' : 'Photo'); translateTitles(); }
 function translateTitles() { document.querySelectorAll('[title]').forEach(el => { if (el.closest('.lang-switch')) return; el.dataset.titleEn ??= el.title; el.title = t(el.dataset.titleEn); }); }
 
 // ─── Keyboard ───────────────────────────────────────────────────────────────

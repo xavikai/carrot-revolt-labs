@@ -38,6 +38,26 @@ export const ICONS = {
   collection: svg(`<path d="M2.5 5.5h11v7.5h-11z" fill="none" stroke="${THEME.collection}" stroke-width="1.2" stroke-linejoin="round"/><path d="M3.8 3h8.4" stroke="${THEME.collection}" stroke-width="1.2" stroke-linecap="round"/>`),
   scene_collection: svg(`<path d="M2.5 5.5h11v7.5h-11z" fill="${THEME.collection}" fill-opacity=".18" stroke="${THEME.collection}" stroke-width="1.2" stroke-linejoin="round"/><path d="M3.8 3h8.4" stroke="${THEME.collection}" stroke-width="1.2" stroke-linecap="round"/>`),
   view_layer: svg(`<path d="M8 2.5 14 5.5 8 8.5 2 5.5z" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="m2 8.5 6 3 6-3M2 11.2l6 3 6-3" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round" opacity=".7"/>`),
+  posemode: svg(`<circle cx="8" cy="3.2" r="1.7" fill="currentColor"/><path d="M8 5.2v5M8 6.6 4.4 9M8 6.6l3.6 2.4M8 10.2l-2.4 4M8 10.2l2.4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>`),
+  weightpaint: svg(`<path d="M2.5 13.5c1.5 0 3-1 3-2.7 0-1-.8-1.8-1.8-1.8-1 0-1.7.8-1.7 1.8 0 1.2-.5 2.1 .5 2.7z" fill="#ff5a3c"/><path d="m5.8 9.3 7-7.2 1.4 1.4-7.2 7z" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>`),
+  timeline: svg(`<path d="M1.5 12.5h13" stroke="currentColor" stroke-width="1.1"/><path d="M4 3.5v9M8 5v7.5M12 3.5v9" stroke="currentColor" stroke-width="1" opacity=".6"/><path d="M8 2.5 10 4.5 8 6.5 6 4.5z" fill="currentColor"/>`),
+  dopesheet: svg(`<path d="M1.5 4.5h13M1.5 8h13M1.5 11.5h13" stroke="currentColor" stroke-width="1" opacity=".45"/><path d="M4 2.8 5.7 4.5 4 6.2 2.3 4.5zM10 6.3 11.7 8 10 9.7 8.3 8zM6.5 9.8l1.7 1.7-1.7 1.7-1.7-1.7z" fill="currentColor"/>`),
+  // Properties editor tabs
+  tab_tool: svg(`<path d="m3 13 6-6M9.2 3.2a2.6 2.6 0 0 0 3.6 3.6l-1.4 1.4-2.2-.6-.6-2.2z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>`),
+  tab_render: svg(`<rect x="2" y="4.5" width="12" height="8.5" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.1"/><circle cx="8" cy="8.7" r="2.6" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M5.2 4.5 6.2 2.8h3.6l1 1.7" fill="none" stroke="currentColor" stroke-width="1.1"/>`),
+  tab_output: svg(`<rect x="2" y="6" width="12" height="5.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M4.5 6V2.5h7V6M4.5 9.5h7v4h-7z" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>`),
+  tab_viewlayer: svg(`<path d="M3 3.5h10v7H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M5 12.5h8" stroke="currentColor" stroke-width="1.1"/><path d="M4.5 9 7 6.5l2 2 1.5-1.5 1.5 1.5" fill="none" stroke="currentColor" stroke-width="1"/>`),
+  tab_scene: svg(`<path d="M5.5 3 9 10.5H2z" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><circle cx="11" cy="10" r="2.8" fill="none" stroke="currentColor" stroke-width="1.1"/>`),
+  tab_world: svg(`<circle cx="8" cy="8" r="5.6" fill="none" stroke="${THEME.shading}" stroke-width="1.2"/><path d="M3 6.5c2 1 3 0 4 1.5s-.5 2.5 1 3.5M9 2.6c-.5 1.5.5 2.2 2 2.4s2 1.3 2.2 2.5" fill="none" stroke="${THEME.shading}" stroke-width="1.1"/>`),
+  tab_object: svg(`<rect x="3" y="3" width="10" height="10" rx="1.5" fill="${THEME.object}"/><rect x="5.5" y="5.5" width="5" height="5" rx=".8" fill="#2b2b2b" opacity=".35"/>`),
+  tab_modifier: svg(`<path d="M10.6 2.2a3 3 0 0 0-3.4 3.9L2.5 10.8a1.3 1.3 0 0 0 1.8 1.8l4.7-4.7a3 3 0 0 0 3.9-3.4L11 6.4 9.6 5 11.5 3z" fill="${THEME.modifier}"/>`),
+  tab_particles: svg(`<circle cx="4" cy="5" r="1.5" fill="${THEME.modifier}"/><circle cx="9" cy="3.5" r="1.3" fill="${THEME.modifier}"/><circle cx="12" cy="8" r="1.6" fill="${THEME.modifier}"/><circle cx="6" cy="10" r="1.7" fill="${THEME.modifier}"/><circle cx="10.5" cy="12.8" r="1.2" fill="${THEME.modifier}"/>`),
+  tab_physics: svg(`<circle cx="8" cy="8" r="2" fill="${THEME.modifier}"/><ellipse cx="8" cy="8" rx="6" ry="2.6" fill="none" stroke="${THEME.modifier}" stroke-width="1.1" transform="rotate(-30 8 8)"/>`),
+  tab_constraint: svg(`<path d="M6.5 9.5 9.5 6.5M7.2 4.8l1.3-1.3a2.3 2.3 0 0 1 3.3 3.3l-1.3 1.3M8.8 11.2l-1.3 1.3a2.3 2.3 0 0 1-3.3-3.3l1.3-1.3" fill="none" stroke="${THEME.modifier}" stroke-width="1.3" stroke-linecap="round"/>`),
+  tab_data: svg(tri(THEME.data)),
+  tab_material: svg(`<circle cx="8" cy="8" r="5.6" fill="${THEME.shading}"/><circle cx="6.2" cy="6" r="1.7" fill="#fff" opacity=".45"/>`),
+  tab_texture: svg(`<rect x="2.5" y="2.5" width="11" height="11" fill="none" stroke="${THEME.shading}" stroke-width="1.1"/><path d="M2.5 2.5h5.5v5.5H2.5zM8 8h5.5v5.5H8z" fill="${THEME.shading}"/>`),
+  bone_data: svg(`<path d="M4 12.5 11 3.5l1.5 1.5-7 9z" fill="none" stroke="${THEME.data}" stroke-width="1.2" stroke-linejoin="round"/><circle cx="12" cy="4" r="1.6" fill="${THEME.data}"/><circle cx="4.2" cy="12.2" r="1.6" fill="${THEME.data}"/>`),
   // Restriction toggles
   hide_off: svg(`<path d="M1.5 8s2.6-4.3 6.5-4.3S14.5 8 14.5 8 11.9 12.3 8 12.3 1.5 8 1.5 8z" fill="none" stroke="currentColor" stroke-width="1.1"/><circle cx="8" cy="8" r="2.2" fill="currentColor"/>`),
   hide_on: svg(`<path d="M1.5 7.2s2.6 3.6 6.5 3.6 6.5-3.6 6.5-3.6M3.6 9.6 2.5 11.3M8 10.8v2M12.4 9.6l1.1 1.7" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>`),
@@ -94,4 +114,47 @@ export function outlinerHTML(rows, { title = 'Outliner', showMode = false } = {}
     return `<li class="${cls}"${r.id ? ` data-ol-id="${esc(r.id)}" role="button" tabindex="0"` : ''}>${mode}<span class="bo-indent" style="width:${(r.depth || 0) * 14}px"></span><span class="bo-tri">${tri}</span><span class="bo-icon">${ICONS[r.icon] || ''}</span><span class="bo-name">${esc(r.name)}</span>${inline}${r.lock ? '<span class="bo-lock" title="Locked in this step">🔒</span>' : ''}<span class="bo-tgs">${tg}</span></li>`;
   }).join('');
   return `<div class="bo" data-no-i18n aria-label="${esc(title)}">${head}<ul class="bo-tree">${body}</ul></div>`;
+}
+
+// ─── Make an existing lab header look like Blender's ─────────────────────────
+// .editor-type (icon + name) becomes the Editor Type dropdown (the name stays for screen readers only, as Blender shows no name);
+// .editor-role tags are lab extras and are hidden; .mode-pill and .mode-select get their mode icon and a dropdown arrow.
+const EDITOR_ICON = [[/3D Viewport/, 'view3d'], [/UV Editor/, 'uv'], [/Image Editor/, 'image'], [/Shader Editor/, 'node'], [/Graph Editor/, 'graph'], [/Timeline/, 'timeline'], [/Dope Sheet/, 'dopesheet'], [/Outliner/, 'outliner'], [/Properties/, 'properties']];
+const MODE_ICON = [[/Edit Mode/, 'editmode'], [/Pose Mode/, 'posemode'], [/Weight Paint/, 'weightpaint'], [/Object Mode/, 'objectmode']];
+const pick = (list, text) => (list.find(([re]) => re.test(text)) || [])[1];
+export function blenderize(root = document) {
+  for (const el of root.querySelectorAll('[data-bicon]')) el.innerHTML = ICONS[el.dataset.bicon] || '';
+  for (const el of root.querySelectorAll('.editor-type:not(.bz)')) {
+    el.classList.add('bz');
+    el.querySelector(':scope > svg')?.remove();
+    const sel = el.querySelector('select');
+    const btn = document.createElement('span'); btn.className = 'bh-dd bh-editor bz-editor';
+    el.prepend(btn);
+    let wrap = null;
+    if (!sel) {
+      wrap = document.createElement('span'); wrap.className = 'bz-label';
+      for (const n of [...el.childNodes]) if (n !== btn && !(n.nodeType === 1 && n.matches('.obj-badge'))) wrap.append(n);
+      el.insertBefore(wrap, btn.nextSibling);
+    } else el.classList.add('bz-has-select');
+    const update = () => { const text = sel ? sel.options[sel.selectedIndex]?.text || '' : wrap.textContent; const ic = pick(EDITOR_ICON, text) || 'view3d'; btn.innerHTML = ICONS[ic] + (sel ? '' : ICONS.dropdown); btn.title = `Editor Type: ${text.trim()}`; };
+    update();
+    if (wrap) new MutationObserver(update).observe(wrap, { childList: true, characterData: true, subtree: true });
+    sel?.addEventListener('change', update);
+  }
+  for (const el of root.querySelectorAll('.editor-role')) el.classList.add('bz-hidden');
+  for (const el of root.querySelectorAll('.mode-pill:not(.bz)')) {
+    el.classList.add('bz', 'bh-dd');
+    const text = el.textContent.trim(), ic = pick(MODE_ICON, text) || 'objectmode';
+    el.innerHTML = `${ICONS[ic]}<span>${text}</span>${ICONS.dropdown}`;
+  }
+  for (const el of root.querySelectorAll('.mode-select:not(.bz)')) {
+    const s = el.querySelector('select'); if (!s) continue;
+    el.classList.add('bz', 'bz-mode-select');
+    const ic = document.createElement('span'); ic.className = 'bz-mode-ic';
+    el.prepend(ic);
+    let last = '';
+    const upd = () => { const text = s.options[s.selectedIndex]?.text || ''; if (text === last) return; last = text; ic.innerHTML = ICONS[pick(MODE_ICON, text) || 'objectmode']; };
+    upd(); s.addEventListener('change', upd);
+    setInterval(upd, 300); // Tab changes the value without a change event.
+  }
 }

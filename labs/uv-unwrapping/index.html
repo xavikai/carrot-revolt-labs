@@ -7,6 +7,8 @@
   <title>UV Unwrap Lab · Carrot Revolt Labs</title>
   <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./style.css?v=8">
+  <link rel="stylesheet" href="../../blender-ui.css?v=2">
+  <script type="module">import { blenderize } from '../../blender-ui.js?v=2'; blenderize();</script>
   <link rel="stylesheet" href="../../brand.css?v=1">
   <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
 </head>
@@ -34,11 +36,12 @@
 
     <section class="blender" id="workspace" aria-label="Blender-style UV Editing workspace">
       <div class="topbar" role="toolbar" aria-label="3D Viewport tools">
-        <span class="topbar-context" aria-hidden="true">3D VIEWPORT</span>
+        <span class="editor-type" data-no-i18n>3D Viewport</span>
         <label class="mode-select"><span class="sr-only">3D Viewport interaction mode</span><select id="mode-select" aria-label="3D Viewport interaction mode (Tab)"><option value="object">Object Mode</option><option value="edit" selected>Edit Mode</option></select></label>
-        <div class="select-modes" role="group" aria-label="Select mode">
-          <button type="button" class="icon-toggle" data-select-mode="edge" aria-pressed="true" title="Edge Select (2)"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="3.5" width="13" height="13" fill="none" stroke="currentColor" stroke-opacity=".45"/><path d="M3.5 16.5 16.5 3.5" stroke="currentColor" stroke-width="2.4"/></svg><span>Edge</span><kbd>2</kbd></button>
-          <button type="button" class="icon-toggle" data-select-mode="face" aria-pressed="false" title="Face Select (3)"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3.5" y="3.5" width="13" height="13" fill="currentColor" fill-opacity=".55" stroke="currentColor"/></svg><span>Face</span><kbd>3</kbd></button>
+        <div class="bh-group" role="group" aria-label="Select mode">
+          <button type="button" class="bh-ico" disabled title="Vertex (1) · not used in this lab" data-bicon="vertexsel"></button>
+          <button type="button" class="bh-ico" data-select-mode="edge" aria-pressed="true" title="Edge (2)" data-bicon="edgesel"></button>
+          <button type="button" class="bh-ico" data-select-mode="face" aria-pressed="false" title="Face (3)" data-bicon="facesel"></button>
         </div>
         <div class="menubar">
           <button type="button" class="menu-button" data-open-menu="select" aria-haspopup="menu" data-edit-only>Select</button>
