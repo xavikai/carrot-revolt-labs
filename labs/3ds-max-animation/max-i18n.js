@@ -75,6 +75,8 @@ const ui = {
   'Helpers are hidden: turn on Helpers in the viewport header.': { ca: 'Els helpers estan ocults: activa Helpers a la capçalera del visor.', es: 'Los helpers están ocultos: activa Helpers en la cabecera del visor.' },
   'Y depth is not editable in this side view. Use X or Z.': { ca: 'La profunditat Y no es pot editar en aquesta vista lateral. Fes servir X o Z.', es: 'La profundidad Y no se puede editar en esta vista lateral. Usa X o Z.' },
   'Y depth unavailable': { ca: 'Profunditat Y no disponible', es: 'Profundidad Y no disponible' },
+  'only Y': { ca: 'només Y', es: 'solo Y' },
+  'Depth preview applied. Click another frame to clear it; the rig has no Y Position track.': { ca: 'Previsualització de profunditat aplicada. Clica un altre fotograma per netejar-la; el rig no té pista Y Position.', es: 'Previsualización de profundidad aplicada. Pulsa otro fotograma para limpiarla; el rig no tiene pista Y Position.' },
   'Preview scale applied. Click another frame to clear it; scale keys are not part of this rig.': { ca: 'Escala de previsualització aplicada. Clica un altre fotograma per netejar-la; aquest rig no té claus d’escala.', es: 'Escala de previsualización aplicada. Pulsa otro fotograma para limpiarla; este rig no tiene claves de escala.' },
 };
 

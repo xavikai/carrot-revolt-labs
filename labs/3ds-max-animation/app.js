@@ -164,20 +164,20 @@ function resize3() {
   renderer3.setSize(r.width, r.height, false); cam3.aspect = r.width / r.height; cam3.updateProjectionMatrix();
   if (!framed3) { framed3 = true; frameView3(); } else render3();
 }
-const pose = f => { const over = Math.round(f) === Math.round(S.frame) && !S.playing ? S.override : {}; const sh = shape(S.data, f, over); return { x: over.locX ?? valueAt('locX', f), rot: over.rotY ?? valueAt('rotY', f), previewScale: over.previewScale ?? 1, ...sh }; };
+const pose = f => { const over = Math.round(f) === Math.round(S.frame) && !S.playing ? S.override : {}; const sh = shape(S.data, f, over); return { x: over.locX ?? valueAt('locX', f), rot: over.rotY ?? valueAt('rotY', f), previewScale: over.previewScale ?? 1, previewDepth: over.previewDepth ?? 0, ...sh }; };
 // Max's +Y points into the screen here, so a positive Y rotation turns the ball clockwise in the side view.
 const toRad = deg => -deg * Math.PI / 180;
 let lastPathKey = '';
 function drawView() {
   const p = pose(S.frame);
-  ballGroup.position.set(p.x, p.center, 0); ballGroup.scale.set(p.sx * p.previewScale, p.sz * p.previewScale, p.sx * p.previewScale); ball3.rotation.set(0, 0, toRad(p.rot));
+  ballGroup.position.set(p.x, p.center, p.previewDepth); ballGroup.scale.set(p.sx * p.previewScale, p.sz * p.previewScale, p.sx * p.previewScale); ball3.rotation.set(0, 0, toRad(p.rot));
   const sh = Math.max(0.25, 1 - Math.max(0, p.bottom) / 6);
   shadow3.position.x = p.x; shadow3.scale.setScalar(p.sx * (0.6 + 0.4 * sh)); shadow3.material.opacity = 0.35 * sh;
   const anim = stage().channels;
-  ctrls3.Root.position.set(p.x, Math.max(0, p.root) + 0.01, 0);
-  ctrls3.SS_Top.position.set(p.x, p.top + 0.08, 0.02); ctrls3.SS_Bottom.position.set(p.x, p.bottom - 0.08, 0.02);
-  ctrls3.Rotation.position.set(p.x, p.center, 0.03); ctrls3.Rotation.rotation.z = toRad(p.rot);
-  const helperPoint = S.bone === 'SS_Top' ? [p.x, p.top + .08, .08] : S.bone === 'SS_Bottom' ? [p.x, p.bottom - .08, .08] : S.bone === 'Rotation' ? [p.x, p.center, .08] : [p.x, Math.max(0, p.root) + .02, .08];
+  ctrls3.Root.position.set(p.x, Math.max(0, p.root) + 0.01, p.previewDepth);
+  ctrls3.SS_Top.position.set(p.x, p.top + 0.08, p.previewDepth + 0.02); ctrls3.SS_Bottom.position.set(p.x, p.bottom - 0.08, p.previewDepth + 0.02);
+  ctrls3.Rotation.position.set(p.x, p.center, p.previewDepth + 0.03); ctrls3.Rotation.rotation.z = toRad(p.rot);
+  const helperPoint = S.bone === 'SS_Top' ? [p.x, p.top + .08, p.previewDepth + .08] : S.bone === 'SS_Bottom' ? [p.x, p.bottom - .08, p.previewDepth + .08] : S.bone === 'Rotation' ? [p.x, p.center, p.previewDepth + .08] : [p.x, Math.max(0, p.root) + .02, p.previewDepth + .08];
   gizmo3.position.set(...helperPoint); gizmo3.scale.setScalar(S.tool === 'scale' ? 1.1 : 1); gizmo3.visible = S.toggles.ctrls;
   for (const [axis, part] of Object.entries(gizmoParts)) { const active = S.axis === axis; part.arrow.line.material.opacity = active ? 1 : .82; part.arrow.cone.material.opacity = active ? 1 : .82; part.label.material.opacity = active ? 1 : .9; }
   const on = S.toggles.ctrls;
@@ -273,7 +273,6 @@ function startVGrab() {
   const root = S.bone === 'Root', startX = S.override.locX ?? +valueAt('locX', S.frame).toFixed(3);
   const p = pose(S.frame), world = new THREE.Vector3(p.x, p.center, 0);
   const dist = cam3.position.distanceTo(world), wpp = 2 * dist * Math.tan(cam3.fov * Math.PI / 360) / viewCanvas.clientHeight;
-  if (S.axis === 'y') return msg('Y depth is not editable in this side view. Use X or Z.', true);
   S.vgrab = { ch, root, start, startX, x0: S.vpointer.x, y0: S.vpointer.y, wpp, num: '', axis: S.axis || (root ? null : 'z'), prev: { ...S.override } };
   viewHost.classList.add('modal'); updateVGrab();
 }
@@ -301,23 +300,25 @@ function endVScale(ok) {
 function updateVGrab() {
   const g = S.vgrab; if (!g) return;
   const typed = g.num !== '' && g.num !== '-' && !isNaN(+g.num) ? +g.num : null;
-  let dx = (S.vpointer.x - g.x0) * g.wpp, dz = -(S.vpointer.y - g.y0) * g.wpp;
-  if (typed != null) { if (g.axis === 'z') { dz = typed; dx = 0; } else { dx = typed; dz = 0; } }
+  let dx = (S.vpointer.x - g.x0) * g.wpp, dz = -(S.vpointer.y - g.y0) * g.wpp, dy = dz;
+  if (typed != null) { if (g.axis === 'z') { dz = typed; dx = 0; } else if (g.axis === 'y') { dy = typed; dx = 0; dz = 0; } else { dx = typed; dz = 0; } }
   if (g.axis === 'x') dz = 0;
   if (g.axis === 'y') { dx = 0; dz = 0; }
   if (g.axis === 'z' || !g.root) dx = 0;
-  const over = { ...g.prev, [g.ch]: Math.round((g.start + dz) * 1000) / 1000 };
-  if (g.root) over.locX = Math.round((g.startX + dx) * 1000) / 1000;
+  const over = { ...g.prev };
+  if (g.axis === 'y') over.previewDepth = Math.round(((g.prev.previewDepth ?? 0) + dy) * 1000) / 1000;
+  else { over[g.ch] = Math.round((g.start + dz) * 1000) / 1000; if (g.root) over.locX = Math.round((g.startX + dx) * 1000) / 1000; }
   S.override = over;
   $('#view-readout').hidden = false;
-  const lock = g.root ? (g.axis ? ` · ${t(g.axis === 'x' ? 'only X' : g.axis === 'y' ? 'Y depth unavailable' : 'only Z')}` : ` · ${t('X / Z lock an axis')}`) : ` · ${t('SS controls move only in Z')}`;
-  $('#view-readout').textContent = `${t('Move')}${g.root ? `  X ${dx >= 0 ? '+' : ''}${dx.toFixed(2)} m` : ''}  Z ${dz >= 0 ? '+' : ''}${dz.toFixed(2)} m${g.num ? `  [${g.num}]` : ''}${lock}`;
+  const lock = g.root ? (g.axis ? ` · ${t(g.axis === 'x' ? 'only X' : g.axis === 'y' ? 'only Y' : 'only Z')}` : ` · ${t('X / Z lock an axis')}`) : ` · ${t('SS controls move only in Z')}`;
+  $('#view-readout').textContent = g.axis === 'y' ? `${t('Move')}  Y ${dy >= 0 ? '+' : ''}${dy.toFixed(2)} m${g.num ? `  [${g.num}]` : ''}${lock}` : `${t('Move')}${g.root ? `  X ${dx >= 0 ? '+' : ''}${dx.toFixed(2)} m` : ''}  Z ${dz >= 0 ? '+' : ''}${dz.toFixed(2)} m${g.num ? `  [${g.num}]` : ''}${lock}`;
   drawView(); renderSidebar();
 }
 function endVGrab(ok) {
   const g = S.vgrab; if (!g) return;
   S.vgrab = null; viewHost.classList.remove('modal'); $('#view-readout').hidden = true;
   if (!ok) S.override = g.prev;
+  else if (g.axis === 'y') msg('Depth preview applied. Click another frame to clear it; the rig has no Y Position track.');
   else {
     for (const c of [g.ch, 'locX']) if (S.override[c] != null && Math.abs(S.override[c] - valueAt(c, S.frame)) < 1e-4) delete S.override[c];
     if (Object.keys(S.override).length) { if (S.keyMode === 'auto') keyControl(); else msg('Moved. Click Set Keys to save the pose before changing frame.'); }
@@ -426,7 +427,6 @@ function chooseAxis(axis) {
   S.axis = S.axis === axis ? null : axis;
   store.set('axis', S.axis);
   if (S.vgrab) {
-    if (S.axis === 'y') msg('Y depth is not editable in this side view. Use X or Z.', true);
     S.vgrab.axis = S.axis || (S.vgrab.root ? null : 'z');
     updateVGrab();
   }
