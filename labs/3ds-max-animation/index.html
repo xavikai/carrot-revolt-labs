@@ -31,10 +31,12 @@
       <div class="max-main-toolbar" aria-label="3ds Max animation toolbar">
         <span class="max-menu-brand">3DS MAX <small>ANIMATION</small></span>
         <span class="max-tool-sep" aria-hidden="true"></span>
-        <button type="button" id="move-tool" title="Select and Move (W)">✥ <span>Select and Move</span></button>
-        <button type="button" id="rotate-tool" title="Select and Rotate (E)">⟳ <span>Select and Rotate</span></button>
+        <button type="button" class="max-transform active" id="move-tool" data-tool="move" title="Select and Move (W)"><span class="max-tool-icon move-icon" aria-hidden="true">✥</span><span>Select and Move</span><kbd>W</kbd></button>
+        <button type="button" class="max-transform" id="rotate-tool" data-tool="rotate" title="Select and Rotate (E)"><span class="max-tool-icon rotate-icon" aria-hidden="true">⟳</span><span>Select and Rotate</span><kbd>E</kbd></button>
+        <button type="button" class="max-transform" id="scale-tool" data-tool="scale" title="Select and Uniform Scale (R)"><span class="max-tool-icon scale-icon" aria-hidden="true">▣</span><span>Select and Scale</span><kbd>R</kbd></button>
         <button type="button" id="reset-control" title="Reset the selected helper">↺ <span>Reset helper</span></button>
-        <span class="max-toolbar-note">Select a helper in the viewport, then move or rotate it.</span>
+        <span class="max-axis-label">Axis Constraints</span><span class="max-axis-constraints" role="group" aria-label="Axis constraints"><button type="button" data-axis="x" class="axis-x" aria-pressed="false">X</button><button type="button" data-axis="y" class="axis-y" aria-pressed="false">Y</button><button type="button" data-axis="z" class="axis-z" aria-pressed="false">Z</button></span>
+        <span class="max-toolbar-note">Select a helper in the viewport, then move, rotate or scale it.</span>
       </div>
       <div class="anim-editors">
         <section class="editor" aria-label="3ds Max Viewport">
@@ -47,7 +49,7 @@
               <label class="live-toggle" id="ref-toggle" title="A real ball simulated with physics"><input type="checkbox" id="t-ref"><span class="switch" aria-hidden="true"></span>Reference</label>
             </div>
           </div>
-          <div class="view-host" id="view-host"><canvas id="view" aria-label="The bouncing ball and its helper controls in 3D"></canvas><div class="view-overlay" id="view-overlay"></div><div class="op-readout" id="view-readout" hidden></div><span class="graph-hint">Click helper · W Move · E Rotate · Set Keys · MMB orbit</span></div>
+          <div class="view-host" id="view-host"><canvas id="view" aria-label="The bouncing ball and its helper controls in 3D"></canvas><div class="view-overlay" id="view-overlay"></div><div class="op-readout" id="view-readout" hidden></div><span class="graph-hint">Click helper · W Move · E Rotate · R Scale · Set Keys · MMB orbit</span></div>
         </section>
 
         <section class="editor" aria-label="Track View Curve Editor">
@@ -88,7 +90,7 @@
       </section>
 
       <div class="statusbar">
-        <span class="status-keys" id="status-keys"><span><kbd>W</kbd>Move helper</span><span><kbd>E</kbd>Rotate helper</span><span><kbd>Ctrl</kbd><kbd>A</kbd>Select keys</span><span><kbd>Del</kbd>Delete keys</span><span><kbd>Space</kbd>Play</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span class="status-keys" id="status-keys"><span><kbd>W</kbd>Move helper</span><span><kbd>E</kbd>Rotate helper</span><span><kbd>R</kbd>Scale helper</span><span><kbd>Ctrl</kbd><kbd>A</kbd>Select keys</span><span><kbd>Del</kbd>Delete keys</span><span><kbd>Space</kbd>Play</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
         <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
       </div>
       <div id="menu" class="context-menu" role="menu" hidden></div>

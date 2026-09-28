@@ -25,7 +25,7 @@ const S = {
   undo: [], redo: [], done: store.get('done', {}), toggles: { path: true, ghosts: false, ref: false, ctrls: store.get('ctrls', true) },
   view: null, drag: null, grab: null, hover: false,
   bone: 'Root', override: {}, vgrab: null, tlGrab: null, area: null, vpointer: null, bottom: store.get('bottom', 'timeline') === 'dopesheet' ? 'dopesheet' : 'timeline',
-  keyMode: store.get('keyMode', 'set'),
+  keyMode: store.get('keyMode', 'set'), tool: store.get('tool', 'move'), axis: store.get('axis', null),
 };
 const stage = () => STAGES[S.stageIndex];
 
@@ -129,6 +129,17 @@ function ctrlShape(bone) {
   scene3.add(m); return m;
 }
 const ctrls3 = { Root: ctrlShape('Root'), SS_Top: ctrlShape('SS_Top'), SS_Bottom: ctrlShape('SS_Bottom'), Rotation: ctrlShape('Rotation') };
+const gizmo3 = new THREE.Group();
+const gizmoParts = {};
+const gizmoLabel = (text, color) => {
+  const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+  x.font = '700 42px Segoe UI, Arial'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillStyle = color; x.strokeStyle = '#111b'; x.lineWidth = 6; x.strokeText(text, 32, 32); x.fillText(text, 32, 32);
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthTest: false })); s.scale.set(.34, .34, 1); s.renderOrder = 30; return s;
+};
+for (const [axis, dir, color] of [['x', new THREE.Vector3(1, 0, 0), 0xe34b4b], ['y', new THREE.Vector3(0, 1, 0), 0x55c878], ['z', new THREE.Vector3(0, 0, 1), 0x4f9cff]]) {
+    const a = new THREE.ArrowHelper(dir, new THREE.Vector3(), .9, color, .16, .09); a.renderOrder = 30; a.line.material.depthTest = false; a.cone.material.depthTest = false; a.line.material.transparent = true; a.cone.material.transparent = true; gizmo3.add(a); gizmo3.add(gizmoLabel(axis.toUpperCase(), '#' + color.toString(16).padStart(6, '0'))); gizmoParts[axis] = { arrow: a, label: gizmo3.children[gizmo3.children.length - 1] };
+}
+const gizmoOrigin = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false })); gizmoOrigin.renderOrder = 30; gizmo3.add(gizmoOrigin); gizmo3.visible = false; scene3.add(gizmo3);
 const pathDots = new THREE.Group(), ghosts = new THREE.Group(), refGroup = new THREE.Group(); scene3.add(pathDots, ghosts, refGroup);
 const dotGeo = new THREE.SphereGeometry(0.035, 8, 6), keyDotGeo = new THREE.SphereGeometry(0.06, 10, 8);
 const refBall = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.SphereGeometry(0.5, 16, 10)), new THREE.LineDashedMaterial({ color: 0xffbf00, dashSize: 0.06, gapSize: 0.04 }));
@@ -149,19 +160,22 @@ function resize3() {
   renderer3.setSize(r.width, r.height, false); cam3.aspect = r.width / r.height; cam3.updateProjectionMatrix();
   if (!framed3) { framed3 = true; frameView3(); } else render3();
 }
-const pose = f => { const over = Math.round(f) === Math.round(S.frame) && !S.playing ? S.override : {}; const sh = shape(S.data, f, over); return { x: over.locX ?? valueAt('locX', f), rot: over.rotY ?? valueAt('rotY', f), ...sh }; };
+const pose = f => { const over = Math.round(f) === Math.round(S.frame) && !S.playing ? S.override : {}; const sh = shape(S.data, f, over); return { x: over.locX ?? valueAt('locX', f), rot: over.rotY ?? valueAt('rotY', f), previewScale: over.previewScale ?? 1, ...sh }; };
 // Max's +Y points into the screen here, so a positive Y rotation turns the ball clockwise in the side view.
 const toRad = deg => -deg * Math.PI / 180;
 let lastPathKey = '';
 function drawView() {
   const p = pose(S.frame);
-  ballGroup.position.set(p.x, p.center, 0); ballGroup.scale.set(p.sx, p.sz, p.sx); ball3.rotation.set(0, 0, toRad(p.rot));
+  ballGroup.position.set(p.x, p.center, 0); ballGroup.scale.set(p.sx * p.previewScale, p.sz * p.previewScale, p.sx * p.previewScale); ball3.rotation.set(0, 0, toRad(p.rot));
   const sh = Math.max(0.25, 1 - Math.max(0, p.bottom) / 6);
   shadow3.position.x = p.x; shadow3.scale.setScalar(p.sx * (0.6 + 0.4 * sh)); shadow3.material.opacity = 0.35 * sh;
   const anim = stage().channels;
   ctrls3.Root.position.set(p.x, Math.max(0, p.root) + 0.01, 0);
   ctrls3.SS_Top.position.set(p.x, p.top + 0.08, 0.02); ctrls3.SS_Bottom.position.set(p.x, p.bottom - 0.08, 0.02);
   ctrls3.Rotation.position.set(p.x, p.center, 0.03); ctrls3.Rotation.rotation.z = toRad(p.rot);
+  const helperPoint = S.bone === 'SS_Top' ? [p.x, p.top + .08, .08] : S.bone === 'SS_Bottom' ? [p.x, p.bottom - .08, .08] : S.bone === 'Rotation' ? [p.x, p.center, .08] : [p.x, Math.max(0, p.root) + .02, .08];
+  gizmo3.position.set(...helperPoint); gizmo3.scale.setScalar(S.tool === 'scale' ? 1.1 : 1); gizmo3.visible = S.toggles.ctrls;
+  for (const [axis, part] of Object.entries(gizmoParts)) { const active = S.axis === axis; part.arrow.line.material.opacity = active ? 1 : .82; part.arrow.cone.material.opacity = active ? 1 : .82; part.label.material.opacity = active ? 1 : .9; }
   const on = S.toggles.ctrls;
   ctrls3.Root.visible = on; ctrls3.SS_Top.visible = on && anim.includes('topZ'); ctrls3.SS_Bottom.visible = on && anim.includes('botZ'); ctrls3.Rotation.visible = on && anim.includes('rotY');
   for (const [b, m] of Object.entries(ctrls3)) { const sel = S.bone === b; m.material.color.set(sel ? 0xffffff : CTRL_COLORS[b]); m.scale.setScalar(sel ? 1.15 : 1); }
@@ -222,6 +236,7 @@ viewCanvas.addEventListener('pointerdown', e => {
   closeMenu();
   if (S.vgrab) { e.preventDefault(); endVGrab(e.button === 0); return; }
   if (S.vrot) { e.preventDefault(); endVRot(e.button === 0); return; }
+  if (S.vscale) { e.preventDefault(); endVScale(e.button === 0); return; }
   if (e.button !== 0 || e.altKey) return;
   const b = pickCtrl(e);
   if (b) selectBone(b);
@@ -230,6 +245,7 @@ viewCanvas.addEventListener('pointermove', e => {
   const r = viewCanvas.getBoundingClientRect(); S.vpointer = { x: e.clientX - r.left, y: e.clientY - r.top };
   if (S.vgrab) updateVGrab();
   if (S.vrot) updateVRot(true);
+  if (S.vscale) updateVScale();
 });
 viewCanvas.addEventListener('contextmenu', e => { if (S.vgrab) { e.preventDefault(); endVGrab(false); } if (S.vrot) { e.preventDefault(); endVRot(false); } });
 // G in the 3D Viewport. The Root moves in X (forwards) and Z (up); the squash & stretch controls only in Z.
@@ -243,8 +259,30 @@ function startVGrab() {
   const root = S.bone === 'Root', startX = S.override.locX ?? +valueAt('locX', S.frame).toFixed(3);
   const p = pose(S.frame), world = new THREE.Vector3(p.x, p.center, 0);
   const dist = cam3.position.distanceTo(world), wpp = 2 * dist * Math.tan(cam3.fov * Math.PI / 360) / viewCanvas.clientHeight;
-  S.vgrab = { ch, root, start, startX, x0: S.vpointer.x, y0: S.vpointer.y, wpp, num: '', axis: root ? null : 'z', prev: { ...S.override } };
+  if (S.axis === 'y') return msg('Y depth is not editable in this side view. Use X or Z.', true);
+  S.vgrab = { ch, root, start, startX, x0: S.vpointer.x, y0: S.vpointer.y, wpp, num: '', axis: S.axis || (root ? null : 'z'), prev: { ...S.override } };
   viewHost.classList.add('modal'); updateVGrab();
+}
+function startVScale() {
+  if (!S.toggles.ctrls) return msg('Helpers are hidden: turn on Helpers in the viewport header.', true);
+  if (!S.vpointer) S.vpointer = { x: viewCanvas.clientWidth / 2, y: viewCanvas.clientHeight / 2 };
+  S.vscale = { start: S.override.previewScale ?? 1, x0: S.vpointer.x, y0: S.vpointer.y, num: '', prev: { ...S.override } };
+  viewHost.classList.add('modal'); updateVScale();
+}
+function updateVScale() {
+  const g = S.vscale; if (!g) return;
+  const typed = g.num !== '' && g.num !== '-' && !isNaN(+g.num) ? +g.num / 100 : null;
+  const drag = Math.max(.1, g.start + -(S.vpointer.y - g.y0) * .01);
+  const factor = Math.max(.1, typed ?? drag);
+  S.override = { ...g.prev, previewScale: +factor.toFixed(3) };
+  $('#view-readout').hidden = false; $('#view-readout').textContent = `${t('Scale')}  ${Math.round(factor * 100)}%${g.num ? `  [${g.num}%]` : ''} · ${t('uniform')}`;
+  drawView(); renderSidebar();
+}
+function endVScale(ok) {
+  const g = S.vscale; if (!g) return;
+  S.vscale = null; viewHost.classList.remove('modal'); $('#view-readout').hidden = true;
+  if (!ok) S.override = g.prev; else msg('Preview scale applied. Click another frame to clear it; scale keys are not part of this rig.');
+  drawView(); renderSidebar();
 }
 function updateVGrab() {
   const g = S.vgrab; if (!g) return;
@@ -312,7 +350,7 @@ function vrotKey(e) {
   else return;
   updateVRot();
 }
-function vgrabKey(e) {
+  function vgrabKey(e) {
   const g = S.vgrab, k = e.key;
   if (k === 'Escape') return endVGrab(false);
   if (k === 'Enter' || k === ' ') return endVGrab(true);
@@ -325,6 +363,15 @@ function vgrabKey(e) {
   else if (k === 'x' || k === 'X' || k === 'y' || k === 'Y') { msg(g.root ? 'The ball moves in X and Z in this lab (side view).' : 'SS controls move only in Z.'); return; }
   else return;
   updateVGrab();
+}
+function vscaleKey(e) {
+  const g = S.vscale, k = e.key;
+  if (k === 'Escape') return endVScale(false);
+  if (k === 'Enter' || k === ' ') return endVScale(true);
+  if (/^[0-9.]$/.test(k)) g.num += k;
+  else if (k === 'Backspace') g.num = g.num.slice(0, -1);
+  else return;
+  updateVScale();
 }
 // Set Keys: key the selected helper at the current frame, with its current pose.
 // The Z Position is always keyed; the Root's X Position only when it was moved,
@@ -347,6 +394,20 @@ function keyControl() {
   S.activeKey = last; S.active = ch;
   msg(tr('Inserted a keyframe on {c} at frame {n}.', { c: ch === 'rotY' ? 'Rotation · Y Rotation' : `${S.bone} · ${[...chans].sort().map(c => CHANNELS[c].axis).join(', ')} Position`, n: f })); changed(true);
 }
+function syncTransformTools() {
+  document.querySelectorAll('.max-transform').forEach(b => b.classList.toggle('active', b.dataset.tool === S.tool));
+  document.querySelectorAll('.max-axis-constraints button').forEach(b => b.setAttribute('aria-pressed', String(S.axis === b.dataset.axis)));
+  gizmo3.visible = S.toggles.ctrls;
+}
+function activateTool(tool) {
+  if (S.vgrab) endVGrab(false);
+  if (S.vrot) endVRot(false);
+  if (S.vscale) endVScale(false);
+  S.tool = tool; store.set('tool', tool); syncTransformTools(); drawView();
+  if (tool === 'move') startVGrab(); else if (tool === 'rotate') startVRot(); else startVScale();
+}
+document.querySelectorAll('.max-transform').forEach(b => b.onclick = () => activateTool(b.dataset.tool));
+document.querySelectorAll('.max-axis-constraints button').forEach(b => b.onclick = () => { S.axis = S.axis === b.dataset.axis ? null : b.dataset.axis; store.set('axis', S.axis); syncTransformTools(); drawView(); });
 function syncKeyMode() {
   $('#auto-key').setAttribute('aria-pressed', String(S.keyMode === 'auto'));
   $('#set-key-mode').setAttribute('aria-pressed', String(S.keyMode === 'set'));
@@ -362,10 +423,8 @@ function chooseKeyMode(mode) {
 $('#auto-key').onclick = () => chooseKeyMode('auto');
 $('#set-key-mode').onclick = () => chooseKeyMode('set');
 $('#set-keys').onclick = () => keyControl();
-$('#move-tool').onclick = () => startVGrab();
-$('#rotate-tool').onclick = () => startVRot();
 $('#reset-control').onclick = () => clearControl();
-syncKeyMode();
+syncKeyMode(); syncTransformTools();
 function clearControl() {
   const ch = channelOf(S.bone);
   if (!stage().channels.includes(ch)) return;
@@ -1042,6 +1101,7 @@ function checkProgress() {
 function syncToggles() {
   $('#t-path').checked = S.toggles.path; $('#t-ghosts').checked = S.toggles.ghosts; $('#t-ref').checked = S.toggles.ref; $('#t-ctrls').checked = S.toggles.ctrls;
   $('#ref-toggle').hidden = stage().id !== 'weight';
+  syncTransformTools();
 }
 function renderLive() {
   drawView(); drawGraph(); drawTimeline();
@@ -1081,8 +1141,9 @@ graphCanvas.addEventListener('pointermove', e => { const r = graphCanvas.getBoun
 for (const [el, area] of [[viewHost, 'view'], [$('#graph-host'), 'graph'], [$('#timeline-host'), 'timeline']]) el.addEventListener('pointerenter', () => { S.area = area; });
 document.addEventListener('keydown', e => {
   if (e.target.closest?.('input, select, textarea')) return;
-  if (S.vgrab) { e.preventDefault(); vgrabKey(e); return; }
-  if (S.vrot) { e.preventDefault(); vrotKey(e); return; }
+    if (S.vgrab) { e.preventDefault(); vgrabKey(e); return; }
+    if (S.vrot) { e.preventDefault(); vrotKey(e); return; }
+    if (S.vscale) { e.preventDefault(); vscaleKey(e); return; }
   if (S.tlGrab) { if (e.key === 'Escape') endTlGrab(false); else if (e.key === 'Enter') endTlGrab(true); e.preventDefault(); return; }
   if (!S.hover && !S.grab && e.key !== 'Escape') return;
   const k = e.key, ctrl = e.ctrlKey || e.metaKey, low = k.toLowerCase();
@@ -1102,8 +1163,9 @@ document.addEventListener('keydown', e => {
   else if (k === 'ArrowUp') jumpKey(1);
   else if (k === 'ArrowDown') jumpKey(-1);
   else if (S.area === 'view') {
-    if (low === 'w') startVGrab();
-    else if (low === 'e') startVRot();
+      if (low === 'w') activateTool('move');
+      else if (low === 'e') activateTool('rotate');
+      else if (low === 'r') activateTool('scale');
     else if (k === 'Home') frameView3();
     else if (e.code === 'Numpad1' || k === '1') frameView3(true);
     else if (k === 'Escape') closeMenu();
