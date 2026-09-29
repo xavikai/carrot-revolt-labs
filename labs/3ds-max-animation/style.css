@@ -532,3 +532,35 @@ footer span:nth-child(3){margin-left:auto}
 @media(max-width:1100px){.max-workspace .timeline{grid-template-columns:1fr}.max-workspace .timeline .editor-header{grid-column:1;grid-row:2}.max-workspace .timeline .max-key-controls{grid-column:1;grid-row:3}}
 @media(max-width:800px){.max-scene-explorer,.max-command-panel{display:none}.max-viewport{grid-template-columns:minmax(0,1fr)}.max-curve-editor{width:100%;margin:0;border-left:0;border-right:0}.max-curve-editor .graph-body{grid-template-columns:135px minmax(0,1fr)}.max-curve-editor .sidebar{display:none}}
 @media(max-width:600px){.max-menu-strip>span:not(.max-app-badge){padding:5px 6px}.max-reference-system,.max-axis-label{display:none}.max-viewport-core .view-toggles{width:100%;justify-content:flex-start}.max-viewport-core .editor-header{flex-wrap:wrap}.max-curve-editor .graph-body{grid-template-columns:1fr;grid-template-rows:110px 250px;height:auto}.max-curve-editor .channels{max-height:110px}.max-curve-editor .sidebar{display:block;max-height:180px}.max-curve-editor .editor-role{display:none}}
+
+/* ── 3ds Max 2027 windows (kit in ../_max) ── */
+.max-stage{margin:0 clamp(16px,3vw,40px);--mx-body-h:460px;--mx-tv-h:340px}
+.max-stage .mx-app{--mx-body-h:460px}
+.max-stage .mx-tv{--mx-tv-h:340px}
+.mx-vp-host canvas#view{display:block;width:100%;height:100%;touch-action:none}
+.mx-vp-host .view-overlay{position:absolute;left:52px;bottom:8px;top:auto;right:auto;background:none;border:0;padding:0;z-index:2;pointer-events:none;font:11.5px/1.45 'Segoe UI',Arial,sans-serif;color:#d8d8d8;text-shadow:0 1px 2px #000}
+.mx-vp-host .view-overlay div:first-child{display:none}
+.mx-vp-host .view-overlay .unkeyed{color:#ffd65a}
+.mx-vp-host .op-readout{position:absolute;left:50%;top:34px;transform:translateX(-50%);z-index:3;background:#1f1f1fe6;border:1px solid #555;padding:4px 10px;font:12px 'Segoe UI',Arial,sans-serif;color:#fff;pointer-events:none}
+.mx-tv-keys .lab-readout{position:absolute;right:10px;top:8px;z-index:2;width:230px;background:#262626e8;border:1px solid #555;border-left:3px solid #ffbf00;padding:8px 10px 6px;font:12px/1.4 'Segoe UI',Arial,sans-serif;color:#ddd;pointer-events:none}
+.lab-readout .lr-title{font-size:10px;letter-spacing:1.3px;color:#ffbf00;font-weight:700;margin-bottom:4px}
+.lab-readout h4{margin:6px 0 2px;font-size:11px;color:#fff}
+.lab-readout .sb-stat{display:flex;justify-content:space-between;gap:10px}
+.lab-readout .sb-stat b{font-weight:600;color:#fff;white-space:nowrap}
+.lab-readout .sb-stat.bad b{color:#ff8a80}
+.lab-readout .sb-sep{display:none}
+.mx-tv.dope .mx-tv-body{grid-template-columns:0 minmax(0,1fr)}
+.mx-tv.dope .mx-tv-controllers{overflow:hidden}
+.mx-tvnode.active{font-weight:700}
+.mx-tvnode.group.sel{color:#ffd65a}
+#mx-prompt.warning{color:#ffb4a8}
+#mx-prompt.flash{animation:mxp .6s ease-out}@keyframes mxp{from{color:#ffd65a}}
+.key-info{display:grid;gap:5px}
+.key-info .mx-prop{grid-template-columns:62px 1fr auto}
+.key-info .kinav{display:flex;gap:4px;align-items:center}
+.key-info .kinav b{flex:1;text-align:center;font-weight:400;font-size:11.5px}
+.tan-pick{display:flex;gap:3px;flex-wrap:wrap}
+.tan-pick .mx-tb{width:28px;height:28px}
+.tan-pick .mx-ico{width:20px;height:20px}
+.shortcuts dl div{grid-template-columns:150px 1fr}
+@media(max-width:760px){.max-stage{overflow-x:auto}.max-stage .mx-app,.max-stage .mx-tv{min-width:1100px}}

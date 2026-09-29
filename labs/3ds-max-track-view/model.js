@@ -132,23 +132,37 @@ export function moveGraphKey(scene, id, frame, value) {
   return true;
 }
 
+// 3ds Max tangent types: Auto, Spline (custom handles), Fast, Slow, Step, Linear and Smooth.
+// Also Break (handles move separately) and Unify (handles stay aligned).
 export function setTangent(scene, ids, type) {
   for (const id of ids) {
     const t = trackForKey(scene, id), keys = t && track(scene, t), k = findKey(scene, id);
     if (!k) continue;
-    const prev = keys[keys.indexOf(k) - 1];
-    if (prev) prev.interp = type === 'step' ? 'CONSTANT' : type === 'linear' ? 'LINEAR' : 'BEZIER';
+    const i = keys.indexOf(k), prev = keys[i - 1], next = keys[i + 1];
+    // The interpolation of a segment belongs to the key that starts it: the previous key's out tangent.
+    if (prev) prev.interp = type === 'step' ? 'CONSTANT' : type === 'linear' ? 'LINEAR' : prev.interp === 'CONSTANT' || prev.interp === 'LINEAR' ? 'BEZIER' : prev.interp;
     if (type === 'linear') { k.interp = 'LINEAR'; k.handle = 'VECTOR'; }
-    if (type === 'step') { k.interp = 'CONSTANT'; k.handle = 'VECTOR'; }
-    if (type === 'smooth') { k.interp = 'BEZIER'; k.handle = 'AUTO_CLAMPED'; }
-    if (type === 'flat') {
+    else if (type === 'step') { k.interp = 'CONSTANT'; k.handle = 'VECTOR'; }
+    else if (type === 'auto') { k.interp = 'BEZIER'; k.handle = 'AUTO_CLAMPED'; }
+    else if (type === 'smooth') { k.interp = 'BEZIER'; k.handle = 'AUTO'; }
+    else if (type === 'fast') { k.interp = 'BEZIER'; k.handle = 'VECTOR'; }
+    else if (type === 'spline' || type === 'unify') { k.interp = 'BEZIER'; k.handle = 'ALIGNED'; }
+    else if (type === 'break') { k.interp = 'BEZIER'; k.handle = 'FREE'; }
+    else if (type === 'slow' || type === 'flat') {
       k.interp = 'BEZIER'; k.handle = 'FREE';
-      k.left = { frame: k.frame - 5, value: k.value };
-      k.right = { frame: k.frame + 5, value: k.value };
+      const dl = prev ? (k.frame - prev.frame) / 3 : 5, dr = next ? (next.frame - k.frame) / 3 : 5;
+      k.left = { frame: k.frame - dl, value: k.value };
+      k.right = { frame: k.frame + dr, value: k.value };
     }
-    if (type === 'break') { k.interp = 'BEZIER'; k.handle = 'FREE'; }
   }
   for (const t of Object.values(scene.tracks)) recalcHandles(t);
+}
+
+// Max's name for the tangent type of a key.
+export function tangentName(k) {
+  if (k.interp === 'CONSTANT') return 'Step';
+  if (k.interp === 'LINEAR') return 'Linear';
+  return { AUTO_CLAMPED: 'Auto', AUTO: 'Smooth', VECTOR: 'Fast', ALIGNED: 'Spline', FREE: Math.abs(k.left.value - k.value) < 1e-6 && Math.abs(k.right.value - k.value) < 1e-6 ? 'Slow' : 'Custom' }[k.handle] || 'Auto';
 }
 
 export function dragTangent(scene, id, side, frame, value) {

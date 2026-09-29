@@ -37,6 +37,16 @@ Lab content and shared lab controls were last synchronized from CIFOG Lab throug
 - Edit Mode Lab: ./labs/editmode/
 - Tileable Texture Lab: ./labs/tileable/
 
+## 3ds Max UI kit (`labs/_max/`)
+
+Both 3ds Max labs share one kit that reproduces the 3ds Max 2027 default workspace:
+
+- `max-shell.js` builds the main window (title bar, menu bar, Main Toolbar, ribbon tabs, Scene Explorer, viewport with label menus and ViewCube, Command Panel with its six tabs, Time Slider, Track Bar, status bar with Transform Type-In, Auto / Set K., Filters…, playback and navigation controls) and the Track View window (Curve Editor and Dope Sheet toolbar in Max's order, Controller Window, Key Window, key stats).
+- It binds the **default 3ds Max hotkeys** (W/E/R/Q, N Auto Key, ' Set Key Mode, K Set Keys, / play, , . frames, Home/End, Space Selection Lock, Alt+W, H, F5–F8, Shift+H, Ctrl+Z/Y…) and lists them in *Customize › Hotkey Editor*. Keys that exist in Max but do nothing in a lab are greyed out there.
+- Auto Key and Set Key Mode turn the button, Time Slider, Track Bar and viewport border red, as in Max. Track Bar keys use Max's colours (red Position, green Rotation, blue Scale, white when selected); Ctrl+Alt+drag changes the time range.
+- `max-icons.js` holds the toolbar icons. They are drawn for this project (not Autodesk artwork) but keep the symbol, colour code and position of each real button.
+- `max-ui.css` holds the 2027 dark theme colours sampled from screenshots.
+
 ## Available labs
 
 **Material Lab** (`labs/materials/`) is a Blender-style Shader Editor in English with the full Principled BSDF (Subsurface, Specular, Transmission, Coat, Sheen, Emission, Thin Film), a live PBR preview and a Properties editor (Render Engine EEVEE/Cycles, Raytracing, the Compositor Glare node, Subdivision Surface with Adaptive Subdivision, the Displace modifier, Material Settings › Displacement and Raytraced Transmission). Seven stages: nodes and mapping; metal or not; maps and colour spaces (with alpha cut-outs); relief (Bump, the Displacement setting, enough vertices, the Displace modifier); light and glass (Emission, Glare in the Compositor, emission lighting, glass in Cycles and in EEVEE); layers of the Principled (car paint, velvet, skin and wax, soap bubble, brushed metal); and a Studio with presets. The preview can use the Lighting Lab's HDRIs.
