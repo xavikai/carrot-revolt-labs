@@ -5,7 +5,7 @@ import commonDictionary from '../labs/animation/i18n.js';
 import maxDictionary from '../labs/3ds-max-animation/max-i18n.js';
 
 test('Max bouncing-ball stages have working start states and solutions', () => {
-  assert.deepEqual(STAGES.map(stage => stage.id), ['timing', 'squash', 'weight', 'rotation', 'free']);
+  assert.deepEqual(STAGES.map(stage => stage.id), ['timing', 'weight', 'rotation', 'squash', 'free']);
   for (const stage of STAGES) stage.steps.forEach((step, i) => {
     const starting = startData(stage, i);
     assert.equal(Boolean(step.check(starting)), false, `${stage.id}/${step.id} starts unfinished`);

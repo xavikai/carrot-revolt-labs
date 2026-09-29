@@ -63,6 +63,7 @@ const minOver = (fn, a, b) => { let m = Infinity; for (let f = a; f <= b; f += 0
 const maxOver = (fn, a, b) => { let m = -Infinity; for (let f = a; f <= b; f += 0.25) m = Math.max(m, fn(f)); return m; };
 export const lowestPoint = d => minOver(f => shape(d, f).bottom, RANGE[0], RANGE[1]);
 
+const SQUASH = () => STAGES.find(s => s.id === 'squash');
 export const STAGES = [
   {
     id: 'timing', name: 'Timing', sub: 'Spacing and rhythm',
@@ -100,52 +101,6 @@ export const STAGES = [
         why: 'Timing gives weight and energy: long bounces feel slow and floaty, short bounces feel quick.',
         check: d => allBezier(locZ(d)) && allSharp(locZ(d)) && strictlyDecreasing(topValues(locZ(d))) && strictlyDecreasing(intervals(contacts(locZ(d)))) && intervals(contacts(locZ(d))).length >= 2,
         solve: d => { d.channels.locZ = curve([[1, 4], [13, 0], [21, 2.2], [29, 0], [35, 1.2], [41, 0], [44, 0.5], [47, 0]]); },
-      },
-    ],
-  },
-  {
-    id: 'squash', name: 'Squash & Stretch', sub: 'Flexible, not rigid',
-    channels: ['locX', 'locZ', 'topZ', 'botZ'],
-    start: () => ({
-      channels: {
-        locX: travel(),
-        locZ: curve([[1, 4], [13, 0], [21, 2.2], [29, 0], [35, 1.1], [40, 0], [44, 0.45], [47, 0]]),
-        topZ: curve([1, 13, 21, 29, 35, 40, 44, 47].map(f => [f, 0, AC])),
-        botZ: curve([1, 13, 21, 29, 35, 40, 44, 47].map(f => [f, 0, AC])),
-      },
-    }),
-    steps: [
-      {
-        id: 's1', title: 'Squash on contact',
-        text: 'A rubber ball squashes when it hits the ground. The rig has two squash & stretch controls: SS_Top moves the top of the ball, SS_Bottom the bottom. At the contacts the base must stay on the floor, so squash with SS_Top: lower it about 0.4 m at the first two contacts (frames 13 and 29).',
-        how: ['Move the Time Slider to frame 13, then click the green <b>SS_Top</b> helper above the ball (or press <kbd>H</kbd> and pick it by name).', 'Turn on <b>Set Key Mode</b> (<kbd>\'</kbd>), choose <b>Select and Move</b> (<kbd>W</kbd>) and drag the helper down about 0.4 m, or type -0.4 in the Z field of the Transform Type-In. Press <b>Set Keys</b> (<kbd>K</kbd>). With <b>Auto Key</b> (<kbd>N</kbd>) the key is made as you move.', 'Do the same at frame 29. The ball gets wider automatically because the rig keeps its volume.'],
-        why: 'Squash and stretch shows that an object is soft and makes impacts readable. The pivot at the base keeps the ball on the floor.',
-        check: d => { const c = contacts(locZ(d)); return c.length >= 2 && c.slice(0, 2).every(f => shape(d, f).sz <= 0.8 && shape(d, f).bottom >= -0.02); },
-        solve: d => { const k = d.channels.topZ; for (const f of contacts(locZ(d)).slice(0, 2)) { const x = k.find(q => q.frame === f); if (x) x.value = -0.4; else k.push(key(f, -0.4)); } recalcHandles(k); },
-      },
-      {
-        id: 's2', title: 'Stretch before and after',
-        text: 'Just before and after the contact the ball moves fast and stretches along its path. Before the contact, stretch it downwards with SS_Bottom: the ball reaches for the floor. After the contact, stretch it upwards with SS_Top: the ball leaves the floor. That is why the rig has two controls.',
-        how: ['At frame 11 select <b>SS_Bottom</b>, lower it about 0.25 m and press <b>Set Keys</b> (<kbd>K</kbd>). Then select SS_Top, type 0 in the Z field and press <kbd>K</kbd> again, so its squash begins only at contact.', 'At frame 15 select <b>SS_Top</b>, move it up about 0.2 m and press <kbd>K</kbd>. Auto Key (<kbd>N</kbd>) is another way to record each changed helper.', 'Play with <kbd>/</kbd>: the ball stretches into the floor and out of it.'],
-        why: 'Stretch is a kind of motion blur drawn into the shape: it makes fast movement easier to follow.',
-        check: d => { const c = contacts(locZ(d))[0]; if (c == null) return false; return minOver(f => chanAt(d, 'botZ', f), c - 3, c - 1) <= -0.1 && maxOver(f => shape(d, f).sz, c - 3, c - 1) >= 1.12 && maxOver(f => chanAt(d, 'topZ', f), c + 1, c + 3) >= 0.1 && maxOver(f => shape(d, f).sz, c + 1, c + 3) >= 1.1; },
-        solve: d => { const c = contacts(locZ(d))[0]; for (const [id, f, v] of [['botZ', c - 2, -0.25], ['topZ', c - 2, 0], ['topZ', c + 2, 0.2]]) { const k = d.channels[id], x = k.find(q => q.frame === f); if (x) x.value = v; else k.push(key(f, v)); recalcHandles(k); } },
-      },
-      {
-        id: 's3', title: 'Round at the top',
-        text: 'At the top of each bounce the ball is almost still, so it must be perfectly round again (both controls back at 0). Check the first two tops (frames 1 and 21) after adding your squash and stretch keys.',
-        how: ['Move to frame 21 and read Z Scale now in the Lab readout of Track View.', 'If it is not close to 1, select the SS_Top and SS_Bottom keys at that frame in Track View and type 0 as their value.'],
-        why: 'Keeping the shape stable when the ball is slow makes the squash at the contact stand out.',
-        check: d => { const t = tops(locZ(d)).slice(0, 2); return STAGES[1].steps[0].check(d) && STAGES[1].steps[1].check(d) && t.length === 2 && t.every(k => Math.abs(shape(d, k.frame).sz - 1) <= 0.07); },
-        solve: d => { STAGES[1].steps[0].solve(d); STAGES[1].steps[1].solve(d); },
-      },
-      {
-        id: 's4', title: 'Never through the floor',
-        text: 'SS_Bottom moves the bottom of the ball, so it can push it through the floor. Play the whole animation and check that the ball never goes below the floor: the Lab readout in Track View shows the lowest point. At contact frames SS_Bottom must be back at 0.',
-        how: ['Watch <b>Lowest point</b> in the Lab readout: it must not be below 0.', 'If it is, move the Time Slider to find the frame and move the SS_Bottom key up.', 'Keep the squash and stretch from the previous steps.'],
-        why: 'A ball that sinks into the floor breaks the illusion of contact at once. Riggers add the second control so animators can stretch without cheating the contact.',
-        check: d => STAGES[1].steps[2].check(d) && lowestPoint(d) >= -0.03,
-        solve: d => { STAGES[1].steps[2].solve(d); },
       },
     ],
   },
@@ -199,7 +154,7 @@ export const STAGES = [
     steps: [
       {
         id: 'r1', title: 'Roll the right way',
-        text: 'A ball that moves forwards also turns. The rig has a Rotation control (the orange circle arrow around the ball): it turns the ball but not its squash, which stays vertical. Right now the ball turns backwards and far too little. A ball rolls without sliding: it turns once for every π × diameter it travels (3.14 m for this 1 m ball). It travels 9 m, so at frame 72 it must have turned about 1031°, forwards.',
+        text: 'A ball that moves forwards also turns. The rig has a Rotation control (the orange circle arrow around the ball): it turns the ball; the squash & stretch helpers of the last stage will stay vertical. Right now the ball turns backwards and far too little. A ball rolls without sliding: it turns once for every π × diameter it travels (3.14 m for this 1 m ball). It travels 9 m, so at frame 72 it must have turned about 1031°, forwards.',
         how: ['Move to frame 72 and click the orange <b>Rotation</b> helper. Choose <b>Select and Rotate</b> (<kbd>E</kbd>) and type 1031 in the Y field of the Transform Type-In, with <b>Auto Key</b> on (<kbd>N</kbd>), or in Set Key Mode followed by <b>Set Keys</b> (<kbd>K</kbd>).', 'Or select the frame 72 Y Rotation key in the Key Window and type 1031 in the value field at the bottom of Track View (or in Key Info, in the Motion panel).', 'Forwards is clockwise in this side view: positive Y Rotation.'],
         why: 'A ball that slides without turning, or turns the wrong way, looks as if it were on ice. The rotation sells the contact with the floor.',
         start: () => ({ channels: { locX: travel(), locZ: curve(RUBBER), rotY: curve([[1, 0, AC], [72, -360, AC]], 'LINEAR') } }),
@@ -223,6 +178,52 @@ export const STAGES = [
         start: () => ({ channels: { locX: curve([[1, 0, AC], [60, 9, AC]]), locZ: curve(RUBBER), rotY: curve([[1, 0, AC], [72, ROLL, AC]], 'LINEAR') } }),
         check: d => rollReport(d).worst <= ROLL_TOL,
         solve: d => { const k = d.channels.rotY; k[k.length - 1].frame = 60; k.forEach(q => { q.interp = 'BEZIER'; q.handle = 'AUTO_CLAMPED'; }); recalcHandles(k); },
+      },
+    ],
+  },
+  {
+    id: 'squash', name: 'Squash & Stretch', sub: 'Flexible, not rigid',
+    channels: ['locX', 'locZ', 'topZ', 'botZ'],
+    start: () => ({
+      channels: {
+        locX: travel(),
+        locZ: curve([[1, 4], [13, 0], [21, 2.2], [29, 0], [35, 1.1], [40, 0], [44, 0.45], [47, 0]]),
+        topZ: curve([1, 13, 21, 29, 35, 40, 44, 47].map(f => [f, 0, AC])),
+        botZ: curve([1, 13, 21, 29, 35, 40, 44, 47].map(f => [f, 0, AC])),
+      },
+    }),
+    steps: [
+      {
+        id: 's1', title: 'Squash on contact',
+        text: 'A rubber ball squashes when it hits the ground. The rig has two squash & stretch controls: SS_Top moves the top of the ball, SS_Bottom the bottom. At the contacts the base must stay on the floor, so squash with SS_Top: lower it about 0.4 m at the first two contacts (frames 13 and 29).',
+        how: ['Move the Time Slider to frame 13, then click the green <b>SS_Top</b> helper above the ball (or press <kbd>H</kbd> and pick it by name).', 'Turn on <b>Set Key Mode</b> (<kbd>\'</kbd>), choose <b>Select and Move</b> (<kbd>W</kbd>) and drag the helper down about 0.4 m, or type -0.4 in the Z field of the Transform Type-In. Press <b>Set Keys</b> (<kbd>K</kbd>). With <b>Auto Key</b> (<kbd>N</kbd>) the key is made as you move.', 'Do the same at frame 29. The ball gets wider automatically because the rig keeps its volume.'],
+        why: 'Squash and stretch shows that an object is soft and makes impacts readable. The pivot at the base keeps the ball on the floor.',
+        check: d => { const c = contacts(locZ(d)); return c.length >= 2 && c.slice(0, 2).every(f => shape(d, f).sz <= 0.8 && shape(d, f).bottom >= -0.02); },
+        solve: d => { const k = d.channels.topZ; for (const f of contacts(locZ(d)).slice(0, 2)) { const x = k.find(q => q.frame === f); if (x) x.value = -0.4; else k.push(key(f, -0.4)); } recalcHandles(k); },
+      },
+      {
+        id: 's2', title: 'Stretch before and after',
+        text: 'Just before and after the contact the ball moves fast and stretches along its path. Before the contact, stretch it downwards with SS_Bottom: the ball reaches for the floor. After the contact, stretch it upwards with SS_Top: the ball leaves the floor. That is why the rig has two controls.',
+        how: ['At frame 11 select <b>SS_Bottom</b>, lower it about 0.25 m and press <b>Set Keys</b> (<kbd>K</kbd>). Then select SS_Top, type 0 in the Z field and press <kbd>K</kbd> again, so its squash begins only at contact.', 'At frame 15 select <b>SS_Top</b>, move it up about 0.2 m and press <kbd>K</kbd>. Auto Key (<kbd>N</kbd>) is another way to record each changed helper.', 'Play with <kbd>/</kbd>: the ball stretches into the floor and out of it.'],
+        why: 'Stretch is a kind of motion blur drawn into the shape: it makes fast movement easier to follow.',
+        check: d => { const c = contacts(locZ(d))[0]; if (c == null) return false; return minOver(f => chanAt(d, 'botZ', f), c - 3, c - 1) <= -0.1 && maxOver(f => shape(d, f).sz, c - 3, c - 1) >= 1.12 && maxOver(f => chanAt(d, 'topZ', f), c + 1, c + 3) >= 0.1 && maxOver(f => shape(d, f).sz, c + 1, c + 3) >= 1.1; },
+        solve: d => { const c = contacts(locZ(d))[0]; for (const [id, f, v] of [['botZ', c - 2, -0.25], ['topZ', c - 2, 0], ['topZ', c + 2, 0.2]]) { const k = d.channels[id], x = k.find(q => q.frame === f); if (x) x.value = v; else k.push(key(f, v)); recalcHandles(k); } },
+      },
+      {
+        id: 's3', title: 'Round at the top',
+        text: 'At the top of each bounce the ball is almost still, so it must be perfectly round again (both controls back at 0). Check the first two tops (frames 1 and 21) after adding your squash and stretch keys.',
+        how: ['Move to frame 21 and read Z Scale now in the Lab readout of Track View.', 'If it is not close to 1, select the SS_Top and SS_Bottom keys at that frame in Track View and type 0 as their value.'],
+        why: 'Keeping the shape stable when the ball is slow makes the squash at the contact stand out.',
+        check: d => { const t = tops(locZ(d)).slice(0, 2); return SQUASH().steps[0].check(d) && SQUASH().steps[1].check(d) && t.length === 2 && t.every(k => Math.abs(shape(d, k.frame).sz - 1) <= 0.07); },
+        solve: d => { SQUASH().steps[0].solve(d); SQUASH().steps[1].solve(d); },
+      },
+      {
+        id: 's4', title: 'Never through the floor',
+        text: 'SS_Bottom moves the bottom of the ball, so it can push it through the floor. Play the whole animation and check that the ball never goes below the floor: the Lab readout in Track View shows the lowest point. At contact frames SS_Bottom must be back at 0.',
+        how: ['Watch <b>Lowest point</b> in the Lab readout: it must not be below 0.', 'If it is, move the Time Slider to find the frame and move the SS_Bottom key up.', 'Keep the squash and stretch from the previous steps.'],
+        why: 'A ball that sinks into the floor breaks the illusion of contact at once. Riggers add the second control so animators can stretch without cheating the contact.',
+        check: d => SQUASH().steps[2].check(d) && lowestPoint(d) >= -0.03,
+        solve: d => { SQUASH().steps[2].solve(d); },
       },
     ],
   },

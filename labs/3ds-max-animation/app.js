@@ -1,11 +1,11 @@
 // 3ds Max Animation Lab: a bouncing ball in a 3D viewport and Track View.
 import * as THREE from 'three';
 import { recalcHandles, evaluate, moveKey, moveHandle, key, contacts, tops, intervals, hangTime, matchScore, INTERPOLATIONS, HANDLE_TYPES } from './fcurve.js';
-import { STAGES, CHANNELS, FPS, RANGE, REFERENCE, BALL, startData, cloneData, shape, channelOf, lowestPoint, firstBounce, rollReport, rollAngle } from './stages.js?v=7';
-import { chanValue } from './stages.js?v=7';
+import { STAGES, CHANNELS, FPS, RANGE, REFERENCE, BALL, startData, cloneData, shape, channelOf, lowestPoint, firstBounce, rollReport, rollAngle } from './stages.js?v=8';
+import { chanValue } from './stages.js?v=8';
 import { t, tr, onLangChange, addDictionary } from '../../i18n.js';
 import blenderConcepts from '../animation/i18n.js?v=5';
-import maxDictionary from './max-i18n.js?v=5';
+import maxDictionary from './max-i18n.js?v=6';
 import { createMaxShell, createTrackView, rollout, spinner } from '../_max/max-shell.js?v=2';
 import { createMaxViewport } from '../_max/max-viewport.js?v=1';
 import { createGizmo, toMax } from '../_max/max-gizmo.js?v=1';
