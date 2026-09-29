@@ -8,7 +8,7 @@
 //
 // Everything here uses 3ds Max's own English names, as students will see them in the program.
 import { icon } from './max-icons.js';
-import { OOR_TYPES, OOR_ICON, OOR_TEXT } from './out-of-range.js';
+import { OOR_TYPES, OOR_ICON, OOR_TEXT, OOR_RANGE } from './out-of-range.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -51,6 +51,7 @@ export const HOTKEYS = [
   { keys: 'f7', action: 'axisZ', label: 'Restrict to Z', group: 'Axis Constraints', show: 'F7' },
   { keys: 'f8', action: 'axisPlane', label: 'Restrict Plane Cycle', group: 'Axis Constraints', show: 'F8' },
   { keys: 'shift+h', action: 'hideHelpers', label: 'Hide Helpers Toggle', group: 'Viewport', show: 'Shift+H' },
+  { keys: 'shift+s', action: 'hideShapes', label: 'Hide Shapes Toggle', group: 'Viewport', show: 'Shift+S' },
   { keys: 's', action: 'snap', label: 'Snaps Toggle', group: 'Snaps' },
   { keys: 'shift+v', action: 'makePreview', label: 'Create Preview Animation', group: 'Animation', show: 'Shift+V' },
   { keys: 'mmb', action: 'pan', label: 'Pan View', group: 'Navigation (mouse)', show: 'Middle button' },
@@ -115,6 +116,19 @@ const createPage = () => `<div class="mx-cats">${[['catGeometry', 'Geometry'], [
   ${rollout('Name and Color', '<div class="mx-namecolor"><input type="text" class="mx-text" aria-label="Name" disabled><span class="mx-swatch" style="background:#e1117f"></span></div>')}`;
 const utilitiesPage = () => rollout('Utilities', `<div class="mx-grid2">${['More...', 'Sets', 'Perspective Match', 'Collapse', 'Color Clipboard', 'Measure', 'Motion Capture', 'Reset XForm', 'MAXScript', 'Flight Studio'].map(n => `<button type="button" class="mx-btn" disabled>${n}</button>`).join('')}</div>`);
 
+// ─── Scene Explorer: Display toolbar (left) ─────────────────────────────────
+// [id, icon, tooltip, on by default, does nothing in these labs]
+const SE_FILTERS = [
+  ['geometry', 'seGeometry', 'Display Geometry', true], ['shapes', 'seShape', 'Display Shapes', true], ['lights', 'seLight', 'Display Lights', true, true],
+  ['cameras', 'seCamera', 'Display Cameras', true, true], ['helpers', 'seHelper', 'Display Helpers', true], ['warps', 'seSpaceWarp', 'Display Space Warps', true, true],
+  ['groups', 'seGroup', 'Display Groups', true, true], ['xrefs', 'seXref', 'Display Object XRefs', true, true], ['bones', 'seBone', 'Display Bones', true],
+  ['containers', 'seContainer', 'Display Containers', true, true], ['frozen', 'seFrozen', 'Display Frozen Objects', true], ['hidden', 'seHidden', 'Display Hidden Objects', true],
+  '|', ['all', 'seAll', 'Display All'], ['none', 'seNone', 'Display None'], ['invert', 'seInvert', 'Invert Display'],
+  '|', ['filterSel', 'seFilter', 'Display Children', false, true],
+];
+const KIND_FILTER = { Geometry: 'geometry', Object: 'geometry', Shape: 'shapes', Helper: 'helpers', Bone: 'bones' };
+const KIND_ICON = { Geometry: 'seGeometry', Object: 'seGeometry', Shape: 'seShape', Helper: 'seHelper', Bone: 'seBone' };
+
 // ─── The main window ─────────────────────────────────────────────────────────
 export function createMaxShell(root, opts = {}) {
   const o = {
@@ -146,17 +160,20 @@ export function createMaxShell(root, opts = {}) {
   <div class="mx-ribbon" aria-hidden="true">${grip}<span class="on">Modeling</span><span>Freeform</span><span>Selection</span><span>Object Paint</span><span>Populate</span><span class="mx-ribbon-opt">&#9635; &#9662;</span></div>
   <div class="mx-body">
     <aside class="mx-explorer" aria-label="Scene Explorer"${o.explorer ? '' : ' hidden'}>
-      <div class="mx-pane-title">Scene Explorer - Layer Explorer</div>
-      <div class="mx-explorer-menu"><span>Select</span><span>Display</span><span>Edit</span><span>Customize</span></div>
-      <div class="mx-search"><input type="text" placeholder="Search All Objects..." aria-label="Search All Objects" disabled>${icon('search')}</div>
-      <div class="mx-cols"><span>Name (Sorted Ascending)</span><span>Frozen</span></div>
-      <div class="mx-tree" id="mx-tree" role="tree"></div>
+      <div class="mx-se-side" role="toolbar" aria-label="Scene Explorer display filters">${SE_FILTERS.map(f => f === '|' ? '<span class="mx-se-sep"></span>' : `<button type="button" class="mx-se-f${f[3] ? ' on' : ''}" data-se-filter="${f[0]}" title="${esc(f[2])}" aria-label="${esc(f[2])}" aria-pressed="${!!f[3]}"${f[4] ? ' data-inert="1"' : ''}>${icon(f[1])}</button>`).join('')}</div>
+      <div class="mx-se-main">
+        <div class="mx-explorer-menu"><span>Select</span><span>Display</span><span>Edit</span><span>Customize</span><span class="mx-se-more" aria-hidden="true">&raquo;</span></div>
+        <div class="mx-se-search"><input type="text" id="mx-se-find" placeholder="" aria-label="Find objects by name"><button type="button" class="mx-se-clear" id="mx-se-clear" title="Clear" aria-label="Clear the search">&#x2715;</button><button type="button" class="mx-se-filt on" title="Toggle Display Filters" aria-label="Toggle Display Filters" data-se-toggle>${icon('seFilterSel')}</button></div>
+        <div class="mx-cols"><span>Name (Sorted Ascending)<i class="mx-sort" aria-hidden="true"></i></span><span>Frozen</span></div>
+        <div class="mx-tree" id="mx-tree" role="tree"></div>
+        <div class="mx-se-foot"><span class="mx-drop" style="width:auto;flex:1">Default<i></i></span>${icon('seLayer')}${icon('seLayerTool')}</div>
+      </div>
     </aside>
     <div class="mx-viewport-area">
       <div class="mx-viewport" id="mx-viewport">
-        <div class="mx-vp-labels"><button type="button" data-vpmenu="general">[+]</button><button type="button" data-vpmenu="pov" id="mx-vp-pov">[Perspective]</button><button type="button" data-vpmenu="shading">[Standard]</button><button type="button" data-vpmenu="style" id="mx-vp-style">[Default Shading]</button></div>
+        <div class="mx-vp-labels"><button type="button" data-vpmenu="general" title="General Viewport menu">+</button><button type="button" data-vpmenu="pov" id="mx-vp-pov" title="Point-of-View menu">Perspective<i></i></button><button type="button" data-vpmenu="shading" title="Standard / High Quality menu">Standard<i></i></button><button type="button" data-vpmenu="style" id="mx-vp-style" title="Per-View Preference menu">Default Shading<i></i></button><button type="button" class="mx-vp-filter" data-vpmenu="filter" title="Viewport Display Filters">${icon('vpFilter')}</button></div>
         <div class="mx-vp-host" id="mx-vp-host"></div>
-        <button type="button" class="mx-viewcube" id="mx-viewcube" data-action="viewCube" title="ViewCube: click to go to the Home view" aria-label="ViewCube"><svg viewBox="0 0 80 64" aria-hidden="true"><ellipse cx="40" cy="48" rx="34" ry="11" fill="none" stroke="#8e8e8e" stroke-width="3"/><path d="M40 8 60 18v22L40 50 20 40V18z" fill="#bdbdbd"/><path d="M40 8l20 10-20 10-20-10z" fill="#e2e2e2"/><path d="M40 28v22L20 40V18z" fill="#a3a3a3"/><text x="27" y="42" font-family="Segoe UI,Arial" font-size="7" fill="#4b4b4b" transform="rotate(26 27 42)">FRONT</text><text x="33" y="20" font-family="Segoe UI,Arial" font-size="6.5" fill="#666" transform="skewX(-30) translate(12 0)">TOP</text></svg></button>
+        <div class="mx-viewcube" id="mx-viewcube-box"><canvas id="mx-viewcube" width="120" height="110" aria-label="ViewCube: click a face to look from that side"></canvas><button type="button" class="mx-vc-home" data-action="viewCube" title="Home" aria-label="ViewCube Home">${icon('home')}</button></div>
         <span class="mx-tripod" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M14 30 30 24" stroke="#e5534b" stroke-width="2"/><path d="M14 30 20 20" stroke="#62c45a" stroke-width="2"/><path d="M14 30V8" stroke="#5aa2e6" stroke-width="2"/><text x="31" y="26" fill="#e5534b" font-size="7">x</text><text x="21" y="18" fill="#62c45a" font-size="7">y</text><text x="11" y="7" fill="#5aa2e6" font-size="7">z</text></svg></span>
       </div>
       <button type="button" class="mx-layout-tab" title="Viewport Layout Tabs" aria-label="Viewport Layout Tabs" data-off="1">${icon('layouts')}</button>
@@ -208,17 +225,58 @@ export function createMaxShell(root, opts = {}) {
   };
 
   // ── Scene Explorer ──
-  function renderTree() {
-    $('#mx-tree').innerHTML = o.objects.map(ob => `<button type="button" role="treeitem" class="mx-node${ob.id === o.selected ? ' on' : ''}" data-object="${esc(ob.id)}" style="--d:${ob.depth || 0}" aria-selected="${ob.id === o.selected}"><span class="mx-eye" aria-hidden="true"></span><span class="mx-ob-ico" aria-hidden="true" style="--c:${ob.color || '#6fa8e8'}"></span>${esc(ob.name || ob.id)}</button>`).join('');
-    const ob = o.objects.find(x => x.id === o.selected);
-    $('#mx-selinfo').textContent = ob ? `1 ${ob.kind || 'Object'} Selected` : 'None Selected';
+  // Objects: { id, name, kind: 'Geometry' | 'Shape' | 'Helper' | 'Bone', parent, hidden, frozen }.
+  // Click a row to select, the eye to hide/unhide, the snowflake to freeze/unfreeze, the triangle to expand.
+  const seState = { closed: new Set(), shown: new Set(SE_FILTERS.filter(f => f !== '|' && f[3]).map(f => f[0])), find: '' };
+  const obById = id => o.objects.find(x => x.id === id);
+  const depthOf = ob => { let d = 0, p = ob.parent; while (p && d < 20) { d++; p = obById(p)?.parent; } return ob.depth ?? d; };
+  function seVisibleList() {
+    const out = [], kids = id => o.objects.filter(x => (x.parent || null) === id);
+    const listed = ob => seState.shown.has(KIND_FILTER[ob.kind] || 'geometry') && (!ob.hidden || seState.shown.has('hidden')) && (!ob.frozen || seState.shown.has('frozen'));
+    const walk = (id, d) => { for (const ob of kids(id)) { const ch = kids(ob.id); if (listed(ob) && (!seState.find || (ob.name || ob.id).toLowerCase().includes(seState.find))) out.push({ ob, d: seState.find ? 0 : d, parent: ch.length > 0 }); if (!seState.closed.has(ob.id) || seState.find) walk(ob.id, d + 1); } };
+    if (o.objects.some(x => x.parent !== undefined)) walk(null, 0);
+    else for (const ob of o.objects) if (listed(ob)) out.push({ ob, d: ob.depth || 0, parent: false });
+    return out;
   }
-  on($('#mx-tree'), 'click', e => { const b = e.target.closest('[data-object]'); if (b) api.select(b.dataset.object, true); });
+  function renderTree() {
+    $('#mx-tree').innerHTML = seVisibleList().map(({ ob, d, parent }) => `<div role="treeitem" class="mx-node${ob.id === o.selected ? ' on' : ''}${ob.hidden ? ' is-hidden' : ''}${ob.frozen ? ' is-frozen' : ''}" data-object="${esc(ob.id)}" style="--d:${d}" aria-selected="${ob.id === o.selected}"${parent ? ` aria-expanded="${!seState.closed.has(ob.id)}"` : ''}><span class="mx-tw${parent ? '' : ' leaf'}" data-se-open="${esc(ob.id)}" aria-hidden="true"></span><button type="button" class="mx-eye" data-se-hide="${esc(ob.id)}" title="${ob.hidden ? 'Unhide' : 'Hide'} ${esc(ob.name || ob.id)}" aria-label="${ob.hidden ? 'Unhide' : 'Hide'} ${esc(ob.name || ob.id)}" aria-pressed="${!ob.hidden}">${icon(ob.hidden ? 'rowEyeOff' : 'rowEye')}</button><span class="mx-kind" aria-hidden="true">${icon(KIND_ICON[ob.kind] || 'seGeometry')}</span><span class="mx-name">${esc(ob.name || ob.id)}</span><button type="button" class="mx-frz${ob.frozen ? ' on' : ''}" data-se-freeze="${esc(ob.id)}" title="${ob.frozen ? 'Unfreeze' : 'Freeze'} ${esc(ob.name || ob.id)}" aria-label="${ob.frozen ? 'Unfreeze' : 'Freeze'} ${esc(ob.name || ob.id)}" aria-pressed="${!!ob.frozen}">${icon('rowFrozen')}</button></div>`).join('');
+    const ob = obById(o.selected);
+    $('#mx-selinfo').textContent = ob ? `1 ${ob.kind === 'Geometry' ? 'Object' : ob.kind || 'Object'} Selected` : 'None Selected';
+  }
+  on($('#mx-tree'), 'click', e => {
+    const tw = e.target.closest('[data-se-open]'); if (tw && !tw.classList.contains('leaf')) { const id = tw.dataset.seOpen; seState.closed.has(id) ? seState.closed.delete(id) : seState.closed.add(id); renderTree(); return; }
+    const h = e.target.closest('[data-se-hide]'); if (h) { const ob = obById(h.dataset.seHide); api.setObjectState(ob.id, { hidden: !ob.hidden }, true); return; }
+    const fz = e.target.closest('[data-se-freeze]'); if (fz) { const ob = obById(fz.dataset.seFreeze); api.setObjectState(ob.id, { frozen: !ob.frozen }, true); return; }
+    const b = e.target.closest('[data-object]'); if (b) api.select(b.dataset.object, true);
+  });
+  on($('#mx-tree'), 'pointerdown', e => { if (!e.target.closest('[data-object]') && e.button === 0 && !state.lock) api.select(null, true); });
+  on($('.mx-se-side'), 'click', e => {
+    const b = e.target.closest('[data-se-filter]'); if (!b) return;
+    const k = b.dataset.seFilter;
+    if (k === 'all') SE_FILTERS.forEach(f => f !== '|' && !f[4] && seState.shown.add(f[0]));
+    else if (k === 'none') SE_FILTERS.forEach(f => f !== '|' && !f[4] && seState.shown.delete(f[0]));
+    else if (k === 'invert') SE_FILTERS.forEach(f => { if (f !== '|' && !f[4]) seState.shown.has(f[0]) ? seState.shown.delete(f[0]) : seState.shown.add(f[0]); });
+    else seState.shown.has(k) ? seState.shown.delete(k) : seState.shown.add(k);
+    root.querySelectorAll('[data-se-filter]').forEach(x => { const onF = seState.shown.has(x.dataset.seFilter); x.classList.toggle('on', onF); x.setAttribute('aria-pressed', onF); });
+    renderTree();
+  });
+  on($('#mx-se-find'), 'input', e => { seState.find = e.target.value.trim().toLowerCase(); renderTree(); });
+  on($('#mx-se-clear'), 'click', () => { $('#mx-se-find').value = ''; seState.find = ''; renderTree(); });
+  // Hide / freeze: the lab is told (it redraws the viewport); the explorer updates itself.
+  api.setObjectState = (id, patch, fromUser = false) => {
+    const ob = obById(id); if (!ob) return;
+    if (fromUser && A.objectState?.(id, patch) === false) return;
+    Object.assign(ob, patch);
+    if (fromUser && patch.hidden != null) api.prompt(`${ob.name || ob.id}: ${patch.hidden ? 'hidden' : 'unhidden'}`);
+    if (fromUser && patch.frozen != null) api.prompt(`${ob.name || ob.id}: ${patch.frozen ? 'frozen: it cannot be selected in the viewport or transformed' : 'unfrozen'}`);
+    renderTree();
+  };
+  api.objects = () => o.objects;
   api.select = (id, fromUser = false) => {
     if (state.lock && fromUser) { api.prompt('Selection Lock is on (Space): press Space to unlock it'); return; }
     const changed = o.selected !== id;
     o.selected = id; renderTree();
-    if (changed) { const ob = o.objects.find(x => x.id === id), nm = $('#mx-objname'), sw = nm?.parentElement.querySelector('.mx-swatch'); if (nm) nm.value = ob?.name || ''; if (sw) sw.style.background = ob?.color || '#555'; }
+    if (changed) { const ob = obById(id), nm = $('#mx-objname'), sw = nm?.parentElement.querySelector('.mx-swatch'); if (nm) nm.value = ob?.name || ''; if (sw) sw.style.background = ob?.color || '#555'; }
     if (fromUser) A.selectObject?.(id);
   };
   api.selectedId = () => o.selected;
@@ -414,10 +472,12 @@ export function createMaxShell(root, opts = {}) {
     const items = k === 'pov' ? [{ label: 'Perspective', keys: 'P', action: 'viewPerspective' }, { label: 'Front', keys: 'F', action: 'viewFront' }, { label: 'Top', keys: 'T', action: 'viewTop' }, { label: 'Left', keys: 'L', action: 'viewLeft' }]
       : k === 'general' ? [{ label: 'Maximize Viewport', keys: 'Alt+W', action: 'maximize' }, { label: 'Show Grids', keys: 'G', action: 'grid' }]
       : k === 'style' ? [{ label: 'Default Shading', action: 'shaded' }, { label: 'Wireframe Override', keys: 'F3', action: 'wireframe' }, { label: 'Edged Faces', keys: 'F4', action: 'edgedFaces' }]
+      : k === 'filter' ? [{ label: 'Geometry', checked: true, dim: true }, { label: 'Shapes', checked: true, dim: true }, { label: 'Helpers', keys: 'Shift+H', action: 'hideHelpers' }, { label: 'Shapes', keys: 'Shift+S', action: 'hideShapes' }]
       : [{ label: 'Standard', dim: true }, { label: 'High Quality', dim: true }];
     openPopup(r.left, r.bottom, items.map(it => ({ ...it, run: () => run(it.action), disabled: it.dim || !A[it.action] })));
   });
-  api.setViewLabel = (pov, style) => { if (pov) $('#mx-vp-pov').textContent = `[${pov}]`; if (style) $('#mx-vp-style').textContent = `[${style}]`; };
+  api.setViewLabel = (pov, style) => { if (pov) $('#mx-vp-pov').firstChild.textContent = pov; if (style) $('#mx-vp-style').firstChild.textContent = style; };
+  api.viewCubeCanvas = $('#mx-viewcube');
 
   // ── Toggles with Max's visual states ──
   function renderModes() {
@@ -446,9 +506,9 @@ export function createMaxShell(root, opts = {}) {
 
   // ── Dialogs ──
   const dlg = $('#mx-dialog');
-  function dialog(title, body, onOk, { ok = 'OK', cancel = 'Cancel', width = 360 } = {}) {
+  function dialog(title, body, onOk, { ok = 'OK', cancel = 'Cancel', width = 360, help = false } = {}) {
     dlg.style.width = `${width}px`;
-    dlg.innerHTML = `<form method="dialog"><div class="mx-dlg-title"><span class="mx-logo sm" aria-hidden="true">3</span>${esc(title)}<button type="button" class="mx-dlg-x" aria-label="Close" data-dlg-x>&#x2715;</button></div><div class="mx-dlg-body">${body}</div><div class="mx-dlg-actions">${ok ? `<button value="ok" class="mx-btn">${esc(ok)}</button>` : ''}${cancel ? `<button value="cancel" class="mx-btn">${esc(cancel)}</button>` : ''}</div></form>`;
+    dlg.innerHTML = `<form method="dialog"><div class="mx-dlg-title"><span class="mx-logo sm" aria-hidden="true">3</span>${esc(title)}${help ? '<button type="button" class="mx-dlg-help" aria-label="Help" title="Help" data-dlg-help>?</button>' : ''}<button type="button" class="mx-dlg-x${help ? ' nomargin' : ''}" aria-label="Close" data-dlg-x>&#x2715;</button></div><div class="mx-dlg-body">${body}</div><div class="mx-dlg-actions">${ok ? `<button value="ok" class="mx-btn">${esc(ok)}</button>` : ''}${cancel ? `<button value="cancel" class="mx-btn">${esc(cancel)}</button>` : ''}</div></form>`;
     wireSpinners(dlg);
     dlg.returnValue = '';
     dlg.onclose = () => { if (dlg.returnValue === 'ok') onOk?.(dlg); };
@@ -475,7 +535,7 @@ export function createMaxShell(root, opts = {}) {
         });
     },
     selectByName() {
-      dialog('Select From Scene', `<div class="mx-sfs"><div class="mx-sfs-head">Name</div>${o.objects.map(ob => `<label class="mx-sfs-row"><input type="radio" name="sfs" value="${esc(ob.id)}"${ob.id === o.selected ? ' checked' : ''}><span class="mx-ob-ico" style="--c:${ob.color || '#6fa8e8'}"></span>${esc(ob.name || ob.id)}</label>`).join('')}</div>`,
+      dialog('Select From Scene', `<div class="mx-sfs"><div class="mx-sfs-head">Name</div>${o.objects.map(ob => `<label class="mx-sfs-row"><input type="radio" name="sfs" value="${esc(ob.id)}"${ob.id === o.selected ? ' checked' : ''}><span class="mx-kind">${icon(KIND_ICON[ob.kind] || 'seGeometry')}</span>${esc(ob.name || ob.id)}${ob.hidden ? ' <i class="mx-dim">(hidden)</i>' : ''}${ob.frozen ? ' <i class="mx-dim">(frozen)</i>' : ''}</label>`).join('')}</div>`,
         d => { const v = d.querySelector('input[name=sfs]:checked')?.value; if (v) api.select(v, true); }, { width: 320 });
     },
     hotkeys() {
@@ -490,20 +550,27 @@ export function createMaxShell(root, opts = {}) {
   api.builtin = BUILTIN;
 
   // ── Parameter Curve Out-of-Range Types: pick a type for before the first key (in) and after the last (out) ──
-  api.outOfRangeDialog = ({ current = { in: 'constant', out: 'constant' }, tracks = '', allowed = OOR_TYPES.map(t => t.id), onChoose }) => {
-    const cur = { ...current };
-    const d = dialog('Param Curve Out-of-Range Types', `<p class="mx-note">${esc(tracks)}</p><div class="mx-oor">${OOR_TYPES.map(t => `<div class="mx-oor-type${allowed.includes(t.id) ? '' : ' off'}" data-type="${t.id}"><button type="button" class="mx-oor-both" data-both="${t.id}" title="${esc(t.label)}: in and out"${allowed.includes(t.id) ? '' : ' disabled'}><svg viewBox="0 0 90 40"><rect x="30" y="0" width="30" height="40" fill="#ffffff12"/><path d="${OOR_ICON[t.id]}" fill="none" stroke="#e8e8e8" stroke-width="1.8"/></svg></button><small>${esc(t.label)}</small><span class="mx-oor-io"><button type="button" data-side="in" data-t="${t.id}" title="In: before the first key"${allowed.includes(t.id) ? '' : ' disabled'}>&#x25C0;</button><button type="button" data-side="out" data-t="${t.id}" title="Out: after the last key"${allowed.includes(t.id) ? '' : ' disabled'}>&#x25B6;</button></span></div>`).join('')}</div><p class="mx-note" id="mx-oor-text"></p>`, null, { ok: 'OK', cancel: '', width: 460 });
+  // In Max you click a thumbnail (both sides) or the small in / out buttons under it, then OK.
+  // onOk({ in, out }) runs on OK; Cancel keeps the old types.
+  const OOR_IN = '<svg viewBox="0 0 20 16" aria-hidden="true"><path d="M17 3v4a3 3 0 0 1-3 3H5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 6 4 10l4 4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
+  const OOR_OUT = '<svg viewBox="0 0 20 16" aria-hidden="true"><path d="M3 3v4a3 3 0 0 0 3 3h9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m12 6 4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
+  api.outOfRangeDialog = ({ current = { in: 'constant', out: 'constant' }, tracks = '', allowed = OOR_TYPES.map(t => t.id), onOk, onChoose }) => {
+    const cur = { in: current.in || 'constant', out: current.out || 'constant' };
+    const thumb = id => `<svg viewBox="0 0 70 46"><path d="M${OOR_RANGE[0]} 4V42M${OOR_RANGE[1]} 4V42" stroke="#f2f2f2" stroke-width="1.4"/><path d="${OOR_ICON[id]}" fill="none" stroke="#3cc4b8" stroke-width="2"/></svg>`;
+    const d = dialog('Param Curve Out-of-Range Types', `<div class="mx-oor-wrap"><div class="mx-oor">${OOR_TYPES.map(t => { const ok = allowed.includes(t.id); return `<div class="mx-oor-type${ok ? '' : ' off'}" data-type="${t.id}"><span class="mx-oor-name">${esc(t.label)}</span><button type="button" class="mx-oor-both" data-both="${t.id}" title="${esc(t.label)}: before the first key and after the last key"${ok ? '' : ' disabled'}>${thumb(t.id)}</button><span class="mx-oor-io"><button type="button" data-side="in" data-t="${t.id}" title="${esc(t.label)} In: before the first key"${ok ? '' : ' disabled'}>${OOR_IN}</button><button type="button" data-side="out" data-t="${t.id}" title="${esc(t.label)} Out: after the last key"${ok ? '' : ' disabled'}>${OOR_OUT}</button></span></div>`; }).join('')}</div><div class="mx-oor-actions"><button type="button" class="mx-btn mx-oor-ok" data-oor="ok">OK</button><button type="button" class="mx-btn" data-oor="cancel">Cancel</button></div></div><p class="mx-note" id="mx-oor-text"></p>${tracks ? `<p class="mx-note">${esc(tracks)}</p>` : ''}`, null, { ok: '', cancel: '', width: 490, help: true });
     const paint = () => {
       d.querySelectorAll('[data-side]').forEach(b => b.classList.toggle('on', cur[b.dataset.side] === b.dataset.t));
       d.querySelectorAll('[data-both]').forEach(b => b.classList.toggle('on', cur.in === b.dataset.both && cur.out === b.dataset.both));
       d.querySelector('#mx-oor-text').textContent = cur.in === cur.out ? OOR_TEXT[cur.out] : `In: ${OOR_TYPES.find(t => t.id === cur.in).label} · Out: ${OOR_TYPES.find(t => t.id === cur.out).label}. ${OOR_TEXT[cur.out]}`;
     };
-    d.querySelector('.mx-oor').addEventListener('click', e => {
+    d.querySelector('.mx-oor-wrap').addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b || b.disabled) return;
-      if (b.dataset.both) { cur.in = cur.out = b.dataset.both; onChoose?.('both', b.dataset.both); }
-      else { cur[b.dataset.side] = b.dataset.t; onChoose?.(b.dataset.side, b.dataset.t); }
+      if (b.dataset.oor) { d.close(b.dataset.oor); if (b.dataset.oor === 'ok') { if (onOk) onOk({ ...cur }); else { onChoose?.('in', cur.in); onChoose?.('out', cur.out); } } return; }
+      if (b.dataset.both) { cur.in = cur.out = b.dataset.both; }
+      else { cur[b.dataset.side] = b.dataset.t; }
       paint();
     });
+    d.querySelector('.mx-oor-ok').focus();
     paint();
   };
 
@@ -599,6 +666,25 @@ export function createMaxShell(root, opts = {}) {
   new ResizeObserver(() => renderTime()).observe($('#mx-ts-track'));
   renderTree(); renderCmd(); renderModes(); renderTime();
   return api;
+}
+
+// ─── Track View: Controller Window tree ─────────────────────────────────────
+// rows: [{ d: depth, label, kind: 'world' | 'object' | 'node' | 'track', icon, color, sel, bold, attrs: { 'data-x': … } }]
+// Drawn as in Max: dotted guide lines, a coloured tick before X / Y / Z tracks, highlighted tracks in blue.
+export function trackTreeHTML(rows) {
+  const next = i => { for (let j = i + 1; j < rows.length; j++) { if (rows[j].d < rows[i].d) return false; if (rows[j].d === rows[i].d) return true; } return false; };
+  const ancestor = (i, d) => { for (let j = i - 1; j >= 0; j--) if (rows[j].d === d) return j; return -1; };
+  return rows.map((r, i) => {
+    let g = '';
+    for (let L = 0; L < r.d; L++) {
+      if (L === r.d - 1) g += `<span class="g ${next(i) ? 't' : 'l'}"></span>`;
+      else { const a = ancestor(i, L + 1); g += `<span class="g ${a >= 0 && next(a) ? 'v' : 'n'}"></span>`; }
+    }
+    const attrs = Object.entries(r.attrs || {}).map(([k, v]) => ` ${k}="${esc(v)}"`).join('');
+    const ico = r.kind === 'object' ? `<span class="mx-kind">${icon(r.icon || 'seGeometry')}</span>` : r.kind === 'world' ? '' : '';
+    const tick = r.color ? `<i class="tick" style="background:${r.color}"></i>` : '';
+    return `<button type="button" class="mx-tvnode k-${r.kind || 'node'}${r.sel ? ' on' : ''}${r.bold ? ' bold' : ''}"${attrs} aria-pressed="${!!r.sel}"><span class="gd">${g}</span><span class="lb">${ico}${tick}<span>${esc(r.label)}</span></span></button>`;
+  }).join('');
 }
 
 // ─── Track View window (Curve Editor / Dope Sheet) ───────────────────────────

@@ -1,15 +1,15 @@
 // 3ds Max Animation Lab: a bouncing ball in a 3D viewport and Track View.
 import * as THREE from 'three';
 import { recalcHandles, evaluate, moveKey, moveHandle, key, contacts, tops, intervals, hangTime, matchScore, INTERPOLATIONS, HANDLE_TYPES } from './fcurve.js';
-import { STAGES, CHANNELS, FPS, RANGE, REFERENCE, BALL, startData, cloneData, shape, channelOf, lowestPoint, firstBounce, rollReport, rollAngle } from './stages.js?v=8';
-import { chanValue } from './stages.js?v=8';
+import { STAGES, CHANNELS, FPS, RANGE, REFERENCE, BALL, startData, cloneData, shape, channelOf, lowestPoint, firstBounce, rollReport, rollAngle, trackAt } from './stages.js?v=9';
+import { OBJECTS, CONTROLS, isControl, tracksOf, trackId, rigPose, worldOf, worldToLocalMove, TRACK_ORDER, restValue } from './rig.js?v=1';
 import { t, tr, onLangChange, addDictionary } from '../../i18n.js';
 import blenderConcepts from '../animation/i18n.js?v=5';
-import maxDictionary from './max-i18n.js?v=6';
-import { createMaxShell, createTrackView, rollout, spinner } from '../_max/max-shell.js?v=2';
-import { createMaxViewport } from '../_max/max-viewport.js?v=1';
-import { createGizmo, toMax } from '../_max/max-gizmo.js?v=1';
-import { icon } from '../_max/max-icons.js?v=2';
+import maxDictionary from './max-i18n.js?v=7';
+import { createMaxShell, createTrackView, rollout, spinner, trackTreeHTML } from '../_max/max-shell.js?v=3';
+import { createMaxViewport } from '../_max/max-viewport.js?v=2';
+import { createGizmo, toMax } from '../_max/max-gizmo.js?v=2';
+import { icon } from '../_max/max-icons.js?v=3';
 addDictionary({ ...blenderConcepts, ...maxDictionary });
 
 const $ = s => document.querySelector(s);
@@ -25,11 +25,11 @@ const INTERP_LABELS = { CONSTANT: 'Step', LINEAR: 'Linear', BEZIER: 'Smooth curv
 
 const S = {
   stageIndex: store.get('stage', 0), step: 0, data: null, frame: 1, start: RANGE[0], end: RANGE[1],
-  playing: false, active: 'locZ', hidden: new Set(), activeKey: null,
+  playing: false, active: 'locZ', shown: new Set(['locZ']), activeKey: null, cat: new Set(store.get('cat', [])), xf: null, rotAxis: 'y',
   undo: [], redo: [], done: store.get('done', {}), toggles: { path: true, ghosts: false, ref: false, ctrls: store.get('ctrls', true) },
   view: null, drag: null, grab: null, hover: false,
-  bone: 'Root', override: {}, vgrab: null, tlGrab: null, area: null, vpointer: null, bottom: store.get('bottom', 'timeline') === 'dopesheet' ? 'dopesheet' : 'timeline',
-  keyMode: store.get('keyMode', 'off'), tool: store.get('tool', 'move'), axis: store.get('axis', null), tvTool: 'moveKeys', showTangents: true,
+  bone: 'ctrl_pilota', override: {}, vgrab: null, tlGrab: null, area: null, vpointer: null, bottom: store.get('bottom', 'timeline') === 'dopesheet' ? 'dopesheet' : 'timeline',
+  keyMode: store.get('keyMode', 'off'), tool: store.get('tool', 'move'), axis: store.get('axis', null) || 'xz', tvTool: 'moveKeys', showTangents: true,
 };
 const stage = () => STAGES[S.stageIndex];
 
@@ -38,7 +38,10 @@ function saveData() { store.set(`data-${stage().id}-${stage().independent ? S.st
 function loadData() {
   const saved = store.get(`data-${stage().id}-${stage().independent ? S.step : 0}`, null);
   S.data = saved && saved.channels ? saved : startData(stage(), S.step);
-  if (stage().free && !S.data.channels.scale) S.data.channels.scale = startData(stage()).channels.scale;
+  // older saves: a single Uniform Scale track (a factor) becomes the X/Y/Z Scale tracks (percent)
+  if (S.data.channels.scale) { const sc = S.data.channels.scale; delete S.data.channels.scale; for (const a of ['sx', 'sy', 'sz']) S.data.channels[`ctrl_pilota.${a}`] = sc.map(k => ({ ...k, value: k.value * 100, left: { ...k.left, value: k.left.value * 100 }, right: { ...k.right, value: k.right.value * 100 } })); }
+  if (stage().free) for (const id of stage().channels) if (!S.data.channels[id]) S.data.channels[id] = startData(stage()).channels[id];
+  S.data.static = S.data.static || {};
   for (const k of Object.values(S.data.channels)) { k.forEach(q => { q.select = false; }); recalcHandles(k); }
   S.activeKey = null; S.undo = []; S.redo = [];
 }
@@ -48,19 +51,21 @@ function undo() { if (!S.undo.length) return msg('Nothing to undo.'); S.redo.pus
 function redo() { if (!S.redo.length) return; S.undo.push(JSON.stringify(S.data)); restore(S.redo.pop()); msg('Redo'); }
 
 const editable = () => true;
-const visibleChannels = () => stage().channels.filter(id => !S.hidden.has(id) && S.data.channels[id]);
+// Tracks highlighted in the Controller Window: their curves are shown in the Key Window.
+const visibleChannels = () => TRACK_ORDER.filter(id => S.shown.has(id));
+const keyedVisible = () => visibleChannels().filter(id => S.data.channels[id]);
 function allKeys(filter = () => true) {
   const out = [];
-  for (const id of visibleChannels()) if (filter(id)) for (const k of S.data.channels[id]) out.push({ id, k });
+  for (const id of keyedVisible()) if (filter(id)) for (const k of S.data.channels[id]) out.push({ id, k });
   return out;
 }
 const selected = () => allKeys(editable).filter(e => e.k.select);
 // The Dope Sheet shows every controller, even ones hidden in the Curve Editor.
-function stageKeys() { const out = []; for (const id of stage().channels) if (S.data.channels[id]) for (const k of S.data.channels[id]) out.push({ id, k }); return out; }
+function stageKeys() { const out = []; for (const id of TRACK_ORDER) if (S.data.channels[id]) for (const k of S.data.channels[id]) out.push({ id, k }); return out; }
 const dopeSheet = () => S.bottom === 'dopesheet';
 const bottomSelected = () => dopeSheet() ? stageKeys().filter(e => e.k.select) : selected();
 function valueAt(id, f) {
-  return chanValue(S.data.channels[id], f, S.data.oor?.[id]);
+  return trackAt(S.data, id, f);
 }
 
 // ─── Status bar ──────────────────────────────────────────────────────────────
@@ -90,18 +95,19 @@ function niceStep(range, px, minPx) {
 
 
 // ─── The 3ds Max 2027 windows (shared kit in ../_max) ────────────────────────
-const HELPERS = [
-  { id: 'Root', name: 'Root', kind: 'Helper', color: '#4aa3ff', depth: 0 },
-  { id: 'Rotation', name: 'Rotation', kind: 'Helper', color: '#ffb347', depth: 1 },
-  { id: 'SS_Bottom', name: 'SS_Bottom', kind: 'Helper', color: '#e07ee0', depth: 1 },
-  { id: 'SS_Top', name: 'SS_Top', kind: 'Helper', color: '#7ee07e', depth: 1 },
-  { id: 'Ball_01', name: 'Ball_01', kind: 'Object', color: '#e1117f', depth: 2 },
-];
-const KEY_TYPE = id => id === 'rotY' ? 'rotation' : id === 'scale' ? 'scale' : 'position';
-const boneChannels = () => stage().channels.filter(id => S.data?.channels[id] && CHANNELS[id].bone === S.bone);
+// The scene of the class file: the same names, types, hierarchy, hidden bones and frozen mesh.
+const SCENE_DEFAULT = Object.fromEntries(OBJECTS.map(o => [o.id, { hidden: !!o.hidden, frozen: !!o.frozen }]));
+const scene = { ...SCENE_DEFAULT, ...store.get('scene', {}) };
+for (const id of Object.keys(scene)) if (!SCENE_DEFAULT[id]) delete scene[id];
+const objList = () => OBJECTS.map(o => ({ id: o.id, name: o.id, kind: o.kind, parent: o.parent, color: o.color, hidden: scene[o.id].hidden, frozen: scene[o.id].frozen }));
+const KEY_TYPE = id => (CHANNELS[id]?.group || 'Position').toLowerCase();
+const trackIdsOf = obj => isControl(obj) ? tracksOf(obj) : [];
+const animatedOf = obj => trackIdsOf(obj).filter(id => S.data?.channels[id]);
+const boneChannels = () => S.bone ? animatedOf(S.bone) : [];
+const objName = id => id || '(none)';
 const max = createMaxShell($('#max-app'), {
   file: 'Bouncing_Ball.max', fps: FPS, units: 'm', tab: 'motion',
-  objects: HELPERS, selected: 'Root', keyFilters: ['Position', 'Rotation', 'Scale'],
+  objects: objList(), selected: 'ctrl_pilota', keyFilters: ['Position', 'Rotation', 'Scale'],
   pages: { motion: '', display: '' },
   menus: {
     Views: () => [
@@ -109,7 +115,8 @@ const max = createMaxShell($('#max-app'), {
       { label: 'Zoom Extents Selected', keys: 'Z', run: () => frameView3() },
       { sep: true },
       { label: 'Show Ghosting', checked: S.toggles.ghosts, run: () => setToggle('ghosts', !S.toggles.ghosts) },
-      { label: 'Hide Helpers', keys: 'Shift+H', checked: !S.toggles.ctrls, run: () => setToggle('ctrls', !S.toggles.ctrls) },
+      { label: 'Hide Helpers', keys: 'Shift+H', checked: S.cat.has('helpers'), run: () => toggleCategory('helpers') },
+      { label: 'Hide Shapes', keys: 'Shift+S', checked: S.cat.has('shapes'), run: () => toggleCategory('shapes') },
     ],
   },
   actions: {
@@ -117,7 +124,7 @@ const max = createMaxShell($('#max-app'), {
     goStart: () => setFrame(S.start), goEnd: () => setFrame(S.end), play: () => togglePlay(),
     keyMode: () => { S.keyJump = !S.keyJump; max.setModes({ keyMode: S.keyJump, silent: true }); msg(S.keyJump ? 'Key Mode: , and . jump from key to key.' : 'Key Mode off: , and . move one frame.'); },
     autoKey: () => chooseKeyMode('auto'), setKeyMode: () => chooseKeyMode('set'),
-    setKey: () => { if (S.keyMode !== 'set') return msg('Set Keys works in Set Key Mode: press \' or the Set K. button.', true); S.override.scale != null && stage().free ? keyScale() : keyControl(); },
+    setKey: () => { if (S.keyMode !== 'set') return msg('Set Keys works in Set Key Mode: press \' or the Set K. button.', true); setKeys(); },
     onTimeConfig: ({ start, end }) => { S.start = Math.max(0, start); S.end = Math.min(250, end); setFrame(Math.max(S.start, Math.min(S.end, S.frame))); renderAll(); },
     range: (start, end) => { S.start = Math.max(0, start); S.end = Math.min(250, end); setFrame(Math.max(S.start, Math.min(S.end, S.frame))); },
     selectKeys: frames => { const set = new Set(frames); clearSelection(); for (const id of boneChannels()) for (const k of S.data.channels[id]) if (set.has(k.frame)) k.select = true; S.activeKey = null; renderAll(); },
@@ -126,22 +133,24 @@ const max = createMaxShell($('#max-app'), {
     delete: () => deleteKeys(selected().length ? selected() : bottomSelected()),
     undo, redo,
     select: () => activateTool('select'), move: () => activateTool('move'), rotate: () => activateTool('rotate'), scale: () => activateTool('scale'),
-    selectObject: id => selectBone(id === 'Ball_01' ? (msg('Ball_01 is linked to the helpers: animate the helpers instead. Root is selected.'), 'Root') : id),
+    selectObject: id => selectBone(id),
+    objectState: (id, patch) => { Object.assign(scene[id], patch); store.set('scene', scene); if (S.bone === id && (patch.hidden || patch.frozen)) endTransform(false); setTimeout(() => { drawView(); renderMotionTab(); }); return true; },
     selectAll: () => { if (max.overTrackView()) selectAll(true); else msg('Select All: in this lab, select one helper at a time.'); },
-    selectNone: () => { if (max.overTrackView()) selectAll(false); },
+    selectNone: () => { if (max.overTrackView()) selectAll(false); else selectBone(null); },
     typeIn: (axis, v) => typeIn(axis, v),
-    axisX: () => chooseAxis('x'), axisY: () => msg('Y is the depth of this side view: the rig does not move in Y.'), axisZ: () => chooseAxis('z'), axisPlane: () => chooseAxis(null),
-    hideHelpers: () => setToggle('ctrls', !S.toggles.ctrls),
+    axisX: () => chooseAxis('x'), axisY: () => chooseAxis('y'), axisZ: () => chooseAxis('z'), axisPlane: () => chooseAxis(({ xy: 'yz', yz: 'xz', xz: 'xy' })[S.axis] || 'xy'),
+    hideHelpers: () => toggleCategory('helpers'), hideShapes: () => toggleCategory('shapes'),
     curveEditor: () => setTrackView('curve'), dopeSheet: () => setTrackView('dope'),
     viewCube: () => { frameView3(); max.setViewLabel('Perspective'); }, zoomExtents: () => frameView3(), zoomExtentsAll: () => frameView3(),
-    viewPerspective: () => { frameView3(); max.setViewLabel('Perspective'); }, viewFront: () => { frameView3(true); max.setViewLabel('Front'); },
+    viewPerspective: () => { frameView3(); max.setViewLabel('Perspective'); }, viewFront: () => { lookFrom('front'); max.setViewLabel('Front'); },
+    viewLeft: () => { lookFrom('left'); max.setViewLabel('Left'); }, viewTop: () => { lookFrom('top'); max.setViewLabel('Top'); },
     orbit: () => msg('Orbit: Alt + middle mouse button drag in the viewport.'), pan: () => msg('Pan: middle mouse button drag in the viewport.'), zoom: () => msg('Zoom: mouse wheel in the viewport.'),
     // Tools › Preview - Grab Viewport (Shift+V): the kit renders each frame of the viewport without helpers.
     grabFrame: f => { const follow = cameraFollowsBall, playing = S.playing; cameraFollowsBall = false; S.previewing = S.playing = true; S.frame = Math.max(0, Math.min(250, f)); drawView(); S.previewing = false; S.playing = playing; cameraFollowsBall = follow; return renderer3.domElement; },
     commandPanel: (tab, page) => { if (tab === 'motion') renderMotion(page); if (tab === 'display') renderDisplay(page); },
     layout: () => requestAnimationFrame(() => { resize3(); renderLive(); }),
     key: (e, combo) => {
-      if ((S.vgrab || S.vrot || S.vscale) && combo === 'escape') { if (S.vgrab) endVGrab(false); if (S.vrot) endVRot(false); if (S.vscale) endVScale(false); return true; }
+      if (S.xf && combo === 'escape') { endTransform(false); msg('Transform cancelled.'); return true; }
       if (S.tlGrab && combo === 'escape') { endTlGrab(false); return true; }
       if (combo === ',' && S.keyJump) { jumpKey(-1); return true; }
       if (combo === '.' && S.keyJump) { jumpKey(1); return true; }
@@ -167,8 +176,8 @@ const tv = createTrackView($('#max-tv'), {
   },
 });
 max.registerWindow(tv.root);
-max.host.innerHTML = '<canvas id="view" aria-label="Perspective viewport: the bouncing ball and its helpers"></canvas><div class="view-overlay" id="view-overlay"></div><div class="op-readout" id="view-readout" hidden></div>';
-tv.host.innerHTML = '<canvas id="graph" aria-label="Key Window: animation curves"></canvas><canvas id="timeline" aria-label="Dope Sheet: keys by helper and track" hidden></canvas><aside class="lab-readout" id="sidebar" aria-label="Lab readout"></aside>';
+max.host.innerHTML = '<canvas id="view" aria-label="Perspective viewport: the bouncing ball and its controls"></canvas><div class="view-overlay" id="view-overlay"></div><div class="op-readout" id="view-readout" hidden></div>';
+tv.host.innerHTML = '<canvas id="graph" aria-label="Key Window: animation curves"></canvas><canvas id="timeline" aria-label="Dope Sheet: keys by object and track" hidden></canvas><aside class="lab-readout" id="sidebar" aria-label="Lab readout"></aside>';
 const TAN_TOOLS = { tanAuto: 'auto', tanSpline: 'spline', tanFast: 'fast', tanSlow: 'slow', tanStep: 'step', tanLinear: 'linear', tanSmooth: 'smooth', breakTangents: 'break', unifyTangents: 'unify' };
 function tvTool(id) {
   if (TAN_TOOLS[id]) return setMaxTangent(TAN_TOOLS[id]);
@@ -178,18 +187,19 @@ function tvTool(id) {
   if (id === 'frameH' || id === 'frameV') { const old = { ...S.view }; frameAll(selected().length > 0); if (id === 'frameH') { S.view.v0 = old.v0; S.view.v1 = old.v1; } else { S.view.f0 = old.f0; S.view.f1 = old.f1; } drawGraph(); return msg(id === 'frameH' ? 'Frame Horizontal Extents' : 'Frame Value Extents'); }
   if (id === 'pan') return msg('Pan: drag with the middle mouse button in the Key Window.');
   if (id === 'zoom') return msg('Zoom: roll the mouse wheel in the Key Window.');
-  if (id === 'filters') return msg('Filters: this scene shows the Transform tracks of the four helpers.');
+  if (id === 'filters') return msg('Filters: the Controller Window shows the Transform tracks of the selected object.');
 }
-// Parameter Curve Out-of-Range Types of the active track: what happens before the first key and after the last.
+// Parameter Curve Out-of-Range Types of the highlighted tracks: what happens before the first key and after the last.
 function outOfRangeDialog() {
-  const id = S.active; if (!S.data.channels[id]) return msg('Select a track in the Controller Window first.', true);
-  const cur = S.data.oor?.[id] || { in: 'constant', out: 'constant' }, name = `${CHANNELS[id].bone} · ${CHANNELS[id].name}`;
-  max.outOfRangeDialog({ current: cur, tracks: `${name}. Choose a thumbnail for both sides, or ◀ in (before the first key) and ▶ out (after the last key). Extend the Time Configuration to see the repeats.`,
-    onChoose: (side, type) => {
+  const ids = visibleChannels().filter(id => S.data.channels[id]);
+  if (!ids.length) return msg('Highlight an animated track in the Controller Window first.', true);
+  const id = ids.includes(S.active) ? S.active : ids[0];
+  const cur = S.data.oor?.[id] || { in: 'constant', out: 'constant' }, name = ids.length > 1 ? tr('{n} tracks', { n: ids.length }) : `${CHANNELS[id].bone} · ${CHANNELS[id].name}`;
+  max.outOfRangeDialog({ current: cur, tracks: `${name}. Click a thumbnail for both sides, or the small buttons for In (before the first key) and Out (after the last key). Extend the Time Configuration to see the repeats.`,
+    onOk: ({ in: tin, out }) => {
       pushUndo(); S.data.oor = S.data.oor || {};
-      const o = S.data.oor[id] = { in: 'constant', out: 'constant', ...S.data.oor[id] };
-      if (side !== 'out') o.in = type; if (side !== 'in') o.out = type;
-      msg(`Out-of-Range: ${name} ${side === 'both' ? '' : side + ' '}${type}`); changed(true);
+      for (const t of ids) S.data.oor[t] = { in: tin, out };
+      msg(`Out-of-Range: ${name} · In ${tin} · Out ${out}`); changed(true);
     } });
 }
 function setTrackView(mode) {
@@ -235,41 +245,98 @@ function trackBarMove(frames, delta, copy) {
     if (copy) { const c = { ...k, left: { ...k.left }, right: { ...k.right } }; moveKey(c, k.frame + delta, k.value); c.select = true; S.data.channels[id].push(c); }
     else { moveKey(k, k.frame + delta, k.value); k.select = true; }
   }
-  for (const id of new Set(moving.map(m => m.id))) recalcHandles(S.data.channels[id]);
+  for (const id of new Set(moving.map(m => m.id))) { S.data.channels[id].sort((a, b) => a.frame - b.frame); recalcHandles(S.data.channels[id]); }
   changed(true); return true;
 }
-// Transform Type-In: exact values for the selected helper at the current frame.
-function typeIn(axis, v) {
-  const ch = channelOf(S.bone);
-  if (S.tool === 'rotate') { if (S.bone !== 'Rotation' || axis !== 'y') return msg('Only the Rotation helper turns, around Y.', true); S.override = { ...S.override, rotY: v }; }
-  else if (S.tool === 'scale') { if (!stage().free) return msg('Scale keys are only part of the free animation stage.', true); S.override = { ...S.override, scale: Math.max(.1, v / 100) }; }
-  else {
-    if (axis === 'y') return msg('Y is the depth of this side view: the rig does not move in Y.', true);
-    if (axis === 'x' && S.bone !== 'Root') return msg('SS controls move only in Z.', true);
-    if (!stage().channels.includes(axis === 'x' ? 'locX' : ch)) return msg('This control is not animated in this stage.', true);
-    S.override = { ...S.override, [axis === 'x' ? 'locX' : ch]: v };
+
+// ─── Keys, as in 3ds Max ────────────────────────────────────────────────────
+// The value of a track now, with an unkeyed pose (Set Key Mode, or during a drag) on top.
+const cur = id => S.override[id] ?? valueAt(id, S.frame);
+// Put a key on a track. A track animated for the first time also gets a key at the start of the
+// time range with its old value, as Auto Key does in 3ds Max.
+function setKeyAt(id, f, v, changedTrack = true) {
+  let ks = S.data.channels[id];
+  if (!ks) {
+    const old = valueAt(id, f); ks = S.data.channels[id] = [];
+    if (f !== S.start) ks.push(key(S.start, +old.toFixed(3)));
+    delete S.data.static?.[id];
   }
-  if (S.keyMode === 'auto') { S.tool === 'scale' ? keyScale() : keyControl(); } else { msg(S.keyMode === 'set' ? 'Pose ready: press Set Keys (K) to key it.' : 'Changed without a key: turn on Auto Key (N) or Set Key Mode (\') to animate it.'); renderLive(); }
+  let k = ks.find(q => q.frame === f);
+  if (k) moveKey(k, f, v);
+  else { const prev = [...ks].reverse().find(q => q.frame < f); k = key(f, v, !changedTrack && prev ? prev.interp : 'BEZIER'); ks.push(k); ks.sort((a, b) => a.frame - b.frame); }
+  recalcHandles(ks); return k;
 }
-function setToggle(name, on) {
-  S.toggles[name] = on; if (name === 'ctrls') store.set('ctrls', on);
-  if (name === 'ctrls') msg(on ? 'Helpers shown.' : 'Helpers hidden (Shift+H): select a helper in the Scene Explorer or press Shift+H again.');
+const trackLabel = ids => { const byObj = {}; for (const id of ids) (byObj[CHANNELS[id].obj] ||= []).push(CHANNELS[id]); return Object.entries(byObj).map(([o, ts]) => `${o} · ${ts.map(t => t.name).join(', ')}`).join(' · '); };
+// A change of some tracks (from the viewport, the Transform Type-In or the Motion panel), by key mode:
+// Auto Key → keys at the current frame · Set Key Mode → an unkeyed pose until Set Keys ·
+// both off → the value itself changes (an animated track moves all its keys, as in Max).
+function applyChange(changes) {
+  const f = Math.round(S.frame);
+  const ids = Object.keys(changes).filter(id => Math.abs(changes[id] - valueAt(id, S.frame)) > 1e-6);
+  for (const id of Object.keys(changes)) if (!ids.includes(id)) delete S.override[id];
+  if (!ids.length) { drawView(); return; }
+  if (S.keyMode === 'set') { for (const id of ids) S.override[id] = +changes[id].toFixed(4); msg('Pose ready: press Set Keys (K) to key it.'); drawView(); renderSidebar(); return; }
+  pushUndo(); clearSelection();
+  let last = null;
+  for (const id of ids) {
+    const v = +changes[id].toFixed(4);
+    delete S.override[id];
+    if (S.keyMode === 'auto') { last = setKeyAt(id, f, v); last.select = true; }
+    else if (S.data.channels[id]) { const dv = v - valueAt(id, S.frame); for (const k of S.data.channels[id]) moveKey(k, k.frame, +(k.value + dv).toFixed(4)); recalcHandles(S.data.channels[id]); }
+    else { (S.data.static ||= {})[id] = v; }
+  }
+  if (S.keyMode === 'auto') { S.activeKey = last; S.active = ids[ids.length - 1]; msg(tr('Inserted a keyframe on {c} at frame {n}.', { c: trackLabel(ids), n: f })); }
+  else if (ids.some(id => S.data.channels[id])) msg(tr('Auto Key is off: every key of {c} moved with it. Turn on Auto Key (N) to key a pose, or Ctrl+Z.', { c: trackLabel(ids.filter(id => S.data.channels[id])) }), true);
+  else msg(tr('Changed {c} (no animation: Auto Key is off).', { c: trackLabel(ids) }));
+  changed(true);
+}
+// Set Keys (K): keys the selected object's tracks that are animated or were changed, filtered by the Key Filters.
+function setKeys(groups = [...max.state.filters]) {
+  if (!S.bone || !isControl(S.bone)) return msg('Select a control first (ctrl_pilota, ctrl_top…).', true);
+  const f = Math.round(S.frame), ids = trackIdsOf(S.bone).filter(id => groups.includes(CHANNELS[id].group) && (S.data.channels[id] || S.override[id] != null));
+  if (!ids.length) return msg(tr('{h} has no animated {g} tracks yet: change it first, or use Auto Key.', { h: S.bone, g: groups.join('/') }), true);
+  pushUndo(); clearSelection();
+  let last = null;
+  for (const id of ids) { const changedTrack = S.override[id] != null; last = setKeyAt(id, f, +cur(id).toFixed(4), changedTrack); last.select = true; delete S.override[id]; }
+  S.activeKey = last; S.active = ids.find(id => S.shown.has(id)) || ids[0];
+  msg(tr('Inserted a keyframe on {c} at frame {n}.', { c: trackLabel(ids), n: f })); changed(true);
+}
+// Transform Type-In: exact values for the selected control at the current frame (track values: frozen transforms).
+function typeIn(axis, v) {
+  if (!S.bone || !isControl(S.bone)) return msg('Select a control first.', true);
+  if (scene[S.bone].frozen) return msg(tr('{h} is frozen: unfreeze it in the Scene Explorer.', { h: S.bone }), true);
+  const p = (S.tool === 'rotate' ? 'r' : S.tool === 'scale' ? 's' : 'p') + axis;
+  applyChange({ [trackId(S.bone, p)]: v });
+}
+function setToggle(name, on) { S.toggles[name] = on; renderAll(); }
+function toggleCategory(cat) {
+  S.cat.has(cat) ? S.cat.delete(cat) : S.cat.add(cat); store.set('cat', [...S.cat]);
+  msg(tr(S.cat.has(cat) ? '{c} hidden (Display panel › Hide by Category).' : '{c} shown.', { c: cat === 'helpers' ? 'Helpers' : cat === 'shapes' ? 'Shapes' : cat === 'bones' ? 'Bones' : 'Geometry' }));
   renderAll();
 }
 function renderDisplay(page) {
-  page.insertAdjacentHTML('beforeend', `${rollout('Hide by Category', `<label class="mx-check"><input type="checkbox" data-toggle="ctrls" data-invert="1"${S.toggles.ctrls ? '' : ' checked'}> Helpers <span class="mx-dim">(Shift+H)</span></label><label class="mx-check dim"><input type="checkbox" disabled> Geometry</label><label class="mx-check dim"><input type="checkbox" disabled> Shapes</label><label class="mx-check dim"><input type="checkbox" disabled> Lights</label><label class="mx-check dim"><input type="checkbox" disabled> Cameras</label>`)}
+  const cb = (cat, label, keys = '') => `<label class="mx-check"><input type="checkbox" data-cat="${cat}"${S.cat.has(cat) ? ' checked' : ''}> ${label}${keys ? ` <span class="mx-dim">(${keys})</span>` : ''}</label>`;
+  page.insertAdjacentHTML('beforeend', `${rollout('Hide by Category', `${cb('geometry', 'Geometry')}${cb('shapes', 'Shapes', 'Shift+S')}<label class="mx-check dim"><input type="checkbox" disabled> Lights</label><label class="mx-check dim"><input type="checkbox" disabled> Cameras</label>${cb('helpers', 'Helpers', 'Shift+H')}${cb('bones', 'Bone Objects')}`)}
+    ${rollout('Hide', `<div class="mx-grid2"><button type="button" class="mx-btn" data-hide="sel">Hide Selected</button><button type="button" class="mx-btn" data-hide="all">Unhide All</button></div>`)}
+    ${rollout('Freeze', `<div class="mx-grid2"><button type="button" class="mx-btn" data-freeze="sel">Freeze Selected</button><button type="button" class="mx-btn" data-freeze="all">Unfreeze All</button></div>`)}
     ${rollout('Display Properties', `<label class="mx-check"><input type="checkbox" data-toggle="path"${S.toggles.path ? ' checked' : ''}> Trajectory</label><p class="mx-note">Shows the path of the ball with one dot per frame: close dots are slow, far dots are fast. Yellow dots are keys.</p><label class="mx-check"><input type="checkbox" data-toggle="ghosts"${S.toggles.ghosts ? ' checked' : ''}> Show Ghosting <span class="mx-dim">(Views menu)</span></label>`)}
     ${stage().id === 'weight' ? rollout('Lab: Reference', `<label class="mx-check"><input type="checkbox" data-toggle="ref"${S.toggles.ref ? ' checked' : ''}> Physics reference</label><p class="mx-note">A real ball simulated with physics, drawn as a dashed yellow line (not a 3ds Max feature).</p>`) : ''}`);
 }
+const renderMotionTab = () => { if (max.state.tab === 'motion' || max.state.tab === 'display') max.showTab(max.state.tab); };
+function setObjectState(id, patch) { max.setObjectState(id, patch); Object.assign(scene[id], patch); store.set('scene', scene); drawView(); }
 max.page().addEventListener('change', e => {
-  const tg = e.target.dataset?.toggle;
-  if (tg) { setToggle(tg, e.target.dataset.invert ? !e.target.checked : e.target.checked); return; }
+  const tg = e.target.dataset?.toggle, cat = e.target.dataset?.cat;
+  if (tg) { setToggle(tg, e.target.checked); return; }
+  if (cat) { if (e.target.checked !== S.cat.has(cat)) toggleCategory(cat); return; }
   if (e.target.id === 'ki-time') editActiveKey('frame', +e.target.value);
   if (e.target.id === 'ki-value') editActiveKey('value', +e.target.value);
 });
 max.page().addEventListener('click', e => {
-  const c = e.target.closest('[data-prs-create]'), d = e.target.closest('[data-prs-delete]'), kt = e.target.closest('[data-ki-tan]'), ki = e.target.closest('[data-ki]');
-  if (c) { const g = c.dataset.prsCreate; if (g === 'Position' && channelOf(S.bone) !== 'rotY') keyControl(); else if (g === 'Rotation' && S.bone === 'Rotation') keyControl(); else if (g === 'Scale' && stage().free && S.bone === 'Root') keyScale(); else msg(tr('{h} has no {g} track in this stage.', { h: S.bone, g }), true); }
+  const c = e.target.closest('[data-prs-create]'), d = e.target.closest('[data-prs-delete]'), kt = e.target.closest('[data-ki-tan]'), ki = e.target.closest('[data-ki]'), hd = e.target.closest('[data-hide]'), fz = e.target.closest('[data-freeze]');
+  if (hd) { if (hd.dataset.hide === 'all') OBJECTS.forEach(o => scene[o.id].hidden && setObjectState(o.id, { hidden: false })); else if (S.bone) setObjectState(S.bone, { hidden: true }); return; }
+  if (fz) { if (fz.dataset.freeze === 'all') OBJECTS.forEach(o => scene[o.id].frozen && setObjectState(o.id, { frozen: false })); else if (S.bone) setObjectState(S.bone, { frozen: true }); return; }
+  // PRS Parameters › Create Key: keys the three tracks of the controller (X, Y and Z), as in Max.
+  if (c) { if (!S.bone || !isControl(S.bone)) return msg('Select a control first.', true); const g = c.dataset.prsCreate, f = Math.round(S.frame); pushUndo(); clearSelection(); let last; for (const id of tracksOf(S.bone, g)) { last = setKeyAt(id, f, +cur(id).toFixed(4), S.override[id] != null); last.select = true; delete S.override[id]; } S.activeKey = last; msg(tr('Inserted a keyframe on {c} at frame {n}.', { c: `${S.bone} · ${g}`, n: f })); changed(true); }
   if (d) { const f = Math.round(S.frame), g = d.dataset.prsDelete, list = boneChannels().filter(id => KEY_TYPE(id) === g.toLowerCase()).flatMap(id => S.data.channels[id].filter(k => k.frame === f).map(k => ({ id, k }))); if (!list.length) return msg(tr('No {g} key at frame {n}.', { g, n: f }), true); clearSelection(); list.forEach(({ k }) => { k.select = true; }); deleteKeys(list); }
   if (kt) setMaxTangent(kt.dataset.kiTan);
   if (ki) { const k = S.activeKey || selected()[0]?.k; if (!k) return; const id = Object.keys(S.data.channels).find(c2 => S.data.channels[c2].includes(k)), ks = S.data.channels[id], n = ks[ks.indexOf(k) + +ki.dataset.ki]; if (n) { clearSelection(); n.select = true; S.activeKey = n; setFrame(n.frame); renderAll(); } }
@@ -278,56 +345,75 @@ function renderMotion(page) {
   if (!S.data) return;
   const k = S.activeKey || selected()[0]?.k, id = k && Object.keys(S.data.channels).find(c => S.data.channels[c].includes(k)), ks = id ? S.data.channels[id] : [];
   const TAN_ICON = { auto: 'tvTangentAuto', spline: 'tvTangentSpline', fast: 'tvTangentFast', slow: 'tvTangentSlow', step: 'tvTangentStep', linear: 'tvTangentLinear', smooth: 'tvTangentSmooth' };
+  if (!S.bone || !isControl(S.bone)) { page.insertAdjacentHTML('beforeend', `<p class="mx-empty">${esc(S.bone ? tr('{h} is driven by the rig: select a control (ctrl_pilota, ctrl_top, ctrl_bottom, squash_space or ctrl_master).', { h: S.bone }) : t('Select a control to see its PRS Parameters and keys.'))}</p>`); return; }
   page.insertAdjacentHTML('beforeend', `
     <div class="mx-cats"><button type="button" class="mx-btn on" style="flex:1">Parameters</button><button type="button" class="mx-btn" style="flex:1" disabled>Trajectories</button></div>
     ${rollout('PRS Parameters', `<div class="mx-grid2"><span style="text-align:center">Create Key</span><span style="text-align:center">Delete Key</span>${['Position', 'Rotation', 'Scale'].map(g => `<button type="button" class="mx-btn" data-prs-create="${g}">${g}</button><button type="button" class="mx-btn" data-prs-delete="${g}">${g}</button>`).join('')}</div><p class="mx-note">${esc(tr('Keys {h} at the current frame ({n}), with its current pose.', { h: S.bone, n: Math.round(S.frame) }))}</p>`)}
     ${rollout('Key Info (Basic)', k && id ? `<div class="key-info"><div class="kinav"><button type="button" class="mx-btn" data-ki="-1" title="Previous key">&lt;</button><b data-no-i18n>${esc(CHANNELS[id].bone)} · ${esc(CHANNELS[id].name)} · ${ks.indexOf(k) + 1}</b><button type="button" class="mx-btn" data-ki="1" title="Next key">&gt;</button></div>
       <div class="mx-prop"><span>Time:</span>${spinner({ id: 'ki-time', value: k.frame, step: 1, decimals: 0, width: 112 })}<span></span></div>
-      <div class="mx-prop"><span>Value:</span>${spinner({ id: 'ki-value', value: +k.value.toFixed(3), step: CHANNELS[id].rot ? 5 : 0.05, decimals: 3, width: 112 })}<span class="mx-unit">${CHANNELS[id].rot ? '°' : 'm'}</span></div>
+      <div class="mx-prop"><span>Value:</span>${spinner({ id: 'ki-value', value: +k.value.toFixed(3), step: CHANNELS[id].rot ? 5 : CHANNELS[id].scale ? 5 : 0.05, decimals: 3, width: 112 })}<span class="mx-unit">${CHANNELS[id].unit}</span></div>
       <div class="mx-prop"><span>In / Out:</span><b style="font-weight:400" data-no-i18n>${TANGENT_NAME(k)}</b><span></span></div>
       <div class="tan-pick">${Object.entries(TAN_ICON).map(([type, ic]) => `<button type="button" class="mx-tb sm${TANGENT_NAME(k).toLowerCase() === type ? ' on' : ''}" data-ki-tan="${type}" title="Set Tangents to ${type[0].toUpperCase() + type.slice(1)}">${icon(ic)}</button>`).join('')}</div></div>`
       : `<p class="mx-note">${esc(t('Select a key in the Track Bar or in Track View to see its time, value and tangents.'))}</p>`)}
-    ${rollout('Assign Controller', `<div class="mx-sfs" style="max-height:none"><div class="mx-sfs-row">Transform : Position/Rotation/Scale</div><div class="mx-sfs-row" style="padding-left:18px">Position : Position XYZ</div><div class="mx-sfs-row" style="padding-left:18px">Rotation : Euler XYZ</div><div class="mx-sfs-row" style="padding-left:18px">Scale : Bezier Scale</div></div>`, false)}`);
+    ${rollout('Assign Controller', `<div class="mx-sfs" style="max-height:none"><div class="mx-sfs-row">Transform : Position/Rotation/Scale</div><div class="mx-sfs-row" style="padding-left:18px">Position : Position List</div><div class="mx-sfs-row" style="padding-left:32px">Frozen Position : Position XYZ</div><div class="mx-sfs-row" style="padding-left:32px">Zero Pos XYZ : Position XYZ</div><div class="mx-sfs-row" style="padding-left:18px">Rotation : Rotation List</div><div class="mx-sfs-row" style="padding-left:32px">Frozen Rotation : Euler XYZ</div><div class="mx-sfs-row" style="padding-left:32px">Zero Euler XYZ : Euler XYZ</div><div class="mx-sfs-row" style="padding-left:18px">Scale : Bezier Scale</div></div>`, false)}`);
 }
 
-// ─── 3D Viewport: the rigged ball ───────────────────────────────────────────
-// Three.js axes: x = Max X, y = Max Z (up), z = -Max Y.
+// ─── 3D Viewport: the rig ───────────────────────────────────────────────────
+// The rig is computed in Max coordinates (rig.js) and drawn with three.js: Max (x, y, z) = three (x, z, -y).
 const viewCanvas = $('#view'), viewHost = max.host;
-// The kit viewport: Max home grid, MMB pan, Alt+MMB orbit, Ctrl+Alt+MMB zoom, wheel zoom.
+// The kit viewport: Max home grid, MMB pan, Alt+MMB orbit, Ctrl+Alt+MMB zoom, wheel zoom, ViewCube.
 const vp = createMaxViewport({ host: viewHost, canvas: viewCanvas, onChange: () => { if (!S.data) return; if (!framed3) { framed3 = true; frameView3(); return; } gizmo.update(); render3(); } });
+vp.attachViewCube(max.viewCubeCanvas, face => { lookFrom(face); });
 const renderer3 = vp.renderer, scene3 = vp.scene, cam3 = vp.camera;
 let framed3 = false;
+// Max local → three world
+function maxMatrix(lin, o) {
+  const m = new THREE.Matrix4();
+  m.set(lin[0][0], lin[0][1], lin[0][2], o[0], lin[2][0], lin[2][1], lin[2][2], o[2], -lin[1][0], -lin[1][1], -lin[1][2], -o[1], 0, 0, 0, 1);
+  return m;
+}
+const MAX_TO_THREE = maxMatrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]], [0, 0, 0]);
+const THREE_TO_MAX = MAX_TO_THREE.clone().invert();
+const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+const place3 = (obj, lin, o) => { obj.matrixAutoUpdate = false; obj.matrix.copy(maxMatrix(lin, o)); obj.matrixWorldNeedsUpdate = true; };
 const ballTex = (() => { const c = document.createElement('canvas'); c.width = 256; c.height = 128; const g = c.getContext('2d'); const cols = ['#e83c32', '#f5f2e9', '#1971d4', '#f6d123', '#f5f2e9', '#e83c32', '#f5f2e9', '#1971d4']; for (let i = 0; i < 8; i++) { g.fillStyle = cols[i]; g.fillRect(i * 32, 0, 32, 128); } const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
-const ball3 = new THREE.Mesh(new THREE.SphereGeometry(0.5, 40, 24), new THREE.MeshStandardMaterial({ map: ballTex, roughness: 0.45 }));
-const ballGroup = new THREE.Group(); ballGroup.add(ball3); scene3.add(ballGroup); // the group squashes (world vertical), the ball turns inside it
+// pilota_Mesh: a unit sphere in Max coordinates (poles on Max Z); the rig gives its matrix every frame
+const ballGeo = new THREE.SphereGeometry(1, 40, 24); ballGeo.applyMatrix4(THREE_TO_MAX);
+const ball3 = new THREE.Mesh(ballGeo, new THREE.MeshStandardMaterial({ map: ballTex, roughness: 0.45 }));
+ball3.userData.obj = 'pilota_Mesh'; scene3.add(ball3);
+const ballGroup = ball3; // test hook name kept
 const shadow3 = new THREE.Mesh(new THREE.CircleGeometry(0.5, 32), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35, depthWrite: false }));
 shadow3.rotation.x = -Math.PI / 2; shadow3.position.y = 0.005; scene3.add(shadow3);
-// Custom rig helper shapes, drawn in front of the ball.
-const CTRL_COLORS = { Root: 0x4aa3ff, SS_Top: 0x7ee07e, SS_Bottom: 0xe07ee0, Rotation: 0xffb347 };
-function ctrlShape(bone) {
-  let g;
-  if (bone === 'Root') { g = new THREE.EdgesGeometry(new THREE.RingGeometry(0.62, 0.7, 40)); }
-  else if (bone === 'Rotation') {
-    // a circular arrow around the ball, in the side view plane
-    const P = [], r = 0.84, a0 = Math.PI * 0.62, a1 = Math.PI * 2.38, n = 48;
-    for (let i = 0; i < n; i++) { const a = a0 + (a1 - a0) * i / n, b = a0 + (a1 - a0) * (i + 1) / n; P.push(Math.cos(a) * r, Math.sin(a) * r, 0, Math.cos(b) * r, Math.sin(b) * r, 0); }
-    const e = [Math.cos(a0) * r, Math.sin(a0) * r]; // the arrow head points clockwise (rolling forwards)
-    const dx = Math.sin(a0), dy = -Math.cos(a0); // clockwise tangent at the tip
-    for (const s of [0.5, -0.5]) { const bx = -(dx * Math.cos(s) - dy * Math.sin(s)) * 0.2, by = -(dx * Math.sin(s) + dy * Math.cos(s)) * 0.2; P.push(...e, 0, e[0] + bx, e[1] + by, 0); }
-    g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
-  } else {
-    const s = new THREE.Shape(), d = bone === 'SS_Top' ? 1 : -1;
-    s.moveTo(-0.22, 0); s.lineTo(0.22, 0); s.lineTo(0, 0.22 * d); s.closePath();
-    g = new THREE.EdgesGeometry(new THREE.ShapeGeometry(s));
-  }
-  const m = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: CTRL_COLORS[bone], depthTest: false, transparent: true }));
-  m.renderOrder = 10;
-  if (bone === 'Root') m.rotation.x = -Math.PI / 2;
-  const pick = new THREE.Mesh(bone === 'Root' ? new THREE.RingGeometry(0.5, 0.8, 24) : bone === 'Rotation' ? new THREE.RingGeometry(0.76, 0.95, 40) : new THREE.CircleGeometry(0.22, 16), new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide }));
-  pick.userData.bone = bone; m.add(pick);
-  scene3.add(m); return m;
+
+// Control shapes, drawn in their own Max local space (wire colour green, white when selected, as in Max).
+const WIRE = 0x36d636, WIRE_SEL = 0xffffff, WIRE_FROZEN = 0x8a8a8a;
+const lineMat = () => new THREE.LineBasicMaterial({ color: WIRE, depthTest: false, transparent: true });
+const circlePts = (r, n = 64) => { const P = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, b = (i + 1) / n * Math.PI * 2; P.push(Math.cos(a) * r, Math.sin(a) * r, 0, Math.cos(b) * r, Math.sin(b) * r, 0); } return P; };
+function boxPts(w, h, z0) { const x = w / 2, P = [], c = [[-x, -x], [x, -x], [x, x], [-x, x]]; for (let i = 0; i < 4; i++) { const [a, b] = c[i], [d, e] = c[(i + 1) % 4]; P.push(a, b, z0, d, e, z0, a, b, z0 + h, d, e, z0 + h, a, b, z0, a, b, z0 + h); } return P; }
+const segs = P => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); return g; };
+const invisible = new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide });
+function control(id, P, pickGeo) {
+  const grp = new THREE.Group(), lines = new THREE.LineSegments(segs(P), lineMat());
+  lines.renderOrder = 10; grp.add(lines);
+  const pick = new THREE.Mesh(pickGeo, invisible); pick.userData.obj = id; grp.add(pick);
+  grp.userData = { id, lines, pick }; scene3.add(grp); return grp;
 }
-const ctrls3 = { Root: ctrlShape('Root'), SS_Top: ctrlShape('SS_Top'), SS_Bottom: ctrlShape('SS_Bottom'), Rotation: ctrlShape('Rotation') };
+const ringPick = (r0, r1) => new THREE.RingGeometry(r0, r1, 48);
+const ctrls3 = {
+  ctrl_master: control('ctrl_master', circlePts(0.78), ringPick(0.66, 0.9)),
+  ctrl_pilota: control('ctrl_pilota', circlePts(0.66), ringPick(0.58, 0.76)),
+  squash_space: control('squash_space', [-.09, 0, 0, .09, 0, 0, 0, -.09, 0, 0, .09, 0, 0, 0, -.09, 0, 0, .09], new THREE.SphereGeometry(0.07, 8, 6)),
+  ctrl_top: control('ctrl_top', boxPts(0.13, 0.08, 0.015), new THREE.BoxGeometry(0.2, 0.2, 0.14).translate(0, 0, 0.055)),
+  ctrl_bottom: control('ctrl_bottom', boxPts(0.13, 0.08, -0.095), new THREE.BoxGeometry(0.2, 0.2, 0.14).translate(0, 0, -0.055)),
+};
+// Bones (hidden in the class file): ball_Bone from ctrl_bottom to ctrl_top, and the small tip_bone after it.
+function boneShape(id) {
+  const w = 0.07, P = [0, 0, 0, w, 0, .12, 0, 0, 0, -w, 0, .12, 0, 0, 0, 0, w, .12, 0, 0, 0, 0, -w, .12, w, 0, .12, 0, w, .12, 0, w, .12, -w, 0, .12, -w, 0, .12, 0, -w, .12, 0, -w, .12, w, 0, .12, w, 0, .12, 0, 0, 1, -w, 0, .12, 0, 0, 1, 0, w, .12, 0, 0, 1, 0, -w, .12, 0, 0, 1, 0, .015, .35, 0, .015, .85];
+  return control(id, P, new THREE.CylinderGeometry(0.06, 0.06, 1, 6).rotateX(Math.PI / 2).translate(0, 0, 0.5));
+}
+const bones3 = { ball_Bone: boneShape('ball_Bone'), tip_bone: boneShape('tip_bone') };
+for (const b of Object.values(bones3)) b.userData.lines.material.color.setHex(0xe6c34a);
+const all3 = { ...ctrls3, ...bones3 };
 // 3ds Max transform gizmos from the kit: drag an axis (it turns yellow) or a plane to constrain the transform.
 const gizmo = createGizmo({ scene: scene3, camera: cam3, dom: viewCanvas });
 const pathDots = new THREE.Group(), ghosts = new THREE.Group(), refGroup = new THREE.Group(); scene3.add(pathDots, ghosts, refGroup);
@@ -341,70 +427,67 @@ viewCanvas.addEventListener('wheel', () => { cameraFollowsBall = false; }, { cap
 // Perspective: almost a side view (the Front view) so spacing and heights read clearly.
 function frameView3(side = false) {
   const fit = Math.max(1, 1.55 / Math.max(0.6, cam3.aspect));
-  const x = S.data?.channels ? valueAt('locX', S.frame) : 0;
+  const x = S.data?.channels ? pose(S.frame).ball.center[0] : 0;
   vp.view.target.set(x, 2.7, 0); vp.view.dist = (side ? 9.6 : 9.4) * fit;
   vp.view.az = side ? 0 : -.2; vp.view.el = side ? .02 : .1;
   cameraFollowsBall = true; lastCameraFrame = null;
   vp.update();
 }
+function lookFrom(face) { cameraFollowsBall = false; vp.setView(face); msg(tr('ViewCube: {f}', { f: face.toUpperCase() })); }
 function resize3() { vp.resize(); }
-const pose = f => { const over = Math.round(f) === Math.round(S.frame) && !S.playing ? S.override : {}; const sh = shape(S.data, f, over); return { x: over.locX ?? valueAt('locX', f), rot: over.rotY ?? valueAt('rotY', f), previewScale: over.previewScale ?? 1, previewDepth: over.previewDepth ?? 0, ...sh }; };
-// Max's +Y points into the screen here, so a positive Y rotation turns the ball clockwise in the side view.
-const toRad = deg => -deg * Math.PI / 180;
+// The whole rig at frame f (with the unkeyed pose on top at the current frame).
+const pose = f => { const over = Math.round(f) === Math.round(S.frame) && !S.playing ? S.override : {}; return rigPose(id => over[id] ?? valueAt(id, f)); };
+const KIND = Object.fromEntries(OBJECTS.map(o => [o.id, o.kind]));
+const CAT = { Geometry: 'geometry', Shape: 'shapes', Helper: 'helpers', Bone: 'bones' };
+const shown3 = id => !scene[id].hidden && !S.cat.has(CAT[KIND[id]]) && (KIND[id] === 'Geometry' || !S.previewing) && !(id === 'tip_bone' && scene.ball_Bone.hidden && false);
 let lastPathKey = '';
 function drawView() {
-  const p = pose(S.frame);
+  const P = pose(S.frame), b = P.ball;
   const currentFrame = Math.round(S.frame);
-  if (cameraFollowsBall && lastCameraFrame !== currentFrame) {
-    vp.view.target.x = p.x; lastCameraFrame = currentFrame; vp.update();
+  if (cameraFollowsBall && lastCameraFrame !== currentFrame) { vp.view.target.x = b.center[0]; lastCameraFrame = currentFrame; vp.update(); }
+  // Transform Type-In: the tracks of the selected control for the current tool
+  if (S.bone && isControl(S.bone) && S.tool !== 'select') { const p = S.tool === 'rotate' ? 'r' : S.tool === 'scale' ? 's' : 'p'; max.setCoords(...['x', 'y', 'z'].map(a => cur(trackId(S.bone, p + a)))); }
+  else if (S.bone && isControl(S.bone)) max.setCoords(...['x', 'y', 'z'].map(a => cur(trackId(S.bone, 'p' + a))));
+  else max.setCoords(null, null, null);
+  // the ball
+  place3(ball3, b.lin, b.center); ball3.visible = shown3('pilota_Mesh');
+  const sh = Math.max(0.25, 1 - Math.max(0, b.bottom) / 6);
+  shadow3.position.set(b.center[0], 0.005, -b.center[1]); shadow3.scale.setScalar(b.sx * (0.6 + 0.4 * sh)); shadow3.material.opacity = 0.35 * sh; shadow3.visible = ball3.visible;
+  // controls and bones
+  for (const id of CONTROLS) { const w = worldOf(P, id); place3(ctrls3[id], w.lin, w.o); }
+  const dir = V3(...P.bone.dir), len = P.bone.length;
+  const boneLin = (L, wScale) => { const z = P.bone.dir, ref = Math.abs(z[0]) > .9 ? [0, 1, 0] : [1, 0, 0]; const x = V3(...ref).cross(dir).normalize(), y = dir.clone().cross(x); return [[x.x * wScale, y.x * wScale, z[0] * L], [x.y * wScale, y.y * wScale, z[1] * L], [x.z * wScale, y.z * wScale, z[2] * L]]; };
+  place3(bones3.ball_Bone, boneLin(len, 1), P.bone.from); place3(bones3.tip_bone, boneLin(0.12, 0.6), P.bone.to);
+  for (const [id, g] of Object.entries(all3)) {
+    g.visible = shown3(id);
+    g.userData.lines.material.color.setHex(S.bone === id ? WIRE_SEL : scene[id].frozen ? WIRE_FROZEN : KIND[id] === 'Bone' ? 0xe6c34a : WIRE);
   }
-  // Transform Type-In: the value of the selected helper's track for the current tool
-  const zNow = S.override[channelOf(S.bone)] ?? (S.data.channels[channelOf(S.bone)] ? valueAt(channelOf(S.bone), S.frame) : 0);
-  if (S.tool === 'rotate') max.setCoords(null, S.bone === 'Rotation' ? p.rot : null, null);
-  else if (S.tool === 'scale') { const sc = (S.override.scale ?? (S.data.channels.scale ? valueAt('scale', S.frame) : 1)) * 100; max.setCoords(sc, sc, sc); }
-  else if (S.tool === 'select') max.setCoords(p.x, 0, zNow);
-  else max.setCoords(S.bone === 'Root' ? p.x : null, null, S.bone === 'Rotation' ? null : zNow);
-  ballGroup.position.set(p.x, p.center, p.previewDepth); ballGroup.scale.set(p.sx * p.previewScale, p.sz * p.previewScale, p.sx * p.previewScale); ball3.rotation.set(0, 0, toRad(p.rot));
-  const sh = Math.max(0.25, 1 - Math.max(0, p.bottom) / 6);
-  shadow3.position.x = p.x; shadow3.scale.setScalar(p.sx * (0.6 + 0.4 * sh)); shadow3.material.opacity = 0.35 * sh;
-  const anim = stage().channels;
-  ctrls3.Root.position.set(p.x, Math.max(0, p.root) + 0.01, p.previewDepth);
-  ctrls3.SS_Top.position.set(p.x, p.top + 0.08, p.previewDepth + 0.02); ctrls3.SS_Bottom.position.set(p.x, p.bottom - 0.08, p.previewDepth + 0.02);
-  ctrls3.Rotation.position.set(p.x, p.center, p.previewDepth + 0.03); ctrls3.Rotation.rotation.z = toRad(p.rot);
-  const helperPoint = S.bone === 'SS_Top' ? [p.x, p.top + .08, p.previewDepth + .08] : S.bone === 'SS_Bottom' ? [p.x, p.bottom - .08, p.previewDepth + .08] : S.bone === 'Rotation' ? [p.x, p.center, p.previewDepth + .08] : [p.x, Math.max(0, p.root) + .02, p.previewDepth + .08];
-  const showGizmo = S.toggles.ctrls && S.tool !== 'select' && !S.previewing;
-  gizmo.setVisible(showGizmo);
-  if (showGizmo) {
-    gizmo.setMode(S.tool); gizmo.attach(toMax(new THREE.Vector3(...helperPoint)));
-    // Root: X and Z; squash & stretch helpers: only Z; Rotation: only Y; scale: uniform.
-    gizmo.setEnabled(S.tool === 'rotate' ? { x: false, z: false, y: S.bone === 'Rotation' } : S.tool === 'scale' ? {} : { y: false, x: S.bone === 'Root' });
-    gizmo.setLocked(S.axis); gizmo.update();
-  }
-  vp.outline(ball3, S.toggles.ctrls && S.bone === 'Root' && !S.previewing);
-  const on = S.toggles.ctrls && !S.previewing;
-  ctrls3.Root.visible = on; ctrls3.SS_Top.visible = on && anim.includes('topZ'); ctrls3.SS_Bottom.visible = on && anim.includes('botZ'); ctrls3.Rotation.visible = on && anim.includes('rotY');
-  for (const [b, m] of Object.entries(ctrls3)) { const sel = S.bone === b; m.material.color.set(sel ? 0xffffff : CTRL_COLORS[b]); m.scale.setScalar(sel ? 1.15 : 1); }
+  // gizmo on the selected control's pivot, all three axes available
+  const showGizmo = S.bone && isControl(S.bone) && S.tool !== 'select' && !S.previewing && all3[S.bone].visible && !scene[S.bone].frozen;
+  gizmo.setVisible(!!showGizmo);
+  if (showGizmo) { const o = worldOf(P, S.bone).o; gizmo.setMode(S.tool); gizmo.attach({ x: o[0], y: o[1], z: o[2] }); gizmo.setEnabled({}); gizmo.setLocked(S.tool === 'move' ? S.axis : null); gizmo.update(); }
+  vp.outline(ball3, S.bone === 'pilota_Mesh' && !S.previewing);
   // motion path, ghosts and reference only need rebuilding when the animation changes
-  const key = JSON.stringify([S.data.channels, S.start, S.end, S.toggles, Math.round(S.frame)]);
+  const key = JSON.stringify([S.data.channels, S.data.static, S.start, S.end, S.toggles, Math.round(S.frame)]);
   if (key !== lastPathKey) {
     lastPathKey = key;
     pathDots.clear(); ghosts.clear();
+    const keyFrames = new Set((S.data.channels.locZ || []).map(k => k.frame));
     if (S.toggles.path) {
-      const keyFrames = new Set(S.data.channels.locZ.map(k => k.frame));
       const pts = [];
       for (let f = S.start; f <= S.end; f++) {
-        const q = shape(S.data, f), x = valueAt('locX', f), isKey = keyFrames.has(f);
-        pts.push(new THREE.Vector3(x, q.center, 0));
+        const c = rigPose(id => valueAt(id, f)).ball.center, isKey = keyFrames.has(f), v = fromMax3(c);
+        pts.push(v);
         const col = f === Math.round(S.frame) ? 0x6aa8ff : isKey ? 0xffd24a : f < S.frame ? 0xdddddd : 0x9c9c9c;
         const m = new THREE.Mesh(isKey ? keyDotGeo : dotGeo, new THREE.MeshBasicMaterial({ color: col, depthTest: false })); m.renderOrder = 5;
-        m.position.set(x, q.center, 0.55); pathDots.add(m);
+        m.position.copy(v); pathDots.add(m);
       }
-      const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts.map(v => v.clone().setZ(0.55))), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, depthTest: false }));
+      const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, depthTest: false }));
       pathDots.add(line);
     }
     if (S.toggles.ghosts) for (let f = S.start; f <= S.end; f += 2) {
-      const q = shape(S.data, f), g = new THREE.Mesh(ball3.geometry, new THREE.MeshBasicMaterial({ color: 0xf0a020, transparent: true, opacity: 0.12, depthWrite: false }));
-      g.position.set(valueAt('locX', f), q.center, 0); g.scale.set(q.sx, q.sz, q.sx); ghosts.add(g);
+      const q = rigPose(id => valueAt(id, f)).ball, g = new THREE.Mesh(ballGeo, new THREE.MeshBasicMaterial({ color: 0xf0a020, transparent: true, opacity: 0.12, depthWrite: false }));
+      place3(g, q.lin, q.center); ghosts.add(g);
     }
     refGroup.visible = S.toggles.ref && stage().id === 'weight';
     if (refGroup.visible) {
@@ -415,276 +498,122 @@ function drawView() {
   }
   pathDots.visible = ghosts.visible = !S.previewing;
   if (refGroup.visible) refBall.position.set(valueAt('locX', S.frame), REFERENCE(S.frame) + BALL / 2, 0);
-  const secs = ((S.frame - 1) / FPS).toFixed(2);
-  $('#view-overlay').innerHTML = `<div>${esc(t('Perspective'))}</div><div data-no-i18n>(${Math.round(S.frame)}) Helper : <b>${esc(S.bone)}</b></div><div>${secs} s · X ${p.x.toFixed(2)} m · ${esc(tr('Height {v} m', { v: Math.max(0, p.bottom).toFixed(2) }))} · ${esc(tr('Scale {x} × {z}', { x: p.sx.toFixed(2), z: p.sz.toFixed(2) }))}</div>${stage().channels.includes('rotY') ? `<div>${esc(tr('Rotation {v}°', { v: p.rot.toFixed(0) }))}</div>` : ''}${Object.keys(S.override).length ? `<div class="unkeyed">${esc(t('Unkeyed change: click Set Keys'))}</div>` : ''}`;
+  const secs = ((S.frame - 1) / FPS).toFixed(2), rotNow = cur('rotY');
+  $('#view-overlay').innerHTML = `<div data-no-i18n>(${Math.round(S.frame)}) ${esc(S.bone ? `${KIND[S.bone]} : ${S.bone}` : 'None Selected')}</div><div>${secs} s · X ${b.center[0].toFixed(2)} m · ${esc(tr('Height {v} m', { v: Math.max(0, b.bottom).toFixed(2) }))} · ${esc(tr('Scale {x} × {z}', { x: b.sx.toFixed(2), z: b.sz.toFixed(2) }))}</div>${S.data.channels.rotY ? `<div>${esc(tr('Rotation {v}°', { v: rotNow.toFixed(0) }))}</div>` : ''}${Object.keys(S.override).length && !S.xf ? `<div class="unkeyed">${esc(t('Unkeyed change: click Set Keys'))}</div>` : ''}`;
   render3();
 }
+const fromMax3 = c => new THREE.Vector3(c[0], c[2], -c[1]);
 function render3() { renderer3.render(scene3, cam3); }
 
-// Selecting and posing the controls in the viewport
+// Selecting objects in the viewport: controls, bones and the mesh when they are visible and not frozen.
 const ray3 = new THREE.Raycaster();
-function pickCtrl(e) {
+function pickObject(e) {
   const r = viewCanvas.getBoundingClientRect();
   ray3.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), cam3);
-  const picks = Object.values(ctrls3).filter(m => m.visible).map(m => m.children[0]);
-  const hit = ray3.intersectObjects(picks, false)[0];
-  if (hit) return hit.object.userData.bone;
-  if (ray3.intersectObject(ball3, false).length) return S.toggles.ctrls ? 'Root' : null;
+  for (const g of Object.values(all3)) g.updateMatrixWorld(true);
+  ball3.updateMatrixWorld(true);
+  const picks = Object.values(all3).filter(g => g.visible && !scene[g.userData.id].frozen).map(g => g.userData.pick);
+  const hits = ray3.intersectObjects(picks, false);
+  // small helpers win over the big circles behind them
+  const size = { squash_space: 0, ctrl_top: 1, ctrl_bottom: 1, tip_bone: 2, ball_Bone: 3, ctrl_pilota: 4, ctrl_master: 5 };
+  if (hits.length) return hits.sort((a, b) => size[a.object.userData.obj] - size[b.object.userData.obj] || a.distance - b.distance)[0].object.userData.obj;
+  if (ball3.visible && !scene.pilota_Mesh.frozen && ray3.intersectObject(ball3, false).length) return 'pilota_Mesh';
   return null;
 }
-function selectBone(bone) {
-  if (S.vgrab) endVGrab(false);
-  if (S.vrot) endVRot(false);
-  if (S.vscale) endVScale(false);
-  S.bone = bone; max.select(bone);
-  const ch = channelOf(bone);
-  if (stage().channels.includes(ch)) { S.active = ch; S.hidden.delete(ch); }
+function selectBone(id) {
+  if (S.xf) endTransform(false);
+  if (Object.keys(S.override).length && id !== S.bone) dropOverrides();
+  S.bone = id; max.select(id); S.activeKey = null;
+  if (id && isControl(id)) {
+    // Track View shows the tracks of the selected object: its animated tracks are highlighted
+    const anim = animatedOf(id).filter(t => !(stage().hide || []).includes(t) || id !== 'ctrl_pilota');
+    S.shown = new Set(anim.length ? anim : [trackId(id, 'pz')]);
+    S.active = [...S.shown][0];
+  }
   renderAll();
 }
-// 3ds Max: click a helper to select it; drag it, or an axis / plane of its gizmo, to transform it.
-// Release to finish, right-click while dragging to cancel. The middle button navigates (kit viewport).
-const gizmoPart = e => S.toggles.ctrls && S.tool !== 'select' ? gizmo.pick(e) : null;
+// 3ds Max: click an object to select it; drag it, or an axis / plane of its gizmo, to transform it.
+// Release to finish, right-click while dragging (or Esc) to cancel. The middle button navigates.
+const gizmoPart = e => S.bone && isControl(S.bone) && S.tool !== 'select' && gizmo.root.visible ? gizmo.pick(e) : null;
 viewCanvas.addEventListener('pointerdown', e => {
   closeMenu();
   if (e.button !== 0 || e.altKey) return;
-  const r = viewCanvas.getBoundingClientRect(); S.vpointer = { x: e.clientX - r.left, y: e.clientY - r.top };
   let part = gizmoPart(e);
-  const b = part ? S.bone : pickCtrl(e);
-  if (!b) return;
-  if (b !== S.bone) { if (max.state.lock) return msg('Selection Lock is on: press Space to unlock it.', true); selectBone(b); }
+  const hit = part ? S.bone : pickObject(e);
+  if (!hit) { if (max.state.lock) return; if (S.bone) selectBone(null); return; }
+  if (hit !== S.bone) { if (max.state.lock) return msg('Selection Lock is on: press Space to unlock it.', true); selectBone(hit); }
   if (S.tool === 'select') return;
-  // which gizmo part drives the drag: the one clicked, or the axis constraint (F5–F8), or the free plane
-  if (S.tool === 'move') {
-    if (!part) part = S.axis || (S.bone === 'Root' ? 'xz' : 'z');
-    if (part.includes('y')) { if (part === 'y') return msg('Y is the depth of this side view: the rig does not move in Y.', true); part = part.replace('y', ''); }
-    if (S.bone !== 'Root') { if (!part.includes('z')) return msg('SS controls move only in Z.', true); part = 'z'; }
-  } else if (S.tool === 'rotate') {
-    if (part && part !== 'y' && part !== 'view') return msg('The Rotation helper turns only around Y: drag the green circle.', true);
-    part = 'y';
-  } else part = 'xyz';
-  S.vpointer.axis = part;
-  if (S.tool === 'move') startVGrab(); else if (S.tool === 'rotate') startVRot(); else startVScale();
-  const g = S.vgrab || S.vrot || S.vscale; if (!g) return;
-  e.preventDefault(); viewCanvas.setPointerCapture(e.pointerId);
-  g.gizmo = true; if (S.vgrab) S.vgrab.axis = part === 'x' ? 'x' : part === 'z' ? 'z' : null;
-  gizmo.begin(e, part); drawView();
+  if (!isControl(hit)) return msg(tr(hit === 'pilota_Mesh' ? '{h} has a Skin modifier: the bones move it. Animate the controls (ctrl_pilota, ctrl_top…).' : '{h} is driven by ctrl_bottom and ctrl_top (Look At). Animate the controls.', { h: hit }), true);
+  // which part drives the drag: the gizmo part clicked, or the current axis constraint (F5–F8)
+  if (S.tool === 'move') { if (!part) part = S.axis || 'xz'; else if (part.length <= 2) { S.axis = part; store.set('axis', part); } }
+  else if (S.tool === 'rotate') { if (!part) part = S.rotAxis || 'y'; if (part === 'view') part = 'y'; S.rotAxis = part; }
+  else if (!part) part = 'xyz';
+  startTransform(e, part);
 });
 viewCanvas.addEventListener('pointermove', e => {
-  const r = viewCanvas.getBoundingClientRect(); S.vpointer = { x: e.clientX - r.left, y: e.clientY - r.top };
-  const g = S.vgrab || S.vrot || S.vscale;
-  if (g?.gizmo) {
-    const d = gizmo.drag(e); if (!d) return;
-    if (S.vgrab && d.move) { g.gm = d.move; updateVGrab(); }
-    if (S.vrot && d.angle != null) { g.acc = d.angle; updateVRot(); }
-    if (S.vscale && d.scale != null) { g.gs = d.scale; updateVScale(); }
-    return;
-  }
-  if (S.vgrab) return updateVGrab();
-  if (S.vrot) return updateVRot(true);
-  if (S.vscale) return updateVScale();
+  if (S.xf) { const d = gizmo.drag(e); if (d) updateTransform(d); return; }
   if (vp.isNavigating()) return;
   if (gizmo.hover(e)) render3();
-  const over = gizmo.hoveredPart || (S.tool !== 'select' && pickCtrl(e));
+  const over = gizmo.hoveredPart || (S.tool !== 'select' ? pickObject(e) : pickObject(e) && 'sel');
   viewCanvas.style.cursor = over ? (S.tool === 'rotate' ? 'alias' : S.tool === 'scale' ? 'nesw-resize' : S.tool === 'move' ? 'move' : 'pointer') : 'default';
 });
 viewCanvas.addEventListener('pointerup', e => {
-  if (!(S.vgrab || S.vrot || S.vscale)) return;
+  if (!S.xf) return;
   if (viewCanvas.hasPointerCapture(e.pointerId)) viewCanvas.releasePointerCapture(e.pointerId);
-  gizmo.end();
-  if (S.vgrab) endVGrab(true); if (S.vrot) endVRot(true); if (S.vscale) endVScale(true);
+  endTransform(true);
 });
-viewCanvas.addEventListener('contextmenu', e => {
-  if (!(S.vgrab || S.vrot || S.vscale)) return;
-  e.preventDefault(); gizmo.end();
-  if (S.vgrab) endVGrab(false); if (S.vrot) endVRot(false); if (S.vscale) endVScale(false);
-  msg('Transform cancelled (right-click).');
-});
-// G in the 3D Viewport. The Root moves in X (forwards) and Z (up); the squash & stretch controls only in Z.
-// This lab lets X or Z lock the axis while moving a helper.
-function startVGrab() {
-  if (S.bone === 'Rotation') return msg('The Rotation helper turns: choose Select and Rotate or press E.', true);
-  const ch = channelOf(S.bone);
-  if (!stage().channels.includes(ch)) return msg('This control is not animated in this stage.', true);
-  if (!S.vpointer) S.vpointer = { x: viewCanvas.clientWidth / 2, y: viewCanvas.clientHeight / 2 };
-  const start = S.override[ch] ?? +valueAt(ch, S.frame).toFixed(3);
-  const root = S.bone === 'Root', startX = S.override.locX ?? +valueAt('locX', S.frame).toFixed(3);
-  const p = pose(S.frame), world = new THREE.Vector3(p.x, p.center, 0);
-  const dist = cam3.position.distanceTo(world), wpp = 2 * dist * Math.tan(cam3.fov * Math.PI / 360) / viewCanvas.clientHeight;
-  S.vgrab = { ch, root, start, startX, x0: S.vpointer.x, y0: S.vpointer.y, wpp, num: '', axis: S.axis || (root ? null : 'z'), prev: { ...S.override } };
-  viewHost.classList.add('modal'); updateVGrab();
+viewCanvas.addEventListener('contextmenu', e => { if (!S.xf) return; e.preventDefault(); endTransform(false); msg('Transform cancelled (right-click).'); });
+// A drag with Select and Move / Rotate / Scale on the selected control: every axis works.
+function startTransform(e, part) {
+  const obj = S.bone;
+  if (scene[obj].frozen) return msg(tr('{h} is frozen: unfreeze it in the Scene Explorer.', { h: obj }), true);
+  const base = Object.fromEntries(tracksOf(obj).map(id => [id, cur(id)]));
+  S.xf = { obj, part, tool: S.tool, base, prev: { ...S.override }, pose: pose(S.frame) };
+  e.preventDefault(); viewCanvas.setPointerCapture(e.pointerId);
+  viewHost.classList.add('modal');
+  gizmo.begin(e, part); drawView();
 }
-function startVScale() {
-  if (!S.toggles.ctrls) return msg('Helpers are hidden: press Shift+H to show them.', true);
-  if (!S.vpointer) S.vpointer = { x: viewCanvas.clientWidth / 2, y: viewCanvas.clientHeight / 2 };
-  if (stage().free) { S.active = 'scale'; S.bone = 'Root'; S.hidden.delete('scale'); renderChannels(); drawGraph(); }
-  S.vscale = { start: stage().free ? S.override.scale ?? valueAt('scale', S.frame) : S.override.previewScale ?? 1, x0: S.vpointer.x, y0: S.vpointer.y, num: '', prev: { ...S.override } };
-  viewHost.classList.add('modal'); updateVScale();
-}
-function updateVScale() {
-  const g = S.vscale; if (!g) return;
-  const typed = g.num !== '' && g.num !== '-' && !isNaN(+g.num) ? +g.num / 100 : null;
-  const drag = Math.max(.1, g.gs != null ? g.start * g.gs : g.start + -(S.vpointer.y - g.y0) * .01);
-  const factor = Math.max(.1, typed ?? drag);
-  S.override = { ...g.prev, [stage().free ? 'scale' : 'previewScale']: +factor.toFixed(3) };
-  $('#view-readout').hidden = false; $('#view-readout').textContent = `${t('Scale')}  ${Math.round(factor * 100)}%${g.num ? `  [${g.num}%]` : ''} · ${t('uniform')}`;
-  drawView(); renderSidebar();
-}
-function endVScale(ok) {
-  const g = S.vscale; if (!g) return;
-  S.vscale = null; viewHost.classList.remove('modal'); $('#view-readout').hidden = true;
-  if (!ok) S.override = g.prev;
-  else if (stage().free) {
-    if (Math.abs(S.override.scale - valueAt('scale', S.frame)) < 1e-4) delete S.override.scale;
-    else if (S.keyMode === 'auto') keyScale();
-    else msg('Scaled. Click Set Keys to save the scale before changing frame.');
-  } else msg('Preview scale applied. Click another frame to clear it; scale keys are not part of this rig.');
-  drawView(); renderSidebar();
-}
-function updateVGrab() {
-  const g = S.vgrab; if (!g) return;
-  const typed = g.num !== '' && g.num !== '-' && !isNaN(+g.num) ? +g.num : null;
-  let dx = g.gm ? g.gm.x : (S.vpointer.x - g.x0) * g.wpp, dz = g.gm ? g.gm.z : -(S.vpointer.y - g.y0) * g.wpp, dy = dz;
-  if (typed != null) { if (g.axis === 'z') { dz = typed; dx = 0; } else if (g.axis === 'y') { dy = typed; dx = 0; dz = 0; } else { dx = typed; dz = 0; } }
-  if (g.axis === 'x') dz = 0;
-  if (g.axis === 'y') { dx = 0; dz = 0; }
-  if (g.axis === 'z' || !g.root) dx = 0;
-  const over = { ...g.prev };
-  if (g.axis === 'y') over.previewDepth = Math.round(((g.prev.previewDepth ?? 0) + dy) * 1000) / 1000;
-  else { over[g.ch] = Math.round((g.start + dz) * 1000) / 1000; if (g.root && dx !== 0) over.locX = Math.round((g.startX + dx) * 1000) / 1000; }
+function updateTransform(d) {
+  const x = S.xf, o = x.obj, over = { ...x.prev };
+  let text = '';
+  if (x.tool === 'move' && d.move) {
+    const local = worldToLocalMove(x.pose, o, [d.move.x, d.move.y, d.move.z]);
+    ['x', 'y', 'z'].forEach((a, i) => { const id = trackId(o, 'p' + a); over[id] = +(x.base[id] + local[i]).toFixed(4); });
+    text = `${t('Move')}  ${x.part.toUpperCase().split('').map(a => `${a} ${over[trackId(o, 'p' + a.toLowerCase())].toFixed(2)}`).join('  ')} m`;
+  }
+  if (x.tool === 'rotate' && d.angle != null) {
+    const id = trackId(o, 'r' + x.part), v = x.base[id] + d.angle;
+    over[id] = +(max.state.angleSnap ? Math.round(v / 5) * 5 : v).toFixed(2);
+    text = `${t('Rotate')}  ${x.part.toUpperCase()} ${over[id].toFixed(1)}°`;
+  }
+  if (x.tool === 'scale' && d.scale != null) {
+    for (const a of x.part.split('')) { const id = trackId(o, 's' + a); over[id] = +(x.base[id] * d.scale).toFixed(2); }
+    text = `${t('Scale')}  ${x.part.toUpperCase()} ${Math.round(d.scale * 100)}%`;
+  }
   S.override = over;
-  $('#view-readout').hidden = false;
-  const lock = g.root ? (g.axis ? ` · ${t(g.axis === 'x' ? 'only X' : g.axis === 'y' ? 'only Y' : 'only Z')}` : ` · ${t('X / Z lock an axis')}`) : ` · ${t('SS controls move only in Z')}`;
-  $('#view-readout').textContent = g.axis === 'y' ? `${t('Move')}  Y ${dy >= 0 ? '+' : ''}${dy.toFixed(2)} m${g.num ? `  [${g.num}]` : ''}${lock}` : `${t('Move')}${g.root ? `  X ${dx >= 0 ? '+' : ''}${dx.toFixed(2)} m` : ''}  Z ${dz >= 0 ? '+' : ''}${dz.toFixed(2)} m${g.num ? `  [${g.num}]` : ''}${lock}`;
+  $('#view-readout').hidden = false; $('#view-readout').textContent = `${o} · ${text}`;
   drawView(); renderSidebar();
 }
-function endVGrab(ok) {
-  const g = S.vgrab; if (!g) return;
-  S.vgrab = null; viewHost.classList.remove('modal'); $('#view-readout').hidden = true;
-  if (!ok) S.override = g.prev;
-  else if (g.axis === 'y') msg('Depth preview applied. Click another frame to clear it; the rig has no Y Position track.');
-  else {
-    for (const c of [g.ch, 'locX']) if (S.override[c] != null && Math.abs(S.override[c] - valueAt(c, S.frame)) < 1e-3) delete S.override[c];
-    if (Object.keys(S.override).length) { if (S.keyMode === 'auto') keyControl(); else msg('Moved. Click Set Keys to save the pose before changing frame.'); }
-  }
-  drawView(); renderSidebar();
-}
-// R in the 3D Viewport: turn the Rotation control. Clockwise = rolling forwards (+Y). Typed numbers are degrees.
-function startVRot() {
-  if (S.bone !== 'Rotation') return msg(S.toggles.ctrls ? 'Select the orange Rotation helper to rotate. Use Select and Move for the other helpers.' : 'Helpers are hidden: press Shift+H to show them.', true);
-  if (!stage().channels.includes('rotY')) return msg('This control is not animated in this stage.', true);
-  if (!S.vpointer) S.vpointer = { x: viewCanvas.clientWidth / 2 + 120, y: viewCanvas.clientHeight / 2 };
-  const c = centreOnScreen(), a = Math.atan2(-(S.vpointer.y - c.y), S.vpointer.x - c.x);
-  S.vrot = { start: S.override.rotY ?? +valueAt('rotY', S.frame).toFixed(2), last: a, acc: 0, num: '', prev: { ...S.override } };
-  viewHost.classList.add('modal'); updateVRot();
-}
-function centreOnScreen() {
-  const p = pose(S.frame), v = new THREE.Vector3(p.x, p.center, 0).project(cam3);
-  return { x: (v.x + 1) / 2 * viewCanvas.clientWidth, y: (1 - v.y) / 2 * viewCanvas.clientHeight };
-}
-function updateVRot(move = false) {
-  const r = S.vrot; if (!r) return;
-  if (move) { const c = centreOnScreen(), a = Math.atan2(-(S.vpointer.y - c.y), S.vpointer.x - c.x); let d = a - r.last; d = ((d + 3 * Math.PI) % (2 * Math.PI)) - Math.PI; r.acc -= d * 180 / Math.PI; r.last = a; }
-  const typed = r.num !== '' && r.num !== '-' && !isNaN(+r.num) ? +r.num : null, delta = Math.round(r.acc);
-  const target = typed ?? r.start + delta;
-  S.override = { ...r.prev, rotY: Math.round(target * 100) / 100 };
-  $('#view-readout').hidden = false;
-  $('#view-readout').textContent = `${t('Rotate')}  Y ${target.toFixed(0)}°${r.num ? `  [${r.num}]` : ''} · ${t('clockwise = forwards')}`;
-  drawView(); renderSidebar();
-}
-function endVRot(ok) {
-  const r = S.vrot; if (!r) return;
-  S.vrot = null; viewHost.classList.remove('modal'); $('#view-readout').hidden = true;
-  if (!ok) S.override = r.prev;
-  else { if (S.override.rotY != null && Math.abs(S.override.rotY - valueAt('rotY', S.frame)) < 1e-3) delete S.override.rotY; if (Object.keys(S.override).length) { if (S.keyMode === 'auto') keyControl(); else msg('Rotated. Click Set Keys to save the pose before changing frame.'); } }
-  drawView(); renderSidebar();
-}
-function vrotKey(e) {
-  const r = S.vrot, k = e.key;
-  if (k === 'Escape') return endVRot(false);
-  if (k === 'Enter' || k === ' ') return endVRot(true);
-  if (/^[0-9.]$/.test(k)) r.num += k;
-  else if (k === '-') r.num = r.num.startsWith('-') ? r.num.slice(1) : '-' + r.num;
-  else if (k === 'Backspace') r.num = r.num.slice(0, -1);
-  else if (/^[xyzXYZ]$/.test(k)) { msg('The Rotation control turns only around Y in this rig.'); return; }
-  else return;
-  updateVRot();
-}
-  function vgrabKey(e) {
-  const g = S.vgrab, k = e.key;
-  if (k === 'Escape') return endVGrab(false);
-  if (k === 'Enter' || k === ' ') return endVGrab(true);
-  if (/^[0-9.]$/.test(k)) g.num += k;
-  else if (k === '-') g.num = g.num.startsWith('-') ? g.num.slice(1) : '-' + g.num;
-  else if (k === 'Backspace') g.num = g.num.slice(0, -1);
-  else if ((k === 'x' || k === 'X') && g.root) g.axis = g.axis === 'x' ? null : 'x';
-  else if ((k === 'z' || k === 'Z') && g.root) g.axis = g.axis === 'z' ? null : 'z';
-  else if (k === 'z' || k === 'Z') return;
-  else if (k === 'x' || k === 'X' || k === 'y' || k === 'Y') { msg(g.root ? 'The ball moves in X and Z in this lab (side view).' : 'SS controls move only in Z.'); return; }
-  else return;
-  updateVGrab();
-}
-function vscaleKey(e) {
-  const g = S.vscale, k = e.key;
-  if (k === 'Escape') return endVScale(false);
-  if (k === 'Enter' || k === ' ') return endVScale(true);
-  if (/^[0-9.]$/.test(k)) g.num += k;
-  else if (k === 'Backspace') g.num = g.num.slice(0, -1);
-  else return;
-  updateVScale();
-}
-// Set Keys: key the selected helper at the current frame, with its current pose.
-// The Z Position is always keyed; the Root's X Position only when it was moved,
-// so keying a bounce does not put ease-in and ease-out into a constant travel.
-function keyControl() {
-  const ch = channelOf(S.bone);
-  if (!stage().channels.includes(ch)) return msg('This control is not animated in this stage.', true);
-  const f = Math.round(S.frame);
-  pushUndo(); clearSelection();
-  const chans = [ch];
-  if (S.bone === 'Root' && S.override.locX != null && Math.abs(S.override.locX - valueAt('locX', f)) > 1e-4) chans.push('locX');
-  let last = null;
-  for (const c of chans) {
-    const ks = S.data.channels[c], v = +(S.override[c] ?? valueAt(c, f)).toFixed(3);
-    let k = ks.find(q => q.frame === f);
-    if (k) moveKey(k, f, v);
-    else { const prev = [...ks].reverse().find(q => q.frame < f); k = key(f, v, c === 'locX' && prev ? prev.interp : 'BEZIER'); ks.push(k); }
-    delete S.override[c]; k.select = true; last = k; recalcHandles(ks);
-  }
-  S.activeKey = last; S.active = ch;
-  msg(tr('Inserted a keyframe on {c} at frame {n}.', { c: ch === 'rotY' ? 'Rotation · Y Rotation' : `${S.bone} · ${[...chans].sort().map(c => CHANNELS[c].axis).join(', ')} Position`, n: f })); changed(true);
-}
-function keyScale() {
-  if (!stage().free) return;
-  const f = Math.round(S.frame), ks = S.data.channels.scale;
-  pushUndo(); clearSelection();
-  const v = +(S.override.scale ?? valueAt('scale', f)).toFixed(3);
-  let k = ks.find(q => q.frame === f);
-  if (k) moveKey(k, f, v);
-  else { k = key(f, v); ks.push(k); }
-  delete S.override.scale;
-  k.select = true; S.activeKey = k; S.active = 'scale'; S.bone = 'Root';
-  recalcHandles(ks);
-  msg(tr('Inserted a keyframe on {c} at frame {n}.', { c: CHANNELS.scale.name, n: f })); changed(true);
+function endTransform(ok) {
+  const x = S.xf; if (!x) return;
+  S.xf = null; gizmo.end(); viewHost.classList.remove('modal'); $('#view-readout').hidden = true;
+  if (!ok) { S.override = x.prev; drawView(); return; }
+  const changes = {};
+  for (const id of tracksOf(x.obj)) if (S.override[id] != null && S.override[id] !== x.prev[id]) changes[id] = S.override[id];
+  S.override = x.prev;
+  if (Object.keys(changes).length) applyChange(changes); else drawView();
 }
 function syncTransformTools() {
   max.setModes({ tool: S.tool, silent: true });
-  gizmo.setVisible(S.toggles.ctrls && S.tool !== 'select');
 }
 function activateTool(tool) {
-  if (S.vgrab) endVGrab(false);
-  if (S.vrot) endVRot(false);
-  if (S.vscale) endVScale(false);
+  if (S.xf) endTransform(false);
   S.tool = tool; store.set('tool', tool); syncTransformTools(); drawView();
-  if (tool === 'rotate' && S.bone !== 'Rotation') msg('Select and Rotate: only the orange Rotation helper turns in this rig.');
 }
 function chooseAxis(axis) {
-  S.axis = axis && S.axis === axis ? null : axis;
-  store.set('axis', S.axis);
-  msg(S.axis ? tr('Restrict to {a}', { a: S.axis.toUpperCase() }) : 'Axis constraint off: free move in the view plane.');
-  if (S.vgrab) {
-    S.vgrab.axis = S.axis || (S.vgrab.root ? null : 'z');
-    updateVGrab();
-  }
+  S.axis = axis; store.set('axis', S.axis);
+  if (S.tool === 'rotate' && axis.length === 1) S.rotAxis = axis;
+  msg(tr('Restrict to {a}', { a: S.axis.toUpperCase() }));
   syncTransformTools(); drawView();
 }
 function syncKeyMode() {
@@ -693,22 +622,11 @@ function syncKeyMode() {
 function chooseKeyMode(mode) {
   S.keyMode = S.keyMode === mode ? 'off' : mode;
   store.set('keyMode', S.keyMode);
+  if (S.keyMode !== 'set' && Object.keys(S.override).length) dropOverrides();
   syncKeyMode();
-  msg(S.keyMode === 'auto' ? 'Auto Key: moving a helper creates a key.' : S.keyMode === 'set' ? 'Set Key Mode: pose a helper, then click Set Keys.' : 'Key modes off. Enable Auto Key or Set Key Mode to animate.');
+  msg(S.keyMode === 'auto' ? 'Auto Key: moving a control creates a key.' : S.keyMode === 'set' ? 'Set Key Mode: pose a control, then click Set Keys.' : 'Key modes off: changes move the whole animation of a track. Enable Auto Key or Set Key Mode to animate.');
 }
 syncKeyMode(); syncTransformTools();
-function clearControl() {
-  if (stage().free && S.tool === 'scale') {
-    S.override.scale = 1; drawView(); renderSidebar();
-    if (S.keyMode === 'auto') keyScale(); else msg('Scaled. Click Set Keys to save the scale before changing frame.');
-    return;
-  }
-  const ch = channelOf(S.bone);
-  if (!stage().channels.includes(ch)) return;
-  if (ch === 'locZ') return msg('Resetting the Root would send the ball to the origin (X 0, Z 0). Move it instead.');
-  S.override = { ...S.override, [ch]: 0 }; drawView(); renderSidebar();
-  if (S.keyMode === 'auto') keyControl(); else msg(ch === 'rotY' ? 'Rotation reset. Click Set Keys to save it.' : 'Position reset. Click Set Keys to save it.');
-}
 function dropOverrides() {
   const lost = Object.entries(S.override).some(([ch, v]) => Math.abs(v - valueAt(ch, S.frame)) > 1e-3);
   S.override = {};
@@ -755,13 +673,13 @@ function drawGraph() {
   // outside the frame range
 
   // reference
-  if (S.toggles.ref && stage().id === 'weight' && !S.hidden.has('locZ')) {
+  if (S.toggles.ref && stage().id === 'weight' && S.shown.has('locZ')) {
     ctx.setLineDash([6, 4]); ctx.strokeStyle = '#ffbf00b0'; ctx.lineWidth = 1.6; ctx.beginPath();
     for (let x = 0; x <= w; x += 2) { const y = gy(REFERENCE(fx(x))); x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
     ctx.stroke(); ctx.setLineDash([]);
   }
   // Contact intervals under the Z Position curve.
-  if (!S.hidden.has('locZ')) {
+  if (S.shown.has('locZ') && S.data.channels.locZ) {
     const c = contacts(S.data.channels.locZ), y = gy(0) + 12;
     ctx.strokeStyle = '#6f8fb8'; ctx.fillStyle = '#9dc0ea'; ctx.lineWidth = 1;
     intervals(c).forEach((n, i) => {
@@ -771,7 +689,12 @@ function drawGraph() {
     });
   }
   // curves
-  for (const id of visibleChannels()) {
+  // tracks without keys: a flat line at their value, as Max draws an unanimated track
+  for (const id of visibleChannels().filter(i => !S.data.channels[i])) {
+    ctx.strokeStyle = CHANNELS[id].color; ctx.globalAlpha = .75; ctx.lineWidth = 1; const y = gy(valueAt(id, S.frame));
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  for (const id of keyedVisible()) {
     const ch = CHANNELS[id], act = id === S.active;
     ctx.strokeStyle = ch.color; ctx.globalAlpha = act ? 1 : 0.55; ctx.lineWidth = act ? 2 : 1.4;
     if (!editable(id)) ctx.setLineDash([3, 3]);
@@ -827,16 +750,16 @@ function prevInterp(id, k) { const ks = S.data.channels[id], i = ks.indexOf(k); 
 
 function hitTest(x, y) {
   const near = (p, r = 8) => Math.hypot(gx(p.frame) - x, gy(p.value) - y) <= r;
-  for (const id of visibleChannels()) {
+  for (const id of keyedVisible()) {
     if (!editable(id)) continue;
     for (const k of S.data.channels[id]) if (k.select) {
       if (prevInterp(id, k) === 'BEZIER' && near(k.left, 7)) return { id, k, side: 'left' };
       if (k.interp === 'BEZIER' && near(k.right, 7)) return { id, k, side: 'right' };
     }
   }
-  const order = [S.active, ...visibleChannels().filter(i => i !== S.active)];
+  const order = [S.active, ...keyedVisible().filter(i => i !== S.active)];
   for (const id of order) {
-    if (!visibleChannels().includes(id) || !editable(id)) continue;
+    if (!keyedVisible().includes(id) || !editable(id)) continue;
     for (const k of S.data.channels[id]) if (near(k)) return { id, k };
   }
   return null;
@@ -859,8 +782,8 @@ function setupGraphInput() {
       // Add Keys: click on the active curve to add a key at that frame
       const f = Math.round(fx(x)), id = S.active, ks = S.data.channels[id];
       if (!visibleChannels().includes(id)) return msg('Show the curve first: click its track in the Controller Window.', true);
-      if (ks.some(q => q.frame === f)) return msg('There is already a keyframe on that frame.', true);
-      pushUndo(); clearSelection(); const k = key(f, +valueAt(id, f).toFixed(3)); k.select = true; ks.push(k); recalcHandles(ks); S.activeKey = k;
+      if (ks?.some(q => q.frame === f)) return msg('There is already a keyframe on that frame.', true);
+      pushUndo(); clearSelection(); const k = setKeyAt(id, f, +valueAt(id, f).toFixed(3)); k.select = true; S.activeKey = k;
       msg(tr('Inserted a keyframe on {c} at frame {n}.', { c: CHANNELS[id].name, n: f })); changed(true); return;
     }
     if (hit?.side) { S.drag = { handle: hit, x, y, started: false }; S.active = hit.id; S.activeKey = hit.k; renderAll(); return; }
@@ -958,12 +881,10 @@ function setHandle(type) {
 function insertKey() {
   const id = S.active;
   if (!editable(id)) return msg('This channel is locked in this lab.', true);
-  const f = Math.round(S.frame), ks = S.data.channels[id];
+  const f = Math.round(S.frame);
   pushUndo();
-  let k = ks.find(q => q.frame === f);
-  if (!k) { k = key(f, +valueAt(id, f).toFixed(3)); ks.push(k); }
+  const k = setKeyAt(id, f, +valueAt(id, f).toFixed(3));
   clearSelection(); k.select = true; S.activeKey = k;
-  recalcHandles(ks);
   msg(tr('Inserted a keyframe on {c} at frame {n}.', { c: CHANNELS[id].name, n: f })); changed(true);
 }
 function deleteKeys(sel = selected()) {
@@ -1020,26 +941,33 @@ document.addEventListener('pointerdown', e => { if (!menuEl.hidden && !menuEl.co
 // Controller Window: as in 3ds Max, the Key Window shows the curves of the highlighted tracks.
 // Click a track to show only its curve, Ctrl+click to add or remove curves, click a helper to show all its tracks.
 function renderChannels() {
-  let html = '<div class="mx-tvnode group" style="--d:0"><span class="tw">▾</span>World</div>', group = null;
-  for (const id of stage().channels) {
-    if (!S.data.channels[id]) continue;
-    const ch = CHANNELS[id];
-    if (ch.bone !== group) { group = ch.bone; const h = HELPERS.find(x => x.id === group); html += `<button type="button" class="mx-tvnode group${S.bone === group ? ' sel' : ''}" style="--d:1" data-bone="${group}" data-no-i18n><span class="tw">▾</span><span class="mx-ob-ico" style="--c:${h?.color || '#6fa8e8'}"></span>${esc(group)}</button>`; }
-    const shown = !S.hidden.has(id);
-    html += `<button type="button" class="mx-tvnode${shown ? ' on' : ''}${id === S.active ? ' active' : ''}" style="--d:2" data-ch="${id}" aria-pressed="${shown}" data-no-i18n><span class="sw" style="background:${ch.color}"></span>${ch.name}</button>`;
+  // As in Max: World › Objects › the selected object › Transform › Position › Zero Pos XYZ › X / Y / Z Position…
+  const rows = [{ d: 0, label: 'World', kind: 'world' }, { d: 1, label: 'Objects', kind: 'node' }];
+  const o = S.bone;
+  if (o && isControl(o)) {
+    const ids = tracksOf(o), row = (d, label, list, extra = {}) => ({ d, label, kind: 'node', sel: list.length > 0 && list.every(i => S.shown.has(i)), attrs: { 'data-ids': list.join(',') }, ...extra });
+    const obj = OBJECTS.find(x => x.id === o);
+    rows.push(row(2, o, ids, { kind: 'object', icon: { Shape: 'seShape', Helper: 'seHelper' }[obj.kind], bold: true, sel: false }));
+    rows.push(row(3, 'Transform', ids, { sel: false }));
+    const pos = tracksOf(o, 'Position'), rot = tracksOf(o, 'Rotation'), sc = tracksOf(o, 'Scale');
+    rows.push(row(4, 'Position', pos, { sel: false }), row(5, 'Zero Pos XYZ', pos, { sel: false }));
+    for (const id of pos) rows.push({ d: 6, label: CHANNELS[id].name, kind: 'track', color: CHANNELS[id].color, sel: S.shown.has(id), bold: id === S.active && S.shown.has(id) && false, attrs: { 'data-ids': id, 'data-ch': id } });
+    rows.push(row(4, 'Rotation', rot, { sel: false }), row(5, 'Zero Euler XYZ', rot, { sel: false }));
+    for (const id of rot) rows.push({ d: 6, label: CHANNELS[id].name, kind: 'track', color: CHANNELS[id].color, sel: S.shown.has(id), attrs: { 'data-ids': id, 'data-ch': id } });
+    rows.push(row(4, 'Scale', sc, { attrs: { 'data-ids': sc.join(','), title: 'Bezier Scale: X, Y and Z Scale curves' } }));
   }
-  tv.tree.innerHTML = html;
+  tv.tree.innerHTML = trackTreeHTML(rows);
+  tv.tree.querySelectorAll('.mx-tvnode').forEach(b => { b.dataset.noI18n = ''; });
 }
+// Click a track (or a controller above it) to show its curves; Ctrl+click adds or removes them.
 tv.tree.addEventListener('click', e => {
   S.area = 'graph';
-  const grp = e.target.closest('[data-bone]');
-  if (grp) { const ids = stage().channels.filter(id => S.data.channels[id] && CHANNELS[id].bone === grp.dataset.bone); S.hidden = new Set(stage().channels.filter(id => !ids.includes(id))); selectBone(grp.dataset.bone); return; }
-  const row = e.target.closest('[data-ch]'); if (!row) return;
-  const id = row.dataset.ch;
-  if (e.ctrlKey || e.metaKey) { if (S.hidden.has(id)) S.hidden.delete(id); else if (visibleChannels().length > 1) S.hidden.add(id); }
-  else S.hidden = new Set(stage().channels.filter(c => c !== id));
-  if (!S.hidden.has(id)) { S.active = id; S.bone = CHANNELS[id].bone; max.select(S.bone); }
-  else S.active = visibleChannels()[0] || id;
+  const row = e.target.closest('[data-ids]'); if (!row) return;
+  const ids = row.dataset.ids.split(',').filter(Boolean); if (!ids.length) return;
+  if (e.ctrlKey || e.metaKey) { const all = ids.every(i => S.shown.has(i)); for (const i of ids) all ? S.shown.delete(i) : S.shown.add(i); }
+  else S.shown = new Set(ids);
+  S.active = ids.find(i => S.shown.has(i)) || visibleChannels()[0] || S.active;
+  if (keyedVisible().length) frameAll();
   renderAll();
 });
 
@@ -1067,8 +995,8 @@ function renderSidebar() {
   if (stage().id === 'squash') {
     const p = pose(S.frame);
     html += `<div class="sb-sep"></div><h4>${esc(t('Rig'))}</h4>`;
-    html += `<div class="sb-stat"><span data-no-i18n>SS_Top</span><b>${(S.override.topZ ?? valueAt('topZ', S.frame)).toFixed(2)} m</b></div>`;
-    html += `<div class="sb-stat"><span data-no-i18n>SS_Bottom</span><b>${(S.override.botZ ?? valueAt('botZ', S.frame)).toFixed(2)} m</b></div>`;
+    html += `<div class="sb-stat"><span data-no-i18n>ctrl_top Z</span><b>${(S.override.topZ ?? valueAt('topZ', S.frame)).toFixed(2)} m</b></div>`;
+    html += `<div class="sb-stat"><span data-no-i18n>ctrl_bottom Z</span><b>${(S.override.botZ ?? valueAt('botZ', S.frame)).toFixed(2)} m</b></div>`;
     html += `<div class="sb-stat"><span>${esc(t('Z Scale now'))}</span><b>${p.sz.toFixed(2)}</b></div>`;
     const low = lowestPoint(S.data);
     html += `<div class="sb-stat${low < -0.03 ? ' bad' : ''}"><span>${esc(t('Lowest point'))}</span><b>${low.toFixed(2)} m</b></div>`;
@@ -1107,7 +1035,7 @@ const RH = 20, NAMES = 150;
 function dsRows() {
   const rows = [{ kind: 'summary', label: 'Summary' }];
   let group = null;
-  for (const id of stage().channels) {
+  for (const id of TRACK_ORDER) {
     if (!S.data.channels[id]) continue;
     const ch = CHANNELS[id];
     if (ch.bone !== group) { group = ch.bone; rows.push({ kind: 'group', bone: group, label: group, ids: [] }); }
@@ -1235,7 +1163,7 @@ function setupTimeline() {
     if (y < TL_RULER) { S.drag = { tlScrub: true }; setFrame(Math.round(tlCanvas._inv(x))); return; }
     if (dopeSheet() && x < NAMES) {
       const r = tlCanvas._rows?.[tlCanvas._rowAt(y)];
-      if (r?.kind === 'ch') { S.active = r.id; S.bone = CHANNELS[r.id].bone; S.hidden.delete(r.id); renderAll(); }
+      if (r?.kind === 'ch') { S.active = r.id; S.shown.add(r.id); if (S.bone !== CHANNELS[r.id].bone) { S.bone = CHANNELS[r.id].bone; max.select(S.bone); } renderAll(); }
       else if (r?.kind === 'group') selectBone(r.bone);
       return;
     }
@@ -1337,11 +1265,11 @@ function renderStepCard() {
   const card = $('#step-card');
   if (st.free) {
     card.classList.remove('done');
-    card.innerHTML = `<div><span class="control-label">${esc(t('FREE PRACTICE'))}</span><h3>${esc(t('Make your own animation'))}</h3><p>${esc(t('All six curves are available: Root X and Z, Uniform Scale, SS_Top, SS_Bottom, and Rotation. Your work is saved in this browser.'))}</p></div>
+    card.innerHTML = `<div><span class="control-label">${esc(t('FREE PRACTICE'))}</span><h3>${esc(t('Make your own animation'))}</h3><p>${esc(t('Every control can move, rotate and scale on all three axes: ctrl_master, ctrl_pilota, squash_space, ctrl_top and ctrl_bottom. Your work is saved in this browser.'))}</p></div>
       <div><span class="control-label">${esc(t('HOW, IN 3DS MAX'))}</span><ol>
-        <li>${t('Select Root, choose Select and Move (<kbd>W</kbd>), and create keys with Auto Key (<kbd>N</kbd>) or Set Keys (<kbd>K</kbd>).')}</li>
-        <li>${t('Use SS_Top and SS_Bottom for squash and stretch; select Rotation and choose Select and Rotate (<kbd>E</kbd>).')}</li>
-        <li>${t('Use Select and Uniform Scale (<kbd>R</kbd>) with Auto Key or Set Keys, or edit its curve in Track View.')}</li>
+        <li>${t('Select ctrl_pilota, choose Select and Move (<kbd>W</kbd>), and create keys with Auto Key (<kbd>N</kbd>) or Set Keys (<kbd>K</kbd>).')}</li>
+        <li>${t('Use ctrl_top and ctrl_bottom for squash and stretch; rotate ctrl_pilota with Select and Rotate (<kbd>E</kbd>).')}</li>
+        <li>${t('Use Select and Uniform Scale (<kbd>R</kbd>) with Auto Key or Set Keys, or edit its curves in Track View.')}</li>
         <li>${t('Edit all six tracks and tangents in Track View – Curve Editor: click a track in the Controller Window to see its curve (<kbd>Ctrl</kbd>-click adds more), then play with <kbd>/</kbd>.')}</li>
       </ol></div>
       <div class="step-actions"><button type="button" class="mini-link" id="reset-stage">${esc(t('Reset my animation'))}</button></div>`;
@@ -1416,9 +1344,12 @@ function changed(commit = true) {
 }
 function enterStage() {
   tv.setMode(dopeSheet() ? 'dope' : 'curve'); $('#graph').hidden = dopeSheet(); $('#timeline').hidden = !dopeSheet(); $('#sidebar').hidden = dopeSheet();
-  S.focus = null; lastDone = null; S.hidden.clear(); for (const id of stage().hide || ['locX']) S.hidden.add(id); // the travel curve is shown on demand
-  S.active = stage().active || 'locZ'; S.bone = CHANNELS[S.active].bone; S.override = {};
+  S.focus = null; lastDone = null; S.override = {};
   loadData();
+  // the travel curve is shown on demand
+  S.active = stage().active || 'locZ'; S.bone = CHANNELS[S.active].bone; max.select(S.bone);
+  const hide = stage().hide || ['locX'];
+  S.shown = new Set(animatedOf(S.bone).filter(id => !hide.includes(id))); S.shown.add(S.active);
   S.toggles.ref = stage().independent ? !!stage().steps[S.step].reference : false;
   frameAll(); sizeBottom(); renderAll(); checkProgress();
 }
@@ -1430,4 +1361,4 @@ setupGraphInput(); setupTimeline();
 new ResizeObserver(() => renderLive()).observe(tv.host);
 onLangChange(() => renderAll());
 frameView3(); enterStage(); resize3();
-window.__maxAnim = S; window.__maxAnim3 = { cam3, ctrls3, selectBone, startVGrab, startVRot, keyControl, ball3, ballGroup }; window.__maxAnimGizmo = gizmo; window.__maxAnimVp = vp; // test hooks
+window.__maxAnim = S; window.__maxAnim3 = { cam3, ctrls3, bones3, selectBone, applyChange, setKeys, pose, ball3, ballGroup, scene }; window.__maxAnimGizmo = gizmo; window.__maxAnimVp = vp; // test hooks

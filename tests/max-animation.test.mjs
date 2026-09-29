@@ -19,14 +19,15 @@ test('Max bouncing-ball stages have working start states and solutions', () => {
 test('Max free animation makes every controller track available', () => {
   const free = STAGES.at(-1);
   assert.equal(free.free, true);
-  assert.deepEqual(free.channels, ['locX', 'locZ', 'scale', 'topZ', 'botZ', 'rotY']);
+  assert.deepEqual(free.channels, ['locX', 'locZ', 'ctrl_pilota.sx', 'ctrl_pilota.sy', 'ctrl_pilota.sz', 'topZ', 'botZ', 'rotY']);
   assert.deepEqual(free.hide, []);
   assert.deepEqual(Object.keys(startData(free).channels), free.channels);
   const first = startData(free);
   first.channels.rotY[0].value = 90;
   assert.equal(startData(free).channels.rotY[0].value, 0);
-  first.channels.scale[0].value = 2;
-  assert.equal(shape(first, 1).sx, 2);
+  for (const a of ['sx', 'sy', 'sz']) first.channels[`ctrl_pilota.${a}`][0].value = 200;
+  assert.ok(Math.abs(shape(first, 1).sx - 2) < 1e-9);
+  assert.ok(Math.abs(shape(first, 1).sz - 2) < 1e-9);
 });
 
 test('Max lesson uses Position and Rotation controllers and every step has Catalan and Spanish text', () => {
@@ -39,4 +40,21 @@ test('Max lesson uses Position and Rotation controllers and every step has Catal
       assert.ok(dictionary[line]?.es, `Missing Spanish: ${line}`);
     }
   }
+});
+
+test('Max rig: every control has nine Transform tracks and the bone follows ctrl_top and ctrl_bottom', async () => {
+  const { CONTROLS, tracksOf, rigPose, restValue } = await import('../labs/3ds-max-animation/rig.js');
+  for (const c of CONTROLS) assert.equal(tracksOf(c).length, 9);
+  const at = over => rigPose(id => over[id] ?? restValue(id));
+  const rest = at({});
+  assert.deepEqual(rest.ball.center.map(v => +v.toFixed(6)), [0, 0, 0.5]);
+  assert.ok(Math.abs(rest.ball.bottom) < 1e-9);
+  const squash = at({ topZ: -0.4 });
+  assert.ok(Math.abs(squash.ball.sz - 0.6) < 1e-9 && squash.ball.sx > 1, 'squash keeps the volume');
+  const tilted = at({ 'ctrl_top.px': 0.5 });
+  assert.ok(tilted.bone.dir[0] > 0.3, 'moving ctrl_top sideways bends the bone');
+  const moved = at({ 'ctrl_master.px': 2, locZ: 1 });
+  assert.ok(Math.abs(moved.ball.center[0] - 2) < 1e-9 && Math.abs(moved.ball.bottom - 1) < 1e-9, 'ctrl_pilota is linked to ctrl_master');
+  const turned = at({ 'ctrl_master.rz': 90, locX: 1 });
+  assert.ok(Math.abs(turned.pilota.o[1] - 1) < 1e-9, 'rotating ctrl_master turns the child position');
 });

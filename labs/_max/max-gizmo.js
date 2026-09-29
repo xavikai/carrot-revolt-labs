@@ -145,6 +145,15 @@ export function createGizmo({ scene, camera, dom }) {
         drag.edgeOn = Math.abs(camDir.dot(d)) < .2;
         const h = ray.ray.intersectPlane(drag.plane, new THREE.Vector3()); drag.last = h ? h.sub(origin) : null;
       }
+      if (mode === 'rotate') {
+        // Edge-on rings (and the view ring) turn by dragging along the ring's tangent on screen, as in Max.
+        const axis = part === 'view' ? camDir.clone().negate() : axisDir(part);
+        const hit = ray.ray.closestPointToPoint(origin, new THREE.Vector3()).sub(origin);
+        let radial = hit.sub(axis.clone().multiplyScalar(hit.dot(axis)));
+        if (radial.lengthSq() < 1e-8) radial = new THREE.Vector3(0, 1, 0).cross(axis);
+        const tan = axis.clone().cross(radial).normalize(), a = origin.clone().project(camera), b = origin.clone().add(tan).project(camera);
+        drag.tan = new THREE.Vector2(b.x - a.x, -(b.y - a.y)); if (drag.tan.lengthSq() < 1e-10) drag.tan.set(1, 0); drag.tan.normalize();
+      }
       paint(); return drag;
     },
     // Totals since begin(): move in Max units, rotation in degrees, scale as a factor.
@@ -159,7 +168,7 @@ export function createGizmo({ scene, camera, dom }) {
         return { move: m };
       }
       if (mode === 'rotate') {
-        if (drag.part === 'view' || drag.edgeOn || !drag.last) { drag.angle = -(e.clientX - drag.x0) * .6; return { angle: drag.angle }; }
+        if (drag.part === 'view' || drag.edgeOn || !drag.last) { drag.angle = ((e.clientX - drag.x0) * drag.tan.x + (e.clientY - drag.y0) * drag.tan.y) * .6; return { angle: drag.angle }; }
         const h = ray.ray.intersectPlane(drag.plane, new THREE.Vector3()); if (!h) return { angle: drag.angle };
         const v = h.sub(drag.origin), a = Math.atan2(drag.last.clone().cross(v).dot(drag.axis), drag.last.dot(v));
         drag.angle += a * 180 / Math.PI; drag.last = v;

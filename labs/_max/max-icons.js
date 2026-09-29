@@ -118,6 +118,32 @@ export const ICONS = {
   tvZoomRegion: dash('M3 3h18v14H3z', T) + `<circle cx="17" cy="19" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/>` + s('M21 23l7 6', 2.8),
   tvDopeSheet: `<rect x="3" y="5" width="26" height="22" rx="1.5" fill="none" stroke="#dcdcdc" stroke-width="2"/>` + f('M9 11l3 3-3 3-3-3zM18 11l3 3-3 3-3-3zM13 19l3 3-3 3-3-3zM24 19l3 3-3 3-3-3z', Y),
   window: s('M5 7h22v18H5zM5 11h22', 2),
+
+  // ── Scene Explorer: object types (rows) and the Display toolbar ──
+  seGeometry: `<circle cx="16" cy="16" r="10" fill="#e8e8e8"/><path d="M9 12a9 9 0 0 1 9-5" fill="none" stroke="#fff" stroke-width="2" opacity=".7"/>`,
+  seShape: s('M5 9h13v13H5z', 2.2) + s('M13 5h14v14H13', 2.2),
+  seHelper: s('M5 27V5l22 22z', 2.2) + s('M9 23V14l9 9z', 1.6) + s('M5 10h3M5 15h3M5 20h3', 1.4),
+  seBone: s('M7 25 21 11', 3) + f('M19 7l6 6-4 1-3-3zM5 23l4 4-3 1-2-2z', '#dcdcdc'),
+  seLight: s('M11 19a7 7 0 1 1 10 0c-1.5 1.5-2 3-2 4h-6c0-1-.5-2.5-2-4zM13 27h6', 2.2),
+  seCamera: `<rect x="4" y="10" width="17" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="2.2"/>` + s('M21 14l7-4v13l-7-4z', 2.2),
+  seSpaceWarp: s('M4 11c4-4 8 4 12 0s8 4 12 0M4 17c4-4 8 4 12 0s8 4 12 0M4 23c4-4 8 4 12 0s8 4 12 0', 2),
+  seGroup: `<rect x="5" y="5" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"/><rect x="10" y="10" width="12" height="12" fill="currentColor" opacity=".5"/>`,
+  seXref: `<rect x="5" y="5" width="22" height="22" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/>` + s('M11 21l10-10M15 11h6v6', 2.2),
+  seContainer: `<rect x="5" y="9" width="22" height="16" fill="none" stroke="currentColor" stroke-width="2.2"/>` + s('M5 9l4-4h14l4 4', 2.2),
+  seFrozen: s('M16 4v24M5.6 10l20.8 12M5.6 22l20.8-12M13 6l3 3 3-3M13 26l3-3 3 3', 2),
+  seHidden: s('M3 16s5-8 13-8 13 8 13 8-5 8-13 8S3 16 3 16z', 2) + `<circle cx="16" cy="16" r="4" fill="currentColor"/>`,
+  seAll: s('M7 7h18M7 13h18M7 19h18M7 25h18', 2.4),
+  seNone: s('M7 7h18v20H7z', 2),
+  seInvert: s('M7 7h18v20H7z', 2) + f('M7 7h18v10H7z'),
+  seFilter: f('M5 6h22l-8.5 10v9l-5 3V16z'),
+  seFilterSel: f('M5 6h22l-8.5 10v9l-5 3V16z') + cursor(18, 16),
+  seLayer: s('M16 5 28 11 16 17 4 11z', 2) + s('M4 16l12 6 12-6M4 21l12 6 12-6', 2),
+  seLayerTool: `<rect x="5" y="5" width="22" height="22" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>` + s('M9 12h14M9 17h14M9 22h8', 2),
+  rowEye: s('M2 16s5-8 14-8 14 8 14 8-5 8-14 8S2 16 2 16z', 2.4) + `<circle cx="16" cy="16" r="4.5" fill="currentColor"/>`,
+  rowEyeOff: s('M2 16s5-8 14-8 14 8 14 8', 2.4) + s('M9 20c2 1.5 4.5 2.5 7 2.5', 2.4),
+  rowFrozen: s('M16 3v26M4.8 9.5l22.4 13M4.8 22.5l22.4-13M12.5 5l3.5 3.5L19.5 5M12.5 27l3.5-3.5 3.5 3.5', 2.4),
+  vpFilter: f('M6 7h20l-7.5 9v8l-5 3V16z'),
+  home: s('M5 15 16 5l11 10M8 13v13h6v-7h4v7h6V13', 2.4),
 };
 
 export const icon = (name, cls = 'mx-ico') => `<svg class="${cls}" viewBox="0 0 32 32" aria-hidden="true" focusable="false">${ICONS[name] || ''}</svg>`;

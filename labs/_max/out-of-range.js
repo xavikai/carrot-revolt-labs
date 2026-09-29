@@ -47,12 +47,14 @@ export function evalOutOfRange(keys, frame, evaluate, types = {}) {
   }
 }
 
-// Thumbnails for the dialog, drawn as in Max's Param Curve Out-of-Range Types window.
+// Thumbnails for the dialog, drawn as in Max's Param Curve Out-of-Range Types window
+// (viewBox 0 0 70 46; the keyed range is between the two white lines at x = 24 and x = 46).
+export const OOR_RANGE = [24, 46];
 export const OOR_ICON = {
-  constant: 'M2 30 H30 C40 30 44 8 56 8 H88',
-  cycle: 'M2 30 C10 30 14 8 22 8 M22 30 C30 30 34 8 42 8 M42 30 C50 30 54 8 62 8 M62 30 C70 30 74 8 82 8',
-  loop: 'M2 30 C10 30 14 8 22 8 C25 8 24 30 30 30 C38 30 42 8 50 8 C53 8 52 30 58 30 C66 30 70 8 78 8',
-  pingpong: 'M2 30 C10 30 14 8 22 8 C30 8 34 30 42 30 C50 30 54 8 62 8 C70 8 74 30 82 30',
-  linear: 'M2 38 L30 24 C40 20 46 12 58 9 L88 0',
-  relative: 'M2 36 C8 36 10 28 16 28 C22 28 24 20 30 20 C36 20 38 12 44 12 C50 12 52 4 58 4',
+  constant: 'M2 30H24C30 30 31 12 35 12S40 30 46 30H68',
+  cycle: 'M2 34C9 34 14 12 24 12V34C31 34 36 12 46 12V34C53 34 58 12 68 12',
+  loop: 'M2 34C7 34 8 12 13 12S19 34 24 34C29 34 30 12 35 12S41 34 46 34C51 34 52 12 57 12S63 34 68 34',
+  pingpong: 'M2 12C13 12 13 34 24 34S35 12 46 12 57 34 68 34',
+  linear: 'M2 42 24 32C31 29 38 18 46 14L68 4',
+  relative: 'M2 40C12 40 14 31 24 31S36 22 46 22 58 12 68 12',
 };

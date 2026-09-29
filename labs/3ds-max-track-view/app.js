@@ -1,10 +1,10 @@
 // Track View Lab: Time Slider, Track Bar, Curve Editor and Dope Sheet in a 3ds Max 2027 workspace.
 import * as THREE from 'three';
 import { TRACKS, createLesson, track, findKey, trackForKey, valueAt, addKey, moveKeys, deleteKeys, moveGraphKey, setTangent, dragTangent, checkLesson, setTimelineRange, tangentName, setOutOfRange } from './model.js?v=4';
-import { createMaxViewport } from '../_max/max-viewport.js?v=1';
-import { createGizmo, fromMax } from '../_max/max-gizmo.js?v=1';
-import { createMaxShell, createTrackView, rollout, spinner } from '../_max/max-shell.js?v=2';
-import { icon } from '../_max/max-icons.js?v=1';
+import { createMaxViewport } from '../_max/max-viewport.js?v=2';
+import { createGizmo, fromMax } from '../_max/max-gizmo.js?v=2';
+import { createMaxShell, createTrackView, rollout, spinner, trackTreeHTML } from '../_max/max-shell.js?v=3';
+import { icon } from '../_max/max-icons.js?v=3';
 
 const $ = s => document.querySelector(s);
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -101,7 +101,7 @@ function lessonStatus() {
 // ─── The 3ds Max main window ─────────────────────────────────────────────────
 const max = createMaxShell($('#max-app'), {
   file: 'Ball_Timing.max', fps: 30, units: 'm', tab: 'motion',
-  objects: [{ id: 'Ball_01', name: 'Ball_01', color: '#e1117f', kind: 'Object' }], selected: 'Ball_01',
+  objects: [{ id: 'Ball_01', name: 'Ball_01', color: '#e1117f', kind: 'Geometry' }], selected: 'Ball_01',
   keyFilters: ['Position', 'Rotation', 'Scale'],
   pages: { modify: modifyPage(), motion: '' },
   actions: {
@@ -185,8 +185,8 @@ function tool(t) { S.tool = t; max.setModes({ tool: t, silent: true }); render()
 
 function outOfRangeDialog() {
   const id = S.active, cur = S.scene.oor[id] || { in: 'constant', out: 'constant' };
-  max.outOfRangeDialog({ current: cur, tracks: `Ball_01 · ${meta(id).name}. Choose a thumbnail for both sides, or ◀ in (before the first key) and ▶ out (after the last key).`,
-    onChoose: (side, type) => { pushUndo(); setOutOfRange(S.scene, [id], side, type); notify(`Out-of-Range: ${meta(id).name} ${side === 'both' ? '' : side + ' '}${type}`); render(); } });
+  max.outOfRangeDialog({ current: cur, tracks: `Ball_01 · ${meta(id).name}. Click a thumbnail for both sides, or the small buttons for In (before the first key) and Out (after the last key), then OK.`,
+    onOk: ({ in: tin, out }) => { pushUndo(); setOutOfRange(S.scene, [id], 'in', tin); setOutOfRange(S.scene, [id], 'out', out); notify(`Out-of-Range: ${meta(id).name} · In ${tin} · Out ${out}`); render(); } });
 }
 
 // ─── Command Panel ───────────────────────────────────────────────────────────
@@ -251,10 +251,14 @@ function togglePlay() { if (S.playing) { stop(); return; } cleanPending(); S.pla
 
 // ─── Track View: Controller Window ───────────────────────────────────────────
 function drawTree() {
-  const all = TRACKS.map(t => t.id).join(',');
-  const row = (d, label, ids = '') => `<div class="mx-tvnode group" style="--d:${d}" data-ids="${ids}"><span class="tw">▾</span>${label}</div>`;
-  tv.tree.innerHTML = row(0, 'World') + row(1, '<span class="mx-ob-ico" style="--c:#e1117f"></span> Ball_01', all) + row(2, 'Transform', all) +
-    ['Position', 'Rotation', 'Scale'].map(g => row(3, g, TRACKS.filter(t => t.group === g).map(t => t.id).join(',')) + TRACKS.filter(t => t.group === g).map(t => `<button type="button" class="mx-tvnode${S.active === t.id ? ' on' : ''}" style="--d:4" data-track-id="${t.id}" data-ids="${t.id}" aria-pressed="${S.active === t.id}"><span class="sw" style="background:${t.color}"></span>${esc(t.name)}</button>`).join('')).join('');
+  // As in Max: World › Objects › Ball_01 › Transform › Position › Position XYZ › X / Z Position…
+  const all = TRACKS.map(t => t.id).join(','), ids = g => TRACKS.filter(t => t.group === g).map(t => t.id).join(',');
+  const rows = [{ d: 0, label: 'World', kind: 'world', attrs: { 'data-ids': all } }, { d: 1, label: 'Objects', attrs: { 'data-ids': all } }, { d: 2, label: 'Ball_01', kind: 'object', icon: 'seGeometry', bold: true, attrs: { 'data-ids': all } }, { d: 3, label: 'Transform', attrs: { 'data-ids': all } }];
+  const track = (d, t) => ({ d, label: t.name, kind: 'track', color: t.color, sel: S.active === t.id, attrs: { 'data-track-id': t.id, 'data-ids': t.id } });
+  rows.push({ d: 4, label: 'Position', attrs: { 'data-ids': ids('Position') } }, { d: 5, label: 'Position XYZ', attrs: { 'data-ids': ids('Position') } }, ...TRACKS.filter(t => t.group === 'Position').map(t => track(6, t)));
+  rows.push({ d: 4, label: 'Rotation', attrs: { 'data-ids': ids('Rotation') } }, { d: 5, label: 'Euler XYZ', attrs: { 'data-ids': ids('Rotation') } }, ...TRACKS.filter(t => t.group === 'Rotation').map(t => track(6, t)));
+  rows.push(...TRACKS.filter(t => t.group === 'Scale').map(t => ({ ...track(4, t), label: 'Scale' })));
+  tv.tree.innerHTML = trackTreeHTML(rows);
 }
 tv.tree.addEventListener('click', e => { const b = e.target.closest('[data-track-id]'); if (!b) return; S.active = b.dataset.trackId; S.selected = S.selected.filter(id => trackForKey(S.scene, id) === S.active); render(); });
 
@@ -466,6 +470,7 @@ for (const svg of [graph, dope]) svg.addEventListener('keydown', e => { const hi
 // ─── Viewport: three.js scene with Max navigation and gizmos ─────────────────
 max.host.innerHTML = '<canvas id="view" aria-label="Perspective viewport: Ball_01. Click it to select it; drag the gizmo axes to move, rotate or scale it."></canvas>';
 const vp = createMaxViewport({ host: max.host, canvas: $('#view'), onChange: () => renderView() });
+vp.attachViewCube(max.viewCubeCanvas, face => { vp.setView(face); max.setViewLabel('Perspective'); });
 const R = 0.5; // ball radius in metres
 const ballTex = (() => { const c = document.createElement('canvas'); c.width = 256; c.height = 128; const g = c.getContext('2d'); g.fillStyle = '#e1117f'; g.fillRect(0, 0, 256, 128); g.fillStyle = '#ffffff'; g.fillRect(0, 58, 256, 12); for (let i = 0; i < 4; i++) g.fillRect(i * 64 + 26, 0, 12, 128); return new THREE.CanvasTexture(c); })();
 ballTex.colorSpace = THREE.SRGBColorSpace;
