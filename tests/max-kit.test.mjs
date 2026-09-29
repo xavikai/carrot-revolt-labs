@@ -30,3 +30,27 @@ test('Track View Lab: 3ds Max tangent types', () => {
   setTangent(s, [k.id], 'slow');
   assert.equal(k.left.value, k.value); assert.equal(k.right.value, k.value);
 });
+
+test('out-of-range types repeat a curve after its last key', async () => {
+  const { evalOutOfRange } = await import('../labs/_max/out-of-range.js');
+  const keys = [{ frame: 0, value: 0 }, { frame: 10, value: 10 }], lin = f => Math.max(0, Math.min(10, f)); // a ramp that holds outside the keys, like the curve evaluator
+  const at = (f, out) => evalOutOfRange(keys, f, lin, { in: 'constant', out });
+  assert.equal(at(15, 'constant'), 10);
+  assert.equal(at(15, 'cycle'), 5);
+  assert.equal(at(15, 'pingpong'), 5);
+  assert.equal(at(12, 'pingpong'), 8);
+  assert.equal(at(25, 'relative'), 25);
+  assert.ok(Math.abs(at(20, 'linear') - 20) < 1e-9);
+  assert.ok(at(19.9, 'loop') < 5, 'Loop blends back towards the first value');
+  assert.equal(evalOutOfRange(keys, -5, lin, { in: 'cycle' }), 5);
+});
+
+test('Animation Lab tracks use their out-of-range types', async () => {
+  const { chanValue } = await import('../labs/3ds-max-animation/stages.js');
+  const { key, recalcHandles } = await import('../labs/3ds-max-animation/fcurve.js');
+  const ks = recalcHandles([key(1, 0, 'LINEAR'), key(11, 4, 'LINEAR')]);
+  assert.equal(chanValue(ks, 20), 4);
+  assert.ok(Math.abs(chanValue(ks, 16, { in: 'constant', out: 'cycle' }) - 2) < 1e-6);
+  assert.ok(Math.abs(chanValue(ks, 16, { in: 'constant', out: 'pingpong' }) - 2) < 1e-6);
+  assert.ok(Math.abs(chanValue(ks, 21, { in: 'constant', out: 'relative' }) - 8) < 1e-6);
+});

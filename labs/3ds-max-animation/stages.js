@@ -1,5 +1,6 @@
 // Stages, starting scenes, guided steps and their checks for the Animation Lab.
 import { key, recalcHandles, evaluate, contacts, tops, strictlyDecreasing, intervals, sharpContact, hangTime, physicsBounce, matchScore, cloneKeys } from './fcurve.js';
+import { evalOutOfRange } from '../_max/out-of-range.js';
 
 export const FPS = 24;
 export const RANGE = [1, 72];
@@ -40,7 +41,14 @@ export function firstBounce(keys) {
   const c = contacts(keys);
   return c.length >= 2 ? [c[0], c[1]] : null;
 }
-const chanAt = (d, id, f) => { const k = d.channels[id]; return k && k.length ? evaluate(k, f) : 0; };
+// One track at a frame, with its Parameter Curve Out-of-Range Types (Constant unless the student changes them).
+export function chanValue(keys, f, types) {
+  if (!keys?.length) return 0;
+  if (!types || ((types.in || 'constant') === 'constant' && (types.out || 'constant') === 'constant')) return evaluate(keys, f);
+  const s = [...keys].sort((a, b) => a.frame - b.frame);
+  return evalOutOfRange(s, f, x => evaluate(s, x), types);
+}
+const chanAt = (d, id, f) => chanValue(d.channels[id], f, d.oor?.[id]);
 // Where the ball is: bottom and top points (m), height, and the scale the rig gives it.
 export function shape(d, f, over = {}) {
   const root = over.locZ ?? chanAt(d, 'locZ', f), top = over.topZ ?? chanAt(d, 'topZ', f), bot = over.botZ ?? chanAt(d, 'botZ', f);
@@ -250,5 +258,7 @@ export function startData(stage, stepIndex = 0) {
   return d;
 }
 export function cloneData(d) {
-  return { channels: Object.fromEntries(Object.entries(d.channels).map(([k, v]) => [k, cloneKeys(v)])) };
+  const c = { channels: Object.fromEntries(Object.entries(d.channels).map(([k, v]) => [k, cloneKeys(v)])) };
+  if (d.oor) c.oor = JSON.parse(JSON.stringify(d.oor));
+  return c;
 }

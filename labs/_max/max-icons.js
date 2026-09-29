@@ -94,6 +94,8 @@ export const ICONS = {
   tvDraw: c('M4 22c0-8 10-8 10-14S6 4 8 10', T, 2.6) + s('M17 27l10-10 3 3-10 10h-3z', 2),
   tvAddKeys: s('M11 4v16M3 12h16', 3.4) + key(16, 16),
   tvMoveKeys: f('M14 3l4 5h-3v4h4V9l5 4-5 4v-3h-4v4h3l-4 5-4-5h3v-4H9v3l-5-4 5-4v3h4V8h-3z', '#dcdcdc') + key(17, 17) + flyout,
+  tvMoveKeysH: f('M3 14l6-6v4h14V8l6 6-6 6v-4H9v4z', '#dcdcdc') + key(17, 17),
+  tvMoveKeysV: f('M14 2l6 6h-4v14h4l-6 6-6-6h4V8H8z', '#dcdcdc') + key(17, 17),
   tvSlideKeys: f('M3 12l7-7v14zM14 5l7 7-7 7z', '#dcdcdc') + key(16, 16),
   tvScaleKeys: dash('M3 3h20v20H3z', '#dcdcdc') + key(15, 15),
   tvScaleValues: `<rect x="3" y="12" width="12" height="16" fill="#dcdcdc"/>` + dash('M3 3h22v25', '#dcdcdc') + s('M27 4v24M24 8h6M24 14h6M24 20h6', 1.8).replace('currentColor', Y),

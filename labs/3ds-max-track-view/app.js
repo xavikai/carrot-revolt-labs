@@ -1,6 +1,9 @@
 // Track View Lab: Time Slider, Track Bar, Curve Editor and Dope Sheet in a 3ds Max 2027 workspace.
-import { TRACKS, createLesson, track, findKey, trackForKey, valueAt, addKey, moveKeys, deleteKeys, moveGraphKey, setTangent, dragTangent, checkLesson, setTimelineRange, tangentName } from './model.js?v=3';
-import { createMaxShell, createTrackView, rollout, spinner } from '../_max/max-shell.js?v=1';
+import * as THREE from 'three';
+import { TRACKS, createLesson, track, findKey, trackForKey, valueAt, addKey, moveKeys, deleteKeys, moveGraphKey, setTangent, dragTangent, checkLesson, setTimelineRange, tangentName, setOutOfRange } from './model.js?v=4';
+import { createMaxViewport } from '../_max/max-viewport.js?v=1';
+import { createGizmo, fromMax } from '../_max/max-gizmo.js?v=1';
+import { createMaxShell, createTrackView, rollout, spinner } from '../_max/max-shell.js?v=2';
 import { icon } from '../_max/max-icons.js?v=1';
 
 const $ = s => document.querySelector(s);
@@ -15,18 +18,9 @@ const LESSONS = {
   range: { index: 'EXERCICI 02 · TIME CONFIGURATION', title: 'Mou i redimensiona el rang', summary: 'El rang de temps decideix quins fotogrames mostra el Time Slider i quins es reprodueixen. Les claus que queden fora del rang no s’esborren: continuen a la pista.', task: 'Deixa l’inici al fotograma 10 o més tard i el final al 55 o abans. Fes-ho amb Time Configuration (el botó del rellotge, a sota del play) o amb Ctrl+Alt i arrossegant al Track Bar: botó esquerre per a l’inici, dret per al final i central per desplaçar el rang.', success: 'Has ajustat els dos extrems del rang. Les claus de fora continuen a les pistes.' },
   curves: { index: 'EXERCICI 03 · CURVE EDITOR', title: 'Curve Editor i tangents', summary: 'A la Key Window, l’eix horitzontal és el temps i el vertical, el valor. La pendent de la corba és la velocitat. Les tangents decideixen com entra i surt la corba de cada clau: Auto, Spline, Fast, Slow, Step, Linear i Smooth.', task: 'A X Position, puja la clau central per sobre de 6 m: arrossega-la amb Move Keys o escriu el valor al camp de la dreta de la barra inferior de la Track View. Aplica-hi Set Tangents to Smooth o Auto. Després compara Slow, Fast i Break Tangents.', success: 'Has canviat el valor i la tangent: mira com varia la velocitat de la pilota al viewport.' },
   dope: { index: 'EXERCICI 04 · DOPE SHEET', title: 'Dope Sheet i timing', summary: 'El Dope Sheet mostra les claus en files, una per pista. Aquí canvies el moment de cada clau sense tocar-ne el valor. Amb Maj i arrossegant en fas una còpia.', task: 'Obre el Dope Sheet (menú Editor de la Track View, o Graph Editors › Track View - Dope Sheet). Mou la clau central de Y Rotation del fotograma 30 al 25 o abans. Després copia la clau central de Uniform Scale amb Maj + arrossegar.', success: 'Has canviat el ritme de dues pistes sense canviar-ne els valors.' },
-  loops: { index: 'EXERCICI 05 · OUT-OF-RANGE TYPES', title: 'Cycle, Loop i Ping Pong', summary: 'Fora de les claus, 3ds Max pot mantenir l’últim valor (Constant), repetir el tram (Cycle), repetir-lo acumulant el canvi (Loop) o anar endavant i enrere (Ping Pong). En aquesta escena la rotació té claus a 0° i 360°, entre els fotogrames 0 i 20.', task: 'Selecciona Y Rotation a la Track View i prem Parameter Curve Out-of-Range Types a la barra d’eines. Compara Cycle, Loop i Ping Pong. Tria Loop i ves al fotograma 60: Y Rotation ha de valer 1080°.', success: 'Loop conserva la continuïtat: 360° per volta, 1080° al fotograma 60.' },
+  loops: { index: 'EXERCICI 05 · OUT-OF-RANGE TYPES', title: 'Cycle, Loop, Ping Pong i Relative Repeat', summary: 'Fora de les claus, 3ds Max pot mantenir el valor (Constant), repetir el tram (Cycle), repetir-lo fonent el final amb l’inici (Loop), anar endavant i enrere (Ping Pong), continuar en línia recta (Linear) o repetir-lo sumant el canvi de cada volta (Relative Repeat). En aquesta escena la rotació té claus a 0° i 360°, entre els fotogrames 0 i 20.', task: 'Selecciona Y Rotation a la Track View i obre Parameter Curve Out-of-Range Types (botó de la barra d’eines o Edit › Controller › Out Of Range Types). Compara Cycle, Loop i Ping Pong amb el botó ▶ (out). Tria Relative Repeat i ves al fotograma 60: Y Rotation ha de valer 1080°.', success: 'Relative Repeat suma 360° a cada volta: 1080° al fotograma 60. És el que fa servir una roda que no para.' },
   free: { index: 'EXPLORACIÓ LLIURE', title: 'Construeix la teva animació', summary: 'Tens totes les eines: Auto Key, Set Keys amb filtres, Track Bar, Curve Editor i Dope Sheet. Afegeix, mou, copia o suprimeix claus i mira com canvia la pilota.', task: 'Anima la pilota com vulguis. Canvia les pistes que grava Set Keys amb el botó Filters..., compara tangents i fes una rotació que es repeteixi.', success: 'Segueix experimentant amb les pistes i els fotogrames.' },
 };
-const OUT_TYPES = [
-  ['constant', 'Constant', 'M4 30 L34 30 C44 30 50 6 60 6 L90 6'],
-  ['cycle', 'Cycle', 'M4 30 C12 30 16 6 24 6 M24 30 C32 30 36 6 44 6 M44 30 C52 30 56 6 64 6 M64 30 C72 30 76 6 84 6'],
-  ['loop', 'Loop', 'M4 34 C10 34 12 26 18 26 C24 26 26 18 32 18 C38 18 40 10 46 10 C52 10 54 2 60 2'],
-  ['pingpong', 'Ping Pong', 'M4 30 C12 30 16 6 24 6 C32 6 36 30 44 30 C52 30 56 6 64 6 C72 6 76 30 84 30'],
-  ['linear', 'Linear', 'M4 36 L30 22 C40 18 46 12 60 8 L90 0'],
-  ['relative', 'Relative Repeat', 'M4 34 L14 34 C20 34 22 26 28 26 L38 26 C44 26 46 18 52 18 L62 18 C68 18 70 10 76 10'],
-];
-const OUT_TEXT = { constant: 'Constant: manté el primer o l’últim valor.', cycle: 'Cycle: repeteix el mateix tram i torna al valor inicial.', loop: 'Loop: repeteix el tram sumant el canvi de cada volta.', pingpong: 'Ping Pong: alterna endavant i enrere entre les claus.' };
 const TAN_TOOLS = { tanAuto: 'auto', tanSpline: 'spline', tanFast: 'fast', tanSlow: 'slow', tanStep: 'step', tanLinear: 'linear', tanSmooth: 'smooth', breakTangents: 'break', unifyTangents: 'unify' };
 const TAN_ICON = { auto: 'tvTangentAuto', spline: 'tvTangentSpline', fast: 'tvTangentFast', slow: 'tvTangentSlow', step: 'tvTangentStep', linear: 'tvTangentLinear', smooth: 'tvTangentSmooth' };
 
@@ -42,7 +36,7 @@ const cleanPending = () => { S.pending = {}; };
 const notify = msg => max.prompt(msg);
 
 // ─── Undo ────────────────────────────────────────────────────────────────────
-const snapshot = () => JSON.stringify({ tracks: S.scene.tracks, start: S.scene.start, end: S.scene.end, out: S.scene.out });
+const snapshot = () => JSON.stringify({ tracks: S.scene.tracks, start: S.scene.start, end: S.scene.end, oor: S.scene.oor });
 function pushUndo() { S.undo.push(snapshot()); if (S.undo.length > 60) S.undo.shift(); S.redo = []; }
 function restore(json) { const d = JSON.parse(json); Object.assign(S.scene, d); S.selected = S.selected.filter(id => findKey(S.scene, id)); cleanPending(); S.frame = clamp(S.frame, S.scene.start, S.scene.end); render(); }
 function undo() { if (!S.undo.length) { notify('Undo: nothing to undo'); return; } S.redo.push(snapshot()); restore(S.undo.pop()); notify('Undo'); }
@@ -138,7 +132,12 @@ const max = createMaxShell($('#max-app'), {
     },
     curveEditor: () => { S.view = 'curve'; render(); tv.root.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); },
     dopeSheet: () => { S.view = 'dope'; render(); tv.root.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); },
-    grid: () => { S.grid = !S.grid; drawViewport(); notify(S.grid ? 'Grid on (G)' : 'Grid off (G)'); },
+    grid: () => { S.grid = !S.grid; vp.grid.visible = S.grid; renderView(); notify(S.grid ? 'Grid on (G)' : 'Grid off (G)'); },
+    zoomExtents: () => frameBall(), zoomExtentsAll: () => frameBall(), viewCube: () => { vp.setView('perspective'); frameBall(); max.setViewLabel('Perspective'); },
+    viewPerspective: () => { vp.setView('perspective'); max.setViewLabel('Perspective'); }, viewFront: () => { vp.setView('front'); max.setViewLabel('Front'); }, viewLeft: () => { vp.setView('left'); max.setViewLabel('Left'); }, viewTop: () => { vp.setView('top'); max.setViewLabel('Top'); },
+    pan: () => notify('Pan: drag with the middle mouse button'), orbit: () => notify('Orbit: Alt + middle mouse button'), zoom: () => notify('Zoom: Ctrl+Alt + middle mouse button, or the mouse wheel'),
+    axisX: () => lockAxis('x'), axisY: () => lockAxis('y'), axisZ: () => lockAxis('z'), axisPlane: () => lockAxis('xz'),
+    grabFrame: f => { S.previewing = true; setFrame(f, true); renderView(); S.previewing = false; return vp.renderer.domElement; },
     commandPanel: (tab, page) => { if (tab === 'motion') renderMotion(page); },
     layout: () => requestAnimationFrame(render),
     key: (e, combo) => {
@@ -157,9 +156,9 @@ const tv = createTrackView($('#max-tv'), {
     Keys: () => [{ label: 'Add Keys', checked: S.tvTool === 'addKeys', run: () => tvTool('addKeys') }, { label: 'Move Keys', checked: S.tvTool === 'moveKeys', run: () => tvTool('moveKeys') }, { sep: true }, { label: 'Delete Keys', keys: 'Delete', run: deleteSelected }, { label: 'Select All', keys: 'Ctrl+A', run: selectAllKeys }],
     Tangents: () => ['auto', 'spline', 'fast', 'slow', 'step', 'linear', 'smooth'].map(t => ({ label: `Set Tangents to ${t[0].toUpperCase() + t.slice(1)}`, run: () => applyTangent(t) })).concat([{ sep: true }, { label: 'Break Tangents', run: () => applyTangent('break') }, { label: 'Unify Tangents', run: () => applyTangent('unify') }]),
     Curves: () => [{ label: 'Parameter Curve Out-of-Range Types...', run: outOfRangeDialog }],
+    Edit: () => [{ label: 'Undo', keys: 'Ctrl+Z', run: undo }, { label: 'Redo', keys: 'Ctrl+Y', run: redo }, { sep: true }, { label: 'Copy', keys: 'Ctrl+C', dim: true }, { label: 'Paste', keys: 'Ctrl+V', dim: true }, { label: 'Controller ▸ Out Of Range Types...', run: outOfRangeDialog }],
     Show: () => [{ label: 'Show Tangents', checked: S.showTangents, run: () => tvTool('showTangents') }],
     View: () => [{ label: 'Frame Horizontal Extents', run: () => fitGraph(true, false) }, { label: 'Frame Value Extents', run: () => fitGraph(false, true) }],
-    Edit: () => [{ label: 'Undo', keys: 'Ctrl+Z', run: undo }, { label: 'Redo', keys: 'Ctrl+Y', run: redo }],
   },
   actions: {
     tool: id => tvTool(id),
@@ -171,7 +170,7 @@ max.registerWindow(tv.root);
 
 function tvTool(id) {
   if (TAN_TOOLS[id]) { applyTangent(TAN_TOOLS[id]); return; }
-  if (id === 'moveKeys' || id === 'addKeys') { S.tvTool = id; tv.setActive('moveKeys', id === 'moveKeys'); tv.setActive('addKeys', id === 'addKeys'); notify(id === 'addKeys' ? 'Add Keys: click on the curve to add a key there' : 'Move Keys: drag keys in time and value'); return; }
+  if (['moveKeys', 'moveKeysH', 'moveKeysV', 'addKeys'].includes(id)) { S.tvTool = id; tv.setActive('moveKeys', id !== 'addKeys'); tv.setActive('addKeys', id === 'addKeys'); notify({ addKeys: 'Add Keys: click on the curve to add a key there', moveKeys: 'Move Keys: drag keys in time and value', moveKeysH: 'Move Keys Horizontal: keys move only in time', moveKeysV: 'Move Keys Vertical: keys move only in value' }[id]); return; }
   if (id === 'showTangents') { S.showTangents = !S.showTangents; tv.setActive('showTangents', S.showTangents); render(); return; }
   if (id === 'outOfRange') { outOfRangeDialog(); return; }
   if (id === 'frameH') { fitGraph(true, false); return; }
@@ -185,16 +184,9 @@ function deselect() { if (max.state.lock) { notify('Selection Lock is on: press 
 function tool(t) { S.tool = t; max.setModes({ tool: t, silent: true }); render(); }
 
 function outOfRangeDialog() {
-  if (S.active !== 'rotation' && S.lesson !== 'free') notify('Tip: in this lab Out-of-Range Types act on Y Rotation');
-  const d = max.dialog('Param Curve Out-of-Range Types', `<p class="mx-note">Before the first key and after the last one, the curve can hold, repeat or continue. In this lab it works on <b>Y Rotation</b>.</p><div class="oor-grid">${OUT_TYPES.map(([id, label, path]) => `<button type="button" data-oor="${id}" class="${S.scene.out === id ? 'on' : ''}"${['linear', 'relative'].includes(id) ? ' disabled title="Not used in this lab"' : ''}><svg viewBox="0 0 90 40"><rect x="30" y="0" width="30" height="40" fill="#ffffff10"/><path d="${path}" fill="none" stroke="#e8e8e8" stroke-width="1.8"/></svg><small>${label}</small></button>`).join('')}</div><p class="mx-note" id="oor-explain">${OUT_TEXT[S.scene.out] || ''}</p>`,
-    null, { ok: 'OK', cancel: '', width: 420 });
-  d.querySelector('.oor-grid').addEventListener('click', e => {
-    const b = e.target.closest('[data-oor]'); if (!b || b.disabled) return;
-    pushUndo(); S.scene.out = b.dataset.oor;
-    d.querySelectorAll('[data-oor]').forEach(x => x.classList.toggle('on', x === b));
-    d.querySelector('#oor-explain').textContent = OUT_TEXT[S.scene.out];
-    notify(`Out-of-Range Type: ${b.textContent}`); render();
-  });
+  const id = S.active, cur = S.scene.oor[id] || { in: 'constant', out: 'constant' };
+  max.outOfRangeDialog({ current: cur, tracks: `Ball_01 · ${meta(id).name}. Choose a thumbnail for both sides, or ◀ in (before the first key) and ▶ out (after the last key).`,
+    onChoose: (side, type) => { pushUndo(); setOutOfRange(S.scene, [id], side, type); notify(`Out-of-Range: ${meta(id).name} ${side === 'both' ? '' : side + ' '}${type}`); render(); } });
 }
 
 // ─── Command Panel ───────────────────────────────────────────────────────────
@@ -233,7 +225,11 @@ max.page().addEventListener('change', e => {
 });
 
 // ─── Time ────────────────────────────────────────────────────────────────────
-function setFrame(f) { S.frame = clamp(Math.round(f), S.scene.start, S.scene.end); S.playFloat = S.frame; cleanPending(); render(); }
+function setFrame(f, quiet = false) {
+  const n = clamp(Math.round(f), S.scene.start, S.scene.end);
+  if (n !== S.frame && !quiet && Object.keys(S.pending).some(id => Math.abs(S.pending[id] - valueAt(S.scene, id, S.frame)) > 1e-3)) notify('The change was not keyed and is lost: animate with Auto Key (N), or Set Key Mode (\') + Set Keys (K)');
+  S.frame = n; S.playFloat = S.frame; cleanPending(); render();
+}
 function step(dir) {
   if (!S.keyMode) { setFrame(S.frame + dir); return; }
   const frames = [...new Set(Object.values(S.scene.tracks).flat().map(k => k.frame))].sort((a, b) => a - b);
@@ -365,7 +361,7 @@ graph.addEventListener('pointermove', e => {
   if (d.kind === 'key') {
     if (!d.moved && Math.hypot(pt.x - d.x, pt.y - d.y) < 3) return;
     // Shift constrains the drag to one direction, as in Max's Move Keys.
-    if (!d.moved) { d.moved = true; if (e.shiftKey) d.axis = Math.abs(pt.x - d.x) > Math.abs(pt.y - d.y) ? 'h' : 'v'; }
+    if (!d.moved) { d.moved = true; d.axis = S.tvTool === 'moveKeysH' ? 'h' : S.tvTool === 'moveKeysV' ? 'v' : e.shiftKey ? (Math.abs(pt.x - d.x) > Math.abs(pt.y - d.y) ? 'h' : 'v') : null; }
     const df = d.axis === 'v' ? 0 : Math.round(p.frame(pt.x) - p.frame(d.x)), dv = d.axis === 'h' ? 0 : p.value(pt.y) - p.value(d.y);
     moveGraphKey(S.scene, d.id, d.frame + df, round(d.value + dv, 3));
     for (const o of d.others) moveGraphKey(S.scene, o.id, o.frame + df, round(o.value + dv, 3));
@@ -467,69 +463,73 @@ dope.addEventListener('pointerup', endDope); dope.addEventListener('pointercance
 dope.addEventListener('wheel', e => { e.preventDefault(); const p = dope._p, pt = point(dope, e), c = p.a + (pt.x - p.x0) / (p.x1 - p.x0) * (p.b - p.a), span = p.b - p.a, n = clamp(span * (e.deltaY < 0 ? .82 : 1.22), 6, 400), r = (c - p.a) / span; S.graphStart = c - r * n; S.graphEnd = S.graphStart + n; drawDope(); }, { passive: false });
 for (const svg of [graph, dope]) svg.addEventListener('keydown', e => { const hit = e.target.closest('[data-key]'); if (!hit || !['Enter', ' '].includes(e.key)) return; e.preventDefault(); e.stopPropagation(); S.selected = [hit.dataset.key]; render(); });
 
-// ─── Viewport ────────────────────────────────────────────────────────────────
-max.host.innerHTML = '<canvas id="view" aria-label="Perspective viewport: Ball_01. Drag it with Select and Move, Rotate or Scale."></canvas>';
-function drawViewport() {
-  const canvas = $('#view'), r = canvas.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2), w = Math.max(1, r.width), h = Math.max(1, r.height);
-  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); }
-  const c = canvas.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
-  c.fillStyle = '#383838'; c.fillRect(0, 0, w, h);
-  const horizon = h * .42, base = h * .8, cx = w * .46;
-  if (S.grid) {
-    c.lineWidth = 1; c.strokeStyle = '#4c4c4c';
-    for (let i = 0; i <= 16; i++) { const y = horizon + (h - horizon) * (i / 16) ** 1.7; c.beginPath(); c.moveTo(0, Math.round(y) + .5); c.lineTo(w, Math.round(y) + .5); c.stroke(); }
-    for (let i = -22; i <= 22; i++) { c.beginPath(); c.moveTo(cx + i * 10, horizon); c.lineTo(cx + i * 62, h); c.stroke(); }
-    c.strokeStyle = '#a13c38'; c.beginPath(); c.moveTo(0, base); c.lineTo(w, base); c.stroke();
-    c.strokeStyle = '#3d8a47'; c.beginPath(); c.moveTo(cx, horizon); c.lineTo(cx, h); c.stroke();
-  }
-  const x = current('x'), z = current('z'), rot = current('rotation') * Math.PI / 180, scale = clamp(current('scale'), .1, 4), radius = clamp(36 * scale, 7, 100), bx = clamp(w * .2 + x * w * .058, 28, w - 28), by = base - z * 31 - radius;
-  S.ball = { x: bx, y: by, r: radius, w, h };
-  c.fillStyle = '#0006'; c.beginPath(); c.ellipse(bx, base + 3, Math.max(16, radius * .95), Math.max(4, radius * .2), 0, 0, Math.PI * 2); c.fill();
-  const g = c.createRadialGradient(-radius * .4, -radius * .45, radius * .1, 0, 0, radius);
-  g.addColorStop(0, '#ff9ccb'); g.addColorStop(.35, '#e1117f'); g.addColorStop(1, '#4d0a2c');
-  c.save(); c.translate(bx, by); c.beginPath(); c.arc(0, 0, radius, 0, Math.PI * 2); c.clip(); c.fillStyle = g; c.fillRect(-radius, -radius, radius * 2, radius * 2);
-  c.rotate(rot); c.strokeStyle = '#ffffffcc'; c.lineWidth = Math.max(2, radius * .1); c.beginPath(); c.moveTo(-radius, 0); c.lineTo(radius, 0); c.stroke(); c.beginPath(); c.moveTo(0, -radius); c.lineTo(0, radius); c.stroke(); c.restore();
-  if (!S.objectSelected) return;
-  // selection: white corner brackets, as in a shaded Max viewport
-  const b = radius + 6, L = Math.max(6, radius * .35);
-  c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.beginPath();
-  for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { c.moveTo(bx + sx * b, by + sy * b - sy * L); c.lineTo(bx + sx * b, by + sy * b); c.lineTo(bx + sx * b - sx * L, by + sy * b); }
-  c.stroke();
-  if (S.tool === 'move') {
-    const arrow = (dx, dy, col, label) => { const ex = bx + dx * (radius + 40), ey = by + dy * (radius + 40); c.strokeStyle = col; c.lineWidth = 2.5; c.beginPath(); c.moveTo(bx, by); c.lineTo(ex, ey); c.stroke(); c.fillStyle = col; c.beginPath(); c.moveTo(ex + dx * 10, ey + dy * 10); c.lineTo(ex - dy * 5, ey + dx * 5); c.lineTo(ex + dy * 5, ey - dx * 5); c.fill(); c.font = '12px Segoe UI, Arial'; c.fillText(label, ex + dx * 14 + 4, ey + dy * 14 + 4); };
-    arrow(1, 0, '#e5534b', 'X'); arrow(0, -1, '#5aa2e6', 'Z');
-    c.strokeStyle = '#e8d44d'; c.lineWidth = 1.5; c.strokeRect(bx + 1, by - 16, 15, 15);
-  }
-  if (S.tool === 'rotate') { c.strokeStyle = '#62c45a'; c.lineWidth = 2.5; c.beginPath(); c.arc(bx, by, radius + 16, 0, Math.PI * 2); c.stroke(); c.strokeStyle = '#8a8a8a'; c.lineWidth = 1; c.beginPath(); c.arc(bx, by, radius + 24, 0, Math.PI * 2); c.stroke(); }
-  if (S.tool === 'scale') { c.fillStyle = '#e8d44d55'; c.strokeStyle = '#e8d44d'; c.lineWidth = 2; c.beginPath(); c.moveTo(bx, by); c.lineTo(bx + radius + 30, by); c.lineTo(bx, by - radius - 30); c.closePath(); c.fill(); c.stroke(); }
+// ─── Viewport: three.js scene with Max navigation and gizmos ─────────────────
+max.host.innerHTML = '<canvas id="view" aria-label="Perspective viewport: Ball_01. Click it to select it; drag the gizmo axes to move, rotate or scale it."></canvas>';
+const vp = createMaxViewport({ host: max.host, canvas: $('#view'), onChange: () => renderView() });
+const R = 0.5; // ball radius in metres
+const ballTex = (() => { const c = document.createElement('canvas'); c.width = 256; c.height = 128; const g = c.getContext('2d'); g.fillStyle = '#e1117f'; g.fillRect(0, 0, 256, 128); g.fillStyle = '#ffffff'; g.fillRect(0, 58, 256, 12); for (let i = 0; i < 4; i++) g.fillRect(i * 64 + 26, 0, 12, 128); return new THREE.CanvasTexture(c); })();
+ballTex.colorSpace = THREE.SRGBColorSpace;
+const ball = new THREE.Mesh(new THREE.SphereGeometry(R, 40, 24), new THREE.MeshStandardMaterial({ map: ballTex, roughness: .45 }));
+const ballPivot = new THREE.Group(); ballPivot.add(ball); vp.scene.add(ballPivot);
+const shadow = new THREE.Mesh(new THREE.CircleGeometry(R, 32), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .35, depthWrite: false }));
+shadow.rotation.x = -Math.PI / 2; shadow.position.y = .005; vp.scene.add(shadow);
+const gizmo = createGizmo({ scene: vp.scene, camera: vp.camera, dom: $('#view') });
+const TOOL_MODE = { move: 'move', rotate: 'rotate', scale: 'scale' };
+function frameBall() { const x = current('x'), z = current('z'); vp.frame({ x: x - 2.5, y: -1, z: 0 }, { x: x + 2.5, y: 1, z: z + 2 * R + 1.5 }); }
+function lockAxis(a) { S.axisLock = S.axisLock === a ? null : a; gizmo.setLocked(S.axisLock); notify(S.axisLock ? `Restrict to ${S.axisLock.toUpperCase()}` : 'Axis constraint off'); renderView(); }
+function renderView() {
+  if (!S.scene) return;
+  const x = current('x'), z = current('z'), rot = current('rotation'), sc = clamp(current('scale'), .1, 4);
+  ballPivot.position.copy(fromMax(x, 0, z + R * sc)); ballPivot.scale.setScalar(sc);
+  ball.rotation.set(0, 0, -rot * Math.PI / 180); // Max +Y points away from the Front view: positive = clockwise, the way the ball rolls
+  shadow.position.x = x; shadow.scale.setScalar(sc * Math.max(.3, 1 - z / 8)); shadow.material.opacity = .35 * Math.max(.2, 1 - z / 8);
+  const show = S.objectSelected && !S.previewing;
+  vp.outline(ball, show);
+  gizmo.setVisible(show && S.tool !== 'select');
+  if (show && S.tool !== 'select') { gizmo.setMode(TOOL_MODE[S.tool]); gizmo.attach({ x, y: 0, z: z + R * sc }); gizmo.setEnabled(S.tool === 'move' ? { y: false } : S.tool === 'rotate' ? { x: false, z: false } : {}); gizmo.update(); }
+  vp.render();
 }
-const view = $('#view');
+const view = $('#view'), ray = new THREE.Raycaster();
+const hitBall = e => { const r = view.getBoundingClientRect(); ray.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), vp.camera); return ray.intersectObject(ball, false).length > 0; };
+view.addEventListener('pointermove', e => {
+  if (S.drag?.kind === 'viewport') return dragView(e);
+  if (vp.isNavigating()) return;
+  if (S.objectSelected && gizmo.hover(e)) renderView();
+  const part = S.objectSelected && S.tool !== 'select' ? gizmo.hoveredPart : null;
+  view.style.cursor = part || (hitBall(e) && S.tool !== 'select') ? (S.tool === 'rotate' ? 'alias' : S.tool === 'scale' ? 'nesw-resize' : 'move') : 'default';
+});
 view.addEventListener('pointerdown', e => {
-  if (!S.ball || e.button !== 0) return;
-  const r = view.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, b = S.ball;
-  const onBall = Math.hypot(x - b.x, y - b.y) <= b.r + 22;
-  if (!onBall) { deselect(); return; }
+  if (e.button !== 0 || e.altKey) return;
+  const part = S.objectSelected && S.tool !== 'select' ? gizmo.pick(e) : null;
+  const onBall = !part && hitBall(e);
+  if (!part && !onBall) { deselect(); return; }
   if (!S.objectSelected) { if (max.state.lock) { notify('Selection Lock is on: press Space to unlock'); return; } max.select('Ball_01'); S.objectSelected = true; render(); }
   if (S.tool === 'select') return;
-  S.drag = { kind: 'viewport', startX: x, startY: y, values: Object.fromEntries(TRACKS.map(t => [t.id, current(t.id)])) };
-  view.setPointerCapture(e.pointerId); max.host.classList.add('dragging'); e.preventDefault();
+  let use = part || (S.tool === 'move' ? (S.axisLock || 'xz') : S.tool === 'rotate' ? 'y' : 'xyz');
+  if (S.tool === 'move' && use.includes('y')) { if (use === 'y') { notify('Ball_01 has no Y Position track in this lab: use X or Z'); return; } use = use.replace('y', '') || 'x'; }
+  if (S.tool === 'rotate' && use !== 'y' && use !== 'view') { notify('The ball rolls around Y: drag the green circle'); return; }
+  if (S.tool === 'rotate' && use === 'view') use = 'y';
+  gizmo.begin(e, use);
+  S.drag = { kind: 'viewport', values: Object.fromEntries(TRACKS.map(t => [t.id, current(t.id)])) };
+  view.setPointerCapture(e.pointerId); e.preventDefault(); renderView();
 });
-view.addEventListener('pointermove', e => {
-  const d = S.drag; if (!d || d.kind !== 'viewport') return;
-  const r = view.getBoundingClientRect(), dx = e.clientX - r.left - d.startX, dy = e.clientY - r.top - d.startY;
-  if (S.tool === 'move') { S.pending.x = round(d.values.x + dx / (r.width * .058), 2); S.pending.z = round(Math.max(0, d.values.z - dy / 31), 2); }
-  if (S.tool === 'rotate') S.pending.rotation = round(d.values.rotation + dx * 2, 1);
-  if (S.tool === 'scale') S.pending.scale = round(clamp(d.values.scale * (1 - dy / 120), .1, 4), 2);
+function dragView(e) {
+  const d = S.drag, r = gizmo.drag(e); if (!r) return;
+  if (r.move) { S.pending.x = round(d.values.x + r.move.x, 2); S.pending.z = round(Math.max(0, d.values.z + r.move.z), 2); }
+  if (r.angle != null) S.pending.rotation = round(d.values.rotation + r.angle, 1);
+  if (r.scale != null) S.pending.scale = round(clamp(d.values.scale * r.scale, .1, 4), 2);
   render();
-});
-view.addEventListener('pointerup', e => {
+}
+const endView = e => {
   const d = S.drag; if (!d || d.kind !== 'viewport') return;
-  S.drag = null; view.releasePointerCapture(e.pointerId); max.host.classList.remove('dragging');
+  S.drag = null; gizmo.end(); if (view.hasPointerCapture(e.pointerId)) view.releasePointerCapture(e.pointerId);
   const changed = Object.keys(S.pending).filter(id => Math.abs(S.pending[id] - d.values[id]) > .001);
-  if (!changed.length) return;
-  if (!record(changed)) notify(S.setMode ? 'Pose ready: press Set Keys (K) to key it at this frame' : 'Moved without a key: turn on Auto Key (N) or Set Key Mode (\') to animate it');
+  if (changed.length && !record(changed)) notify(S.setMode ? 'Pose ready: press Set Keys (K) to key it at this frame' : 'Moved without a key: this change is lost when the frame changes. Turn on Auto Key (N) or Set Key Mode (\') to animate');
   render();
-});
+};
+view.addEventListener('pointerup', endView);
+view.addEventListener('contextmenu', e => { e.preventDefault(); if (S.drag?.kind === 'viewport') { S.pending = {}; S.drag = null; gizmo.end(); notify('Transform cancelled (right-click)'); render(); } });
+vp.setView('perspective', { x: 4, y: 0, z: 1.5 }, 11);
 
 // ─── Render ──────────────────────────────────────────────────────────────────
 function render() {
@@ -551,7 +551,7 @@ function render() {
   tv.setStats(k?.frame, k ? round(k.value, 3) : null, !!k && S.selected.length === 1);
   drawTree();
   if (S.view === 'curve') drawCurve(); else drawDope();
-  drawViewport(); lessonStatus();
+  renderView(); lessonStatus();
   if (max.state.tab === 'motion') max.showTab('motion');
 }
 
@@ -561,3 +561,4 @@ new ResizeObserver(() => render()).observe($('.max-stage'));
 enterLesson('timeline');
 window.__maxTrackView = S; // test hook
 tv.tree.parentElement.addEventListener('scroll', () => { if (S.view === 'dope') drawDope(); });
+window.__tvView = { vp, gizmo, ball };

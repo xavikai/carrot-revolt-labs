@@ -7,7 +7,8 @@
   <title>Track View Lab · Carrot Revolt Labs</title>
   <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../../brand.css?v=1">
-  <link rel="stylesheet" href="../_max/max-ui.css?v=1">
+  <link rel="stylesheet" href="../_max/max-ui.css?v=2">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
   <link rel="stylesheet" href="./style.css?v=2">
 </head>
 <body>
@@ -46,12 +47,16 @@
         <div><dt><kbd>Ctrl</kbd>+<kbd>Z</kbd> · <kbd>Ctrl</kbd>+<kbd>Y</kbd></dt><dd>Undo i Redo.</dd></div>
         <div><dt><kbd>H</kbd></dt><dd>Select From Scene: tria un objecte pel nom.</dd></div>
         <div><dt><kbd>Alt</kbd>+<kbd>W</kbd></dt><dd>Maximize Viewport Toggle.</dd></div>
+        <div><dt>Botó central · <kbd>Alt</kbd>+central · <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+central</dt><dd>Al viewport: desplaça (pan), orbita i fa zoom. La roda també fa zoom.</dd></div>
+        <div><dt>Gizmo</dt><dd>Arrossega un eix (es torna groc) per moure, rotar o escalar només en aquell eix; el quadrat entre dos eixos mou en el pla. Clic dret mentre arrossegues cancel·la.</dd></div>
+        <div><dt><kbd>Maj</kbd>+<kbd>V</kbd></dt><dd>Tools › Preview - Grab Viewport › Create Preview Animation: renderitza el viewport fotograma a fotograma i el reprodueix al Media Player (desa .webm o .png).</dd></div>
+        <div><dt>Out-of-Range</dt><dd>Botó del Track View o Edit › Controller › Out Of Range Types: Cycle, Loop, Ping Pong, Linear o Relative Repeat després de l'última clau.</dd></div>
       </dl>
     </section>
 
     <section class="takeaways"><div><span class="eyebrow">QUÈ HAS APRÈS</span><h2>Tres vistes d'una mateixa animació</h2></div><div class="takeaway-grid"><article><b>01</b><h3>Timeline</h3><p>El Time Slider escull el fotograma. El Track Bar mostra les claus de l'objecte. Auto Key registra els canvis; Set Keys els desa quan ho demanes.</p></article><article><b>02</b><h3>Curve Editor</h3><p>L'eix horitzontal és temps i el vertical és valor. La inclinació de la corba indica la velocitat del canvi. Ajusta les tangents per accelerar i frenar.</p></article><article><b>03</b><h3>Dope Sheet</h3><p>Cada fila és una pista. Mou o duplica claus per canviar el ritme sense canviar-ne el valor. Les pistes de posició, rotació i escala es poden editar per separat.</p></article></div></section>
   </main>
   <footer><span>Carrot Revolt Labs · Track View Lab</span><span>Basat en els apunts de classe «TIMELINE» i «CURVE EDITOR I INTERPOLACIONS».</span><a href="https://help.autodesk.com/cloudhelp/2027/ENU/3dsMax-Animation/files/GUID-2B5EE43F-F86F-42C9-82C7-48BAFC0EE9F4.html" target="_blank" rel="noopener">Autodesk: Track View ↗</a><a href="../3ds-max-animation/">Animation Lab ↗</a></footer>
-  <script type="module" src="./app.js?v=3"></script>
+  <script type="module" src="./app.js?v=4"></script>
 </body>
 </html>

@@ -23,7 +23,7 @@ test('each Track View exercise starts unfinished and can be completed with its a
 
   const loops = createLesson('loops');
   assert.equal(checkLesson('loops', loops), false);
-  loops.out = 'loop';
+  loops.oor.rotation.out = 'relative';
   assert.equal(checkLesson('loops', loops), false);
   assert.equal(checkLesson('loops', loops, 60), true);
 });
@@ -43,13 +43,17 @@ test('Dope Sheet moves time, duplicates with Shift, and rejects occupied frames'
 test('interpolation and out-of-range types have distinct results', () => {
   const scene = createLesson('loops');
   assert.equal(valueAt(scene, 'rotation', 25), 360);
-  scene.out = 'cycle';
+  scene.oor.rotation.out = 'cycle';
   assert.equal(valueAt(scene, 'rotation', 25), 90);
-  scene.out = 'loop';
+  scene.oor.rotation.out = 'relative';
   assert.equal(valueAt(scene, 'rotation', 25), 450);
   assert.equal(valueAt(scene, 'rotation', 60), 1080);
-  scene.out = 'pingpong';
+  scene.oor.rotation.out = 'pingpong';
   assert.equal(valueAt(scene, 'rotation', 25), 270);
+  scene.oor.rotation.out = 'linear';
+  assert.ok(Math.abs(valueAt(scene, 'rotation', 40) - 720) < 1e-6);
+  scene.oor.rotation.out = 'loop';
+  assert.ok(valueAt(scene, 'rotation', 39.9) < 60, 'Loop eases the end of each repeat back to the first value');
 
   const curves = createLesson('curves');
   const first = track(curves, 'x')[0];

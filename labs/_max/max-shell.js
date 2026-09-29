@@ -8,6 +8,7 @@
 //
 // Everything here uses 3ds Max's own English names, as students will see them in the program.
 import { icon } from './max-icons.js';
+import { OOR_TYPES, OOR_ICON, OOR_TEXT } from './out-of-range.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -51,6 +52,11 @@ export const HOTKEYS = [
   { keys: 'f8', action: 'axisPlane', label: 'Restrict Plane Cycle', group: 'Axis Constraints', show: 'F8' },
   { keys: 'shift+h', action: 'hideHelpers', label: 'Hide Helpers Toggle', group: 'Viewport', show: 'Shift+H' },
   { keys: 's', action: 'snap', label: 'Snaps Toggle', group: 'Snaps' },
+  { keys: 'shift+v', action: 'makePreview', label: 'Create Preview Animation', group: 'Animation', show: 'Shift+V' },
+  { keys: 'mmb', action: 'pan', label: 'Pan View', group: 'Navigation (mouse)', show: 'Middle button' },
+  { keys: 'alt+mmb', action: 'orbit', label: 'Orbit', group: 'Navigation (mouse)', show: 'Alt + Middle button' },
+  { keys: 'ctrl+alt+mmb', action: 'zoom', label: 'Zoom', group: 'Navigation (mouse)', show: 'Ctrl+Alt + Middle button' },
+  { keys: 'wheel', action: 'zoom', label: 'Zoom', group: 'Navigation (mouse)', show: 'Mouse wheel' },
   { keys: 'a', action: 'angleSnap', label: 'Angle Snap Toggle', group: 'Snaps' },
 ];
 const comboOf = e => {
@@ -384,6 +390,7 @@ export function createMaxShell(root, opts = {}) {
 
   const MENUS = {
     Edit: [{ label: 'Undo', keys: 'Ctrl+Z', action: 'undo' }, { label: 'Redo', keys: 'Ctrl+Y', action: 'redo' }, { sep: true }, { label: 'Delete', keys: 'Delete', action: 'delete' }, { sep: true }, { label: 'Select All', keys: 'Ctrl+A', action: 'selectAll' }, { label: 'Select None', keys: 'Ctrl+D', action: 'selectNone' }, { label: 'Select by Name...', keys: 'H', action: 'selectByName' }, { sep: true }, { label: 'Select and Move', keys: 'W', action: 'move' }, { label: 'Select and Rotate', keys: 'E', action: 'rotate' }, { label: 'Select and Scale', keys: 'R', action: 'scale' }],
+    Tools: [{ label: 'Preview - Grab Viewport ▸ Create Preview Animation...', keys: 'Shift+V', action: 'makePreview' }],
     Views: [{ label: 'Maximize Viewport Toggle', keys: 'Alt+W', action: 'maximize' }, { label: 'Zoom Extents Selected', keys: 'Z', action: 'zoomExtents' }, { label: 'Show Grids', keys: 'G', action: 'grid' }],
     Animation: [{ label: 'Toggle Auto Key Mode', keys: 'N', action: 'autoKey' }, { label: 'Toggle Set Key Mode', keys: "'", action: 'setKeyMode' }, { label: 'Set Keys', keys: 'K', action: 'setKey' }, { sep: true }, { label: 'Play Animation', keys: '/', action: 'play' }, { label: 'Go to Start', keys: 'Home', action: 'goStart' }, { label: 'Go to End', keys: 'End', action: 'goEnd' }, { sep: true }, { label: 'Time Configuration...', action: 'timeConfig' }, { label: 'Key Filters...', action: 'keyFilters' }],
     'Graph Editors': [{ label: 'Track View - Curve Editor...', action: 'curveEditor' }, { label: 'Track View - Dope Sheet...', action: 'dopeSheet' }],
@@ -441,11 +448,13 @@ export function createMaxShell(root, opts = {}) {
   const dlg = $('#mx-dialog');
   function dialog(title, body, onOk, { ok = 'OK', cancel = 'Cancel', width = 360 } = {}) {
     dlg.style.width = `${width}px`;
-    dlg.innerHTML = `<form method="dialog"><div class="mx-dlg-title"><span class="mx-logo sm" aria-hidden="true">3</span>${esc(title)}<button value="cancel" class="mx-dlg-x" aria-label="Close">&#x2715;</button></div><div class="mx-dlg-body">${body}</div><div class="mx-dlg-actions">${ok ? `<button value="ok" class="mx-btn">${esc(ok)}</button>` : ''}${cancel ? `<button value="cancel" class="mx-btn">${esc(cancel)}</button>` : ''}</div></form>`;
+    dlg.innerHTML = `<form method="dialog"><div class="mx-dlg-title"><span class="mx-logo sm" aria-hidden="true">3</span>${esc(title)}<button type="button" class="mx-dlg-x" aria-label="Close" data-dlg-x>&#x2715;</button></div><div class="mx-dlg-body">${body}</div><div class="mx-dlg-actions">${ok ? `<button value="ok" class="mx-btn">${esc(ok)}</button>` : ''}${cancel ? `<button value="cancel" class="mx-btn">${esc(cancel)}</button>` : ''}</div></form>`;
     wireSpinners(dlg);
     dlg.returnValue = '';
     dlg.onclose = () => { if (dlg.returnValue === 'ok') onOk?.(dlg); };
+    dlg.querySelector('[data-dlg-x]').onclick = () => dlg.close('cancel');
     dlg.showModal();
+    dlg.querySelector('.mx-dlg-actions .mx-btn')?.focus();
     return dlg;
   }
   api.dialog = dialog;
@@ -473,11 +482,83 @@ export function createMaxShell(root, opts = {}) {
       const groups = [...new Set(HOTKEYS.map(h => h.group))];
       dialog('Hotkey Editor · 3ds Max default shortcuts', `<div class="mx-hk">${groups.map(g => `<h4>${g}</h4>${HOTKEYS.filter(h => h.group === g).map(h => `<div class="mx-hk-row${A[h.action] || BUILTIN[h.action] ? '' : ' dim'}"><span>${esc(h.label)}</span><kbd>${esc(showKeys(h))}</kbd></div>`).join('')}`).join('')}</div><p class="mx-note">Greyed shortcuts exist in 3ds Max but do nothing in this lab.</p>`, null, { ok: '', cancel: 'Close', width: 520 });
     },
+    makePreview() { makePreview(); },
     toggleExplorer() { const ex = $('.mx-explorer'); ex.hidden = !ex.hidden; renderModes(); A.layout?.(); },
     selectionLock() { state.lock = !state.lock; renderModes(); api.prompt(state.lock ? 'Selection Lock on: the selection cannot change (Space)' : 'Selection Lock off'); },
     maximize() { state.maximized = !state.maximized; renderModes(); A.layout?.(); A.maximize?.(state.maximized); },
   };
   api.builtin = BUILTIN;
+
+  // ── Parameter Curve Out-of-Range Types: pick a type for before the first key (in) and after the last (out) ──
+  api.outOfRangeDialog = ({ current = { in: 'constant', out: 'constant' }, tracks = '', allowed = OOR_TYPES.map(t => t.id), onChoose }) => {
+    const cur = { ...current };
+    const d = dialog('Param Curve Out-of-Range Types', `<p class="mx-note">${esc(tracks)}</p><div class="mx-oor">${OOR_TYPES.map(t => `<div class="mx-oor-type${allowed.includes(t.id) ? '' : ' off'}" data-type="${t.id}"><button type="button" class="mx-oor-both" data-both="${t.id}" title="${esc(t.label)}: in and out"${allowed.includes(t.id) ? '' : ' disabled'}><svg viewBox="0 0 90 40"><rect x="30" y="0" width="30" height="40" fill="#ffffff12"/><path d="${OOR_ICON[t.id]}" fill="none" stroke="#e8e8e8" stroke-width="1.8"/></svg></button><small>${esc(t.label)}</small><span class="mx-oor-io"><button type="button" data-side="in" data-t="${t.id}" title="In: before the first key"${allowed.includes(t.id) ? '' : ' disabled'}>&#x25C0;</button><button type="button" data-side="out" data-t="${t.id}" title="Out: after the last key"${allowed.includes(t.id) ? '' : ' disabled'}>&#x25B6;</button></span></div>`).join('')}</div><p class="mx-note" id="mx-oor-text"></p>`, null, { ok: 'OK', cancel: '', width: 460 });
+    const paint = () => {
+      d.querySelectorAll('[data-side]').forEach(b => b.classList.toggle('on', cur[b.dataset.side] === b.dataset.t));
+      d.querySelectorAll('[data-both]').forEach(b => b.classList.toggle('on', cur.in === b.dataset.both && cur.out === b.dataset.both));
+      d.querySelector('#mx-oor-text').textContent = cur.in === cur.out ? OOR_TEXT[cur.out] : `In: ${OOR_TYPES.find(t => t.id === cur.in).label} · Out: ${OOR_TYPES.find(t => t.id === cur.out).label}. ${OOR_TEXT[cur.out]}`;
+    };
+    d.querySelector('.mx-oor').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b || b.disabled) return;
+      if (b.dataset.both) { cur.in = cur.out = b.dataset.both; onChoose?.('both', b.dataset.both); }
+      else { cur[b.dataset.side] = b.dataset.t; onChoose?.(b.dataset.side, b.dataset.t); }
+      paint();
+    });
+    paint();
+  };
+
+  // ── Tools › Preview - Grab Viewport › Create Preview Animation (Shift+V) ──
+  // The lab gives A.grabFrame(frame) -> canvas; the kit renders every frame and plays them in a Media Player.
+  async function makePreview() {
+    if (!A.grabFrame) { api.prompt('Create Preview Animation: not available in this lab'); return; }
+    dialog('Make Preview', `<fieldset><legend>Preview Range</legend><label class="mx-check"><input type="radio" name="range" value="active" checked> Active Time Segment (${state.start} to ${state.end})</label><label class="mx-check"><input type="radio" name="range" value="custom"> Custom Range: ${spinner({ id: 'mx-pv-a', value: state.start, step: 1, min: 0, max: 1000, decimals: 0, width: 70 })} to ${spinner({ id: 'mx-pv-b', value: state.end, step: 1, min: 0, max: 1000, decimals: 0, width: 70 })}</label></fieldset>
+      <fieldset><legend>Frame Rate</legend><label class="mx-field">Playback FPS: ${spinner({ id: 'mx-pv-fps', value: o.fps, step: 1, min: 1, max: 60, decimals: 0, width: 70 })}</label></fieldset>
+      <fieldset><legend>Image Size</legend><label class="mx-field">Percent of Output: ${spinner({ id: 'mx-pv-size', value: 100, step: 25, min: 25, max: 100, decimals: 0, width: 70 })}</label></fieldset>
+      <fieldset><legend>Visual Style</legend><label class="mx-field">Default Shading, with the grid and helpers as in the viewport</label></fieldset>`,
+    async dd => {
+      let a = state.start, b = state.end;
+      if (dd.querySelector('input[name=range]:checked').value === 'custom') { a = Math.round(+dd.querySelector('#mx-pv-a').value); b = Math.round(+dd.querySelector('#mx-pv-b').value); }
+      if (b <= a) { api.prompt('Make Preview: the end frame must be after the start frame'); return; }
+      const fps = Math.max(1, +dd.querySelector('#mx-pv-fps').value || o.fps), size = Math.max(.25, Math.min(1, (+dd.querySelector('#mx-pv-size').value || 100) / 100));
+      const back = state.frame, frames = [];
+      for (let f = a; f <= b; f++) {
+        const src = await A.grabFrame(f);
+        const c = document.createElement('canvas'); c.width = Math.round(src.width * size); c.height = Math.round(src.height * size);
+        c.getContext('2d').drawImage(src, 0, 0, c.width, c.height); frames.push(c);
+        if (f % 5 === 0) { api.prompt(`Creating preview: frame ${f} of ${b}`, true); await new Promise(r => setTimeout(r)); }
+      }
+      await A.grabFrame(back); A.frame?.(back);
+      api.prompt(`Preview created: ${frames.length} frames at ${fps} fps`);
+      mediaPlayer(frames, fps, a);
+    }, { ok: 'Create', cancel: 'Cancel', width: 380 });
+  }
+  function mediaPlayer(frames, fps, first) {
+    const w = frames[0].width, h = frames[0].height;
+    const d = dialog('_scene.avi - Media Player', `<canvas class="mx-player" width="${w}" height="${h}"></canvas><div class="mx-player-bar"><button type="button" class="mx-btn" data-p="play">Pause</button><input type="range" min="0" max="${frames.length - 1}" value="0" aria-label="Preview frame"><span class="mx-player-f"></span><button type="button" class="mx-btn" data-p="webm">Save .webm</button><button type="button" class="mx-btn" data-p="png">Save frame .png</button></div>`, null, { ok: '', cancel: 'Close', width: Math.min(innerWidth - 40, Math.max(520, w + 26)) });
+    const cv = d.querySelector('canvas'), g = cv.getContext('2d'), range = d.querySelector('input[type=range]'), lab = d.querySelector('.mx-player-f');
+    let i = 0, playing = true, timer = 0;
+    const show = () => { g.drawImage(frames[i], 0, 0); range.value = i; lab.textContent = `Frame ${first + i}`; };
+    const tick = () => { if (!d.open) return; if (playing) { i = (i + 1) % frames.length; show(); } timer = setTimeout(tick, 1000 / fps); };
+    show(); timer = setTimeout(tick, 1000 / fps);
+    d.addEventListener('close', () => clearTimeout(timer), { once: true });
+    range.addEventListener('input', () => { playing = false; d.querySelector('[data-p=play]').textContent = 'Play'; i = +range.value; show(); });
+    d.querySelector('.mx-player-bar').addEventListener('click', async e => {
+      const b = e.target.closest('[data-p]'); if (!b) return;
+      if (b.dataset.p === 'play') { playing = !playing; b.textContent = playing ? 'Pause' : 'Play'; }
+      if (b.dataset.p === 'png') { const a = document.createElement('a'); a.download = `preview_${String(first + i).padStart(4, '0')}.png`; a.href = cv.toDataURL('image/png'); a.click(); }
+      if (b.dataset.p === 'webm') {
+        if (!window.MediaRecorder || !cv.captureStream) { api.prompt('This browser cannot record video: save frames as .png instead'); return; }
+        b.disabled = true; playing = false;
+        const rec = new MediaRecorder(cv.captureStream(fps), { mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm' }), chunks = [];
+        rec.ondataavailable = ev => chunks.push(ev.data);
+        rec.onstop = () => { const a = document.createElement('a'); a.download = 'preview.webm'; a.href = URL.createObjectURL(new Blob(chunks, { type: 'video/webm' })); a.click(); b.disabled = false; playing = true; };
+        rec.start();
+        for (i = 0; i < frames.length; i++) { show(); await new Promise(r => setTimeout(r, 1000 / fps)); }
+        i = 0; rec.stop();
+      }
+    });
+  }
+  api.makePreview = makePreview;
 
   // ── Dispatch: buttons and hotkeys go through the same actions ──
   function run(action, e) {
@@ -536,7 +617,8 @@ export function createTrackView(root, opts = {}) {
   const o = { mode: 'curve', tools: {}, active: { moveKeys: true, showTangents: true }, actions: {}, title: 'Track View', ...opts };
   const A = o.actions;
   root.classList.add('mx-tv'); root.dataset.noI18n = '';
-  const tool = t => t === '|' ? sep : btn(t[0], t[1], t[2], { active: !!o.active[t[0]], disabled: !o.tools[t[0]], action: `tv:${t[0]}` });
+  const FLYOUTS = { moveKeys: [['moveKeys', 'tvMoveKeys', 'Move Keys'], ['moveKeysH', 'tvMoveKeysH', 'Move Keys Horizontal'], ['moveKeysV', 'tvMoveKeysV', 'Move Keys Vertical']] };
+  const tool = t => t === '|' ? sep : btn(t[0], t[1], t[2], { active: !!o.active[t[0]], disabled: !o.tools[t[0]], action: `tv:${t[0]}`, cls: FLYOUTS[t[0]] ? 'has-flyout' : '' });
   root.innerHTML = `
     <div class="mx-tv-title"><span class="mx-logo sm" aria-hidden="true">3</span><span id="mx-tv-title">Track View - Curve Editor</span><span class="mx-winbtns light" aria-hidden="true"><i>&#x2500;</i><i>&#x2610;</i><i>&#x2715;</i></span></div>
     <div class="mx-tv-menubar">${['Editor', 'Edit', 'View', 'Curves', 'Keys', 'Tangents', 'Show'].map(m => `<button type="button" class="mx-menu" data-tvmenu="${m}">${m}</button>`).join('')}</div>
@@ -554,6 +636,22 @@ export function createTrackView(root, opts = {}) {
     </div>`;
   const $ = s => root.querySelector(s);
   wireSpinners(root);
+  // Click and hold a button with a small triangle to open its flyout.
+  let holdTimer = 0, flyoutOpen = false;
+  root.addEventListener('pointerdown', e => {
+    const b = e.target.closest('.mx-tb.has-flyout'); if (!b || b.dataset.off) return;
+    holdTimer = setTimeout(() => {
+      flyoutOpen = true;
+      const list = FLYOUTS[b.dataset.id], r = b.getBoundingClientRect();
+      const fly = document.createElement('div'); fly.className = 'mx-flyout'; fly.style.left = `${r.left}px`; fly.style.top = `${r.bottom}px`;
+      fly.innerHTML = list.map(([id, ic, title]) => `<button type="button" data-fly="${id}" data-ic="${ic}" title="${esc(title)}">${icon(ic)}</button>`).join('');
+      document.body.append(fly);
+      const pick = ev => { const it = ev.target.closest('[data-fly]'); fly.remove(); document.removeEventListener('pointerup', pick, true); if (!it) return; b.innerHTML = icon(it.dataset.ic); b.title = b.ariaLabel = it.title; b.dataset.flyChoice = it.dataset.fly; A.tool?.(it.dataset.fly); setTimeout(() => { flyoutOpen = false; }); };
+      document.addEventListener('pointerup', pick, true);
+    }, 280);
+  });
+  root.addEventListener('pointerup', () => clearTimeout(holdTimer));
+  root.addEventListener('pointerleave', () => clearTimeout(holdTimer));
   const api = {
     root, host: $('#mx-tv-keys'), tree: $('#mx-tv-tree'),
     setMode(mode) { o.mode = mode; $('#mx-tv-title').textContent = `Track View - ${mode === 'dope' ? 'Dope Sheet' : 'Curve Editor'}`; root.classList.toggle('dope', mode === 'dope'); },
@@ -565,7 +663,8 @@ export function createTrackView(root, opts = {}) {
   root.addEventListener('click', e => {
     const b = e.target.closest('[data-action]');
     if (b) {
-      const id = b.dataset.action.replace(/^tv:/, '');
+      const id = b.dataset.flyChoice || b.dataset.action.replace(/^tv:/, '');
+      if (flyoutOpen) return;
       if (b.dataset.off) { opts.shell?.prompt(`${b.title}: not used in this lab`); return; }
       A.tool?.(id, e); return;
     }
