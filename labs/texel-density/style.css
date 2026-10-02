@@ -652,3 +652,18 @@ footer span:nth-child(3){margin-left:auto}
 .strip-row select{background:var(--b-widget);border:1px solid #1b1b1b;color:#eee;border-radius:4px;font-size:11.5px;padding:2px}
 .strip-row em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums;font-size:11.5px}
 .strip-row.good em{color:#91d76c}.strip-row.bad em{color:#ff8a70}
+/* Step a5: the recipe, one numbered line per action */
+.recipe{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:6px}
+.recipe>li{display:grid;grid-template-columns:20px 1fr;gap:6px;align-items:start;padding:6px;border:1px solid #2a2a2a;border-radius:4px;background:#262626}
+.recipe>li>b{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#3a3a3a;color:#ddd;font-size:11px}
+.recipe>li.done{border-color:#3c5a2c}
+.recipe>li.done>b{background:#4f7a37;color:#fff}
+.recipe>li.done>b{font-size:0}.recipe>li.done>b:after{content:"✓";font-size:11px}
+.recipe strong{display:block;font-size:12px;color:#eee;margin-bottom:3px}
+.recipe .td-note{margin:2px 0 4px}
+.recipe select{width:100%}
+.recipe .td-set{margin-top:2px}
+.recipe .tool-grid{margin-top:2px}
+.tq-grid{grid-template-columns:repeat(5,1fr)}
+.ref-table td:last-child{font-weight:700;color:#ffc266}
+.recipe .td-set:disabled{opacity:.45;cursor:default}

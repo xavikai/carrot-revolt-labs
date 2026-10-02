@@ -62,19 +62,26 @@ test('free animation opens every rig curve in an independent starting scene', ()
   const first = startData(free);
   first.channels.locZ[0].value = 0;
   assert.equal(startData(free).channels.locZ[0].value, 4);
-  assert.equal(shape(startData(free), 1).sx, 1);
+  assert.equal(shape(startData(free), 0).sx, 1);
   first.channels.scale[0].value = 2;
-  assert.equal(shape(first, 1).sx, 2);
+  assert.equal(shape(first, 0).sx, 2);
 });
 
-test('rotation stage: the ball rolls with its travel', async () => {
-  const { STAGES, startData, rollReport, rollAngle } = await import('../labs/animation/stages.js');
-  const st = STAGES.find(s => s.id === 'rotation');
+test('stages follow the class: keys every 10 frames, timing, travel, rotation, squash & stretch, then extras', async () => {
+  const { STAGES, startData, RANGE, rollReport, rollAngle, travelReport, TRAVEL_END } = await import('../labs/animation/stages.js');
+  assert.deepEqual(STAGES.map(s => s.id), ['keys', 'timing', 'travel', 'rotation', 'squash', 'weight', 'free']);
+  assert.deepEqual(RANGE, [0, 100]);
+  const solved = id => { const st = STAGES.find(s => s.id === id), d = startData(st); st.steps.forEach(s => s.solve(d)); return d; };
+  assert.deepEqual(solved('keys').channels.locZ.map(k => k.frame), [0, 10, 20, 30, 40, 50]);
+  assert.deepEqual(contacts(solved('timing').channels.locZ), [10, 28, 43, 56, 67, 73]);
+  assert.deepEqual(tops(solved('timing').channels.locZ).map(k => k.frame), [0, 20, 36, 50, 62, 70]);
+  const tr = travelReport(solved('travel'));
+  assert.equal(tr.end, TRAVEL_END); assert.ok(tr.flat && tr.easeOut);
+  const linear = startData(STAGES.find(s => s.id === 'travel')); linear.channels.locX = curve([[0, 0], [73, 9]], 'LINEAR');
+  assert.equal(STAGES.find(s => s.id === 'travel').steps[0].check(linear), false, 'a linear travel stops dead');
   assert.ok(Math.abs(rollAngle(Math.PI) - 360) < 1e-9);
-  st.steps.forEach((s, i) => {
-    const d = startData(st, i);
-    assert.equal(!!s.check(d), false, `${s.id} starts solved`);
-    s.solve(d); assert.equal(!!s.check(d), true, `${s.id} solution fails`);
-  });
-  const back = startData(st, 0); assert.equal(rollReport(back).backwards, true);
+  const rot = STAGES.find(s => s.id === 'rotation'), d = startData(rot);
+  rot.steps[0].solve(d); assert.ok(rollReport(d).endErr < 0.01, 'turns as much as the travel by frame 73');
+  d.channels.rotY.push(key(99, 900)); recalcHandles(d.channels.rotY);
+  assert.equal(rot.steps[1].check(d), false, 'turning backwards at the end fails');
 });

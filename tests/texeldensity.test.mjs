@@ -90,3 +90,26 @@ test('loop cuts: a single quad cannot keep 512 px/m; cuts at 0.25 and 1.75 m wit
   s.cuts = [0.5, 1.75]; s.zones = ['baseboard', 'bricks', 'cornice']; syncCuts(s); assert.equal(cutReport(s).rows[0].dv, 256, 'a 0.5 m baseboard strip is stretched');
   const b = startState(a4); a4.solve(b); assert.ok(a4.check(b));
 });
+test('stage order: see, measure, choose, match, break the rule', () => {
+  assert.deepEqual(STAGES.map(s => s.id), ['see', 'measure', 'choose', 'match', 'rules']);
+});
+test('step c0: the starting target for each game advances only on the right value', async () => {
+  const { TARGET_CASES } = await import('../labs/texel-density/stages.js');
+  const s = startState(steps.find(x => x.id === 'c0'));
+  assert.equal(answerQuiz(s, TARGET_CASES, 4096).ok, false); assert.equal(s.flags.quiz | 0, 0);
+  for (const c of TARGET_CASES) assert.equal(answerQuiz(s, TARGET_CASES, c.a).ok, true);
+});
+test('texture size estimate target × √(surface ÷ 0.7) gives the smallest texture that reaches the target', async () => {
+  const { textureEstimate } = await import('../labs/texel-density/stages.js');
+  for (const o of ['crate', 'wall', 'barrel', 'cabinet']) for (const tg of [256, 512]) assert.equal(textureEstimate(o, tg).res, minRes(o, tg), `${o} ${tg}`);
+});
+test('step a5: every line of the recipe is needed', async () => {
+  const { recipe } = await import('../labs/texel-density/stages.js');
+  const a5 = steps.find(x => x.id === 'a5'), s = startState(a5);
+  assert.ok(Object.values(recipe(s)).every(v => !v) || !recipe(s).target);
+  a5.solve(s); assert.ok(a5.check(s));
+  for (const [k, undo] of [['target', x => { x.target = 1024; }], ['applied', x => { x.flags.applied = false; }], ['size', x => { x.res.cabinet = 4096; }], ['checker', x => { x.view = 'texture'; }]]) {
+    const c = JSON.parse(JSON.stringify(s)); undo(c); assert.equal(a5.check(c), false, k);
+  }
+  const small = startState(a5); a5.solve(small); small.res.cabinet = 1024; assert.equal(a5.check(small), false, 'a 1K texture cannot reach 512 px/m on the cabinet');
+});

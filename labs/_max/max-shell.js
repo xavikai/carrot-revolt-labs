@@ -59,6 +59,9 @@ export const HOTKEYS = [
   { keys: 'ctrl+alt+mmb', action: 'zoom', label: 'Zoom', group: 'Navigation (mouse)', show: 'Ctrl+Alt + Middle button' },
   { keys: 'wheel', action: 'zoom', label: 'Zoom', group: 'Navigation (mouse)', show: 'Mouse wheel' },
   { keys: 'a', action: 'angleSnap', label: 'Angle Snap Toggle', group: 'Snaps' },
+  { keys: 'ctrl+i', action: 'selectInvert', label: 'Select Invert', group: 'Selection' },
+  { keys: 'ctrl+v', action: 'cloneDialog', label: 'Clone', group: 'Edit' },
+  { keys: 'f12', action: 'typeInDialog', label: 'Transform Type-In Dialog Toggle', group: 'Selection', show: 'F12' },
 ];
 const comboOf = e => {
   let k = e.key === ' ' ? ' ' : e.key.toLowerCase();
@@ -68,8 +71,9 @@ const comboOf = e => {
 export const showKeys = h => (h.show || h.keys).split('+').map(p => p.length === 1 ? p.toUpperCase() : p[0].toUpperCase() + p.slice(1)).join('+');
 
 // ─── Small components ────────────────────────────────────────────────────────
-const btn = (id, ico, title, { cls = '', active = false, disabled = false, action = id } = {}) =>
-  `<button type="button" class="mx-tb${cls ? ' ' + cls : ''}${active ? ' on' : ''}" data-action="${action}" data-id="${id}" title="${esc(title)}" aria-label="${esc(title)}"${active ? ' aria-pressed="true"' : ''}${disabled ? ' data-off="1"' : ''}>${icon(ico)}</button>`;
+let ENABLED = new Set(); // buttons a lab turns on (opts.enable) although the kit greys them out by default
+const btn = (id, ico, title, { cls = '', active = false, disabled = false, action = id } = {}) => (disabled = disabled && !ENABLED.has(id),
+  `<button type="button" class="mx-tb${cls ? ' ' + cls : ''}${active ? ' on' : ''}" data-action="${action}" data-id="${id}" title="${esc(title)}" aria-label="${esc(title)}"${active ? ' aria-pressed="true"' : ''}${disabled ? ' data-off="1"' : ''}>${icon(ico)}</button>`);
 const sep = '<span class="mx-sep" aria-hidden="true"></span>';
 const grip = '<span class="mx-grip" aria-hidden="true"></span>';
 const drop = (text, width, title = '') => `<span class="mx-drop" style="width:${width}px" title="${esc(title)}">${esc(text)}<i></i></span>`;
@@ -126,8 +130,8 @@ const SE_FILTERS = [
   '|', ['all', 'seAll', 'Display All'], ['none', 'seNone', 'Display None'], ['invert', 'seInvert', 'Invert Display'],
   '|', ['filterSel', 'seFilter', 'Display Children', false, true],
 ];
-const KIND_FILTER = { Geometry: 'geometry', Object: 'geometry', Shape: 'shapes', Helper: 'helpers', Bone: 'bones' };
-const KIND_ICON = { Geometry: 'seGeometry', Object: 'seGeometry', Shape: 'seShape', Helper: 'seHelper', Bone: 'seBone' };
+const KIND_FILTER = { Geometry: 'geometry', Object: 'geometry', Shape: 'shapes', Helper: 'helpers', Bone: 'bones', Group: 'groups' };
+const KIND_ICON = { Geometry: 'seGeometry', Object: 'seGeometry', Shape: 'seShape', Helper: 'seHelper', Bone: 'seBone', Group: 'seGroup' };
 
 // ─── The main window ─────────────────────────────────────────────────────────
 export function createMaxShell(root, opts = {}) {
@@ -136,6 +140,7 @@ export function createMaxShell(root, opts = {}) {
     fps: 30, units: 'm', explorer: true, keyFilters: ['Position', 'Rotation', 'Scale'], ...opts,
   };
   const A = o.actions;
+  ENABLED = new Set(o.enable || []);
   const state = { frame: 0, start: 0, end: 100, auto: false, setMode: false, playing: false, keyMode: false, tool: 'move', lock: false, maximized: false, keys: [], selectedKey: new Set(), filters: new Set(o.keyFilters), tab: o.tab };
 
   root.classList.add('mx-app'); root.dataset.noI18n = ''; // the Max interface stays in English, as in the program
@@ -148,7 +153,7 @@ export function createMaxShell(root, opts = {}) {
     ${drop('All', 78, 'Selection Filter')}
     ${btn('select', 'selectObject', 'Select Object (Q)')}${btn('selectByName', 'selectByName', 'Select by Name (H)')}${btn('region', 'rectRegion', 'Rectangular Selection Region', { disabled: true })}${btn('crossing', 'windowCrossing', 'Window/Crossing', { disabled: true })}${sep}
     ${btn('move', 'move', 'Select and Move (W)', { active: true })}${btn('rotate', 'rotate', 'Select and Rotate (E)')}${btn('scale', 'scale', 'Select and Uniform Scale (R)')}${btn('place', 'selectPlace', 'Select and Place', { disabled: true })}
-    ${drop('View', 78, 'Reference Coordinate System')}${btn('pivot', 'pivot', 'Use Pivot Point Center', { disabled: true })}${sep}
+    ${A.refCoord ? `<button type="button" class="mx-drop mx-dropbtn" style="width:78px" id="mx-refcoord" data-action="refCoord" title="Reference Coordinate System">View<i></i></button>` : drop('View', 78, 'Reference Coordinate System')}${btn('pivot', 'pivot', 'Use Pivot Point Center', { disabled: true })}${sep}
     ${btn('manipulate', 'manipulate', 'Select and Manipulate', { disabled: true })}${btn('kbd', 'keyboardOverride', 'Keyboard Shortcut Override Toggle', { active: true })}${sep}
     ${btn('snap', 'snap3', 'Snaps Toggle (S)')}${btn('angleSnap', 'angleSnap', 'Angle Snap Toggle (A)')}${btn('percentSnap', 'percentSnap', 'Percent Snap Toggle', { disabled: true })}${btn('spinnerSnap', 'spinnerSnap', 'Spinner Snap Toggle', { disabled: true })}${sep}
     ${btn('namedSel', 'editNamedSel', 'Edit Named Selection Sets', { disabled: true })}${drop('', 130, 'Create Selection Set')}${sep}
@@ -239,17 +244,19 @@ export function createMaxShell(root, opts = {}) {
     return out;
   }
   function renderTree() {
-    $('#mx-tree').innerHTML = seVisibleList().map(({ ob, d, parent }) => `<div role="treeitem" class="mx-node${ob.id === o.selected ? ' on' : ''}${ob.hidden ? ' is-hidden' : ''}${ob.frozen ? ' is-frozen' : ''}" data-object="${esc(ob.id)}" style="--d:${d}" aria-selected="${ob.id === o.selected}"${parent ? ` aria-expanded="${!seState.closed.has(ob.id)}"` : ''}><span class="mx-tw${parent ? '' : ' leaf'}" data-se-open="${esc(ob.id)}" aria-hidden="true"></span><button type="button" class="mx-eye" data-se-hide="${esc(ob.id)}" title="${ob.hidden ? 'Unhide' : 'Hide'} ${esc(ob.name || ob.id)}" aria-label="${ob.hidden ? 'Unhide' : 'Hide'} ${esc(ob.name || ob.id)}" aria-pressed="${!ob.hidden}">${icon(ob.hidden ? 'rowEyeOff' : 'rowEye')}</button><span class="mx-kind" aria-hidden="true">${icon(KIND_ICON[ob.kind] || 'seGeometry')}</span><span class="mx-name">${esc(ob.name || ob.id)}</span><button type="button" class="mx-frz${ob.frozen ? ' on' : ''}" data-se-freeze="${esc(ob.id)}" title="${ob.frozen ? 'Unfreeze' : 'Freeze'} ${esc(ob.name || ob.id)}" aria-label="${ob.frozen ? 'Unfreeze' : 'Freeze'} ${esc(ob.name || ob.id)}" aria-pressed="${!!ob.frozen}">${icon('rowFrozen')}</button></div>`).join('');
-    const ob = obById(o.selected);
-    $('#mx-selinfo').textContent = ob ? `1 ${ob.kind === 'Geometry' ? 'Object' : ob.kind || 'Object'} Selected` : 'None Selected';
+    const isSel = id => o.selSet ? o.selSet.has(id) : id === o.selected;
+    $('#mx-tree').innerHTML = seVisibleList().map(({ ob, d, parent }) => `<div role="treeitem" class="mx-node${isSel(ob.id) ? ' on' : ''}${ob.hidden ? ' is-hidden' : ''}${ob.frozen ? ' is-frozen' : ''}" data-object="${esc(ob.id)}" style="--d:${d}" aria-selected="${isSel(ob.id)}"${parent ? ` aria-expanded="${!seState.closed.has(ob.id)}"` : ''}><span class="mx-tw${parent ? '' : ' leaf'}" data-se-open="${esc(ob.id)}" aria-hidden="true"></span><button type="button" class="mx-eye" data-se-hide="${esc(ob.id)}" title="${ob.hidden ? 'Unhide' : 'Hide'} ${esc(ob.name || ob.id)}" aria-label="${ob.hidden ? 'Unhide' : 'Hide'} ${esc(ob.name || ob.id)}" aria-pressed="${!ob.hidden}">${icon(ob.hidden ? 'rowEyeOff' : 'rowEye')}</button><span class="mx-kind" aria-hidden="true">${icon(KIND_ICON[ob.kind] || 'seGeometry')}</span><span class="mx-name">${esc(ob.name || ob.id)}</span><button type="button" class="mx-frz${ob.frozen ? ' on' : ''}" data-se-freeze="${esc(ob.id)}" title="${ob.frozen ? 'Unfreeze' : 'Freeze'} ${esc(ob.name || ob.id)}" aria-label="${ob.frozen ? 'Unfreeze' : 'Freeze'} ${esc(ob.name || ob.id)}" aria-pressed="${!!ob.frozen}">${icon('rowFrozen')}</button></div>`).join('');
+    const ob = obById(o.selected), n = o.selSet ? o.selSet.size : ob ? 1 : 0;
+    $('#mx-selinfo').textContent = n > 1 ? `${n} Objects Selected` : ob ? `1 ${ob.kind === 'Geometry' ? 'Object' : ob.kind || 'Object'} Selected` : 'None Selected';
   }
   on($('#mx-tree'), 'click', e => {
     const tw = e.target.closest('[data-se-open]'); if (tw && !tw.classList.contains('leaf')) { const id = tw.dataset.seOpen; seState.closed.has(id) ? seState.closed.delete(id) : seState.closed.add(id); renderTree(); return; }
     const h = e.target.closest('[data-se-hide]'); if (h) { const ob = obById(h.dataset.seHide); api.setObjectState(ob.id, { hidden: !ob.hidden }, true); return; }
     const fz = e.target.closest('[data-se-freeze]'); if (fz) { const ob = obById(fz.dataset.seFreeze); api.setObjectState(ob.id, { frozen: !ob.frozen }, true); return; }
-    const b = e.target.closest('[data-object]'); if (b) api.select(b.dataset.object, true);
+    const b = e.target.closest('[data-object]'); if (!b) return;
+    if (A.treeClick) { if (state.lock) { api.prompt('Selection Lock is on (Space): press Space to unlock it'); return; } A.treeClick(b.dataset.object, e); } else api.select(b.dataset.object, true);
   });
-  on($('#mx-tree'), 'pointerdown', e => { if (!e.target.closest('[data-object]') && e.button === 0 && !state.lock) api.select(null, true); });
+  on($('#mx-tree'), 'pointerdown', e => { if (!e.target.closest('[data-object]') && e.button === 0 && !state.lock) { if (A.treeClick) A.treeClick(null, e); else api.select(null, true); } });
   on($('.mx-se-side'), 'click', e => {
     const b = e.target.closest('[data-se-filter]'); if (!b) return;
     const k = b.dataset.seFilter;
@@ -280,6 +287,9 @@ export function createMaxShell(root, opts = {}) {
     if (fromUser) A.selectObject?.(id);
   };
   api.selectedId = () => o.selected;
+  // Several selected objects (Ctrl+click, region): ids in selection order, the last one is shown in the Command Panel.
+  api.setSelection = ids => { o.selSet = new Set(ids); const last = ids[ids.length - 1] ?? null, changed = last !== o.selected; o.selected = last; renderTree(); if (changed) { const ob = obById(last), nm = $('#mx-objname'), sw = nm?.parentElement.querySelector('.mx-swatch'); if (nm) nm.value = ids.length > 1 ? '' : ob?.name || ''; if (sw) sw.style.background = ob?.color || '#555'; } };
+  api.setRefCoord = name => { const b = $('#mx-refcoord'); if (b) b.firstChild.textContent = name; };
   api.setObjects = (list, selected = o.selected) => { o.objects = list; o.selected = selected; renderTree(); };
 
   // ── Command Panel ──

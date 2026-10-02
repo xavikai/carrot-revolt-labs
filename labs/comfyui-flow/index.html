@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Learn the nodes, socket types and execution order of a basic ComfyUI text-to-image workflow in an interactive browser lab.">
+  <title>ComfyUI Flow Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <link rel="stylesheet" href="./style.css?v=1">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a>
+    <span class="header-divider" aria-hidden="true"></span>
+    <div class="header-title"><small>GENERATIVE IMAGE / COMFYUI</small><strong>Flow Lab</strong></div>
+    <a class="back-link" href="../../#comfyui">All ComfyUI labs ↗</a>
+  </header>
+  <main>
+    <section class="intro">
+      <p class="eyebrow">01 / NODES AND DATA FLOW</p>
+      <h1>Make sense of <em>the graph.</em></h1>
+      <p>Follow a basic ComfyUI text-to-image workflow from the checkpoint and prompts to the saved image. Inspect nodes, connect matching sockets and trace what runs when you queue the workflow.</p>
+      <div class="intro-notes"><span>Runs in your browser</span><span>No model download needed</span><span>Conceptual preview, no AI generation</span></div>
+    </section>
+
+    <nav class="lesson-nav" id="lesson-nav" aria-label="Exercises"></nav>
+    <section class="lab-layout" aria-label="Interactive ComfyUI exercise">
+      <aside class="lesson-panel">
+        <span class="panel-kicker" id="step-label"></span>
+        <h2 id="step-title"></h2>
+        <p id="step-copy"></p>
+        <div class="goal" id="goal"></div>
+        <div class="panel-actions">
+          <button id="check" type="button" class="primary">Check step</button>
+          <button id="hint" type="button">Hint</button>
+          <button id="reset" type="button">Reset step</button>
+          <button id="solution" type="button">Show connections</button>
+        </div>
+        <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+        <div class="inspector"><span class="panel-kicker">SELECTED NODE</span><h3 id="inspect-title">Select a node</h3><p id="inspect-copy">Click a node title to see its job in the workflow.</p></div>
+      </aside>
+
+      <div class="workspace">
+        <div class="workspace-toolbar"><div><span class="workspace-app">ComfyUI <b>· teaching canvas</b></span><span class="workspace-tip">Choose an output socket, then a matching input. Click an input again to disconnect it.</span></div><button id="queue" type="button" class="queue">▶ Queue Prompt</button></div>
+        <div class="canvas-scroll"><div class="graph" id="graph"><svg id="wires" aria-hidden="true"></svg><div id="nodes"></div></div></div>
+        <div class="workspace-bottom"><span id="link-count"></span><span>MODEL · CLIP · CONDITIONING · LATENT · VAE · IMAGE</span></div>
+      </div>
+    </section>
+
+    <section class="results" aria-label="Conceptual result">
+      <div class="result-head"><div><span class="eyebrow">OUTPUT / SIMULATION</span><h2>Trace the result</h2></div><p>This is a schematic preview for learning the graph. It does not run a model or predict what ComfyUI would generate.</p></div>
+      <div class="result-grid"><div class="preview" id="preview"><span>Queue a valid workflow to see a schematic preview.</span></div><div class="run-details"><h3>What each node passes on</h3><ol id="trace"></ol><p class="source-note">Node names and connections follow the basic ComfyUI workflow. <a href="https://docs.comfy.org/essentials/core-concepts/links" target="_blank" rel="noopener noreferrer">ComfyUI documentation ↗</a></p></div></div>
+    </section>
+  </main>
+  <footer><span>CARROT REVOLT <strong>LABS</strong></span><span>Interactive studies for the classroom</span><a href="../../#comfyui">Back to ComfyUI labs ↑</a></footer>
+  <script type="module" src="./app.js?v=1"></script>
+</body>
+</html>

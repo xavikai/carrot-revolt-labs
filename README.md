@@ -6,9 +6,9 @@ Interactive browser labs for learning by experimenting. This independent collect
 
 ## Learning areas
 
-The home page groups labs by their **main teaching interface**. Blender has its own track (14 labs) with basics, modeling and UVs, materials, light and camera, and rigging and animation. 3ds Max begins with a separate bouncing-ball Animation Lab. Unity-focused work sits under Game engines; C#, video grading, scenography and graphic design have separate areas. All 22 original lab URLs remain unchanged.
+The home page groups labs by their **main teaching interface**. Blender has its own track (14 labs) with basics, modeling and UVs, materials, light and camera, and rigging and animation. 3ds Max has its own track: a Viewport Lab for the basics, a bouncing-ball Animation Lab and a Track View Lab. Unity-focused work sits under Game engines; C#, video grading, scenography and graphic design have separate areas. All 22 original lab URLs remain unchanged.
 
-The 3ds Max area has a dedicated Animation Lab. Its rig (`labs/3ds-max-animation/rig.js`) copies the class scene: `ctrl_master` › `ctrl_pilota` (shapes), `squash_space` › `ctrl_bottom`, `ctrl_top` (point helpers), the hidden `ball_Bone` › `tip_bone` and the frozen `pilota_Mesh`. Every control has the nine Transform tracks (Zero Pos XYZ, Zero Euler XYZ, Bezier Scale) and can be moved, rotated and scaled on any axis; Auto Key keys changes, Set Key Mode holds a pose until Set Keys, and with both off an animated track moves all its keys, as in Max. It shares the bouncing-ball principles and four assessment stages with the Blender lab, while using a separate 3ds Max-inspired viewport, helper rig, Time Slider and Track Bar, Track View Curve Editor/Dope Sheet, and Auto Key/Set Keys workflow. Its progress is stored separately in the browser. Future Max labs can build on the same learning goals with their own application controls and terminology.
+The 3ds Max area has a dedicated Animation Lab. Its rig (`labs/3ds-max-animation/rig.js`) copies the class scene: `ctrl_master` › `ctrl_pilota` (shapes), `squash_space` › `ctrl_bottom`, `ctrl_top` (point helpers), the hidden `ball_Bone` › `tip_bone` and the frozen `pilota_Mesh`. Every control has the nine Transform tracks (Zero Pos XYZ, Zero Euler XYZ, Bezier Scale) and can be moved, rotated and scaled on any axis; Auto Key keys changes, Set Key Mode holds a pose until Set Keys, and with both off an animated track moves all its keys, as in Max. It shares the bouncing-ball principles and the stages of the class (keys every 10 frames, timing, travel, rotation, squash and stretch, and weight as an extra) with the Blender lab, while using a separate 3ds Max-inspired viewport, helper rig, Time Slider and Track Bar, Track View Curve Editor/Dope Sheet, and Auto Key/Set Keys workflow. Its progress is stored separately in the browser. Future Max labs can build on the same learning goals with their own application controls and terminology.
 
 Lab content and shared lab controls were last synchronized from CIFOG Lab through commit `6618198` (2026-09-28). The Carrot Revolt Labs home page, learning areas, branding, 3ds Max Animation Lab and local preview configuration are maintained here.
 
@@ -17,6 +17,7 @@ Lab content and shared lab controls were last synchronized from CIFOG Lab throug
 - UV Unwrap Lab: ./labs/uv-unwrapping/
 - Code Lab (C#): ./labs/csharp/
 - Animation Lab: ./labs/animation/
+- 3ds Max Viewport Lab: ./labs/3ds-max-viewport/
 - 3ds Max Animation Lab: ./labs/3ds-max-animation/
 - Code Lab 02 (objects): ./labs/csharp-objects/
 - Skin Weights Lab: ./labs/skin-weights/
@@ -39,7 +40,7 @@ Lab content and shared lab controls were last synchronized from CIFOG Lab throug
 
 ## 3ds Max UI kit (`labs/_max/`)
 
-Both 3ds Max labs share one kit that reproduces the 3ds Max 2027 default workspace:
+The 3ds Max labs share one kit that reproduces the 3ds Max 2027 default workspace:
 
 - `max-shell.js` builds the main window (title bar, menu bar, Main Toolbar, ribbon tabs, Scene Explorer, viewport with label menus and ViewCube, Command Panel with its six tabs, Time Slider, Track Bar, status bar with Transform Type-In, Auto / Set K., Filters…, playback and navigation controls) and the Track View window (Curve Editor and Dope Sheet toolbar in Max's order, Controller Window, Key Window, key stats).
 - It binds the **default 3ds Max hotkeys** (W/E/R/Q, N Auto Key, ' Set Key Mode, K Set Keys, / play, , . frames, Home/End, Space Selection Lock, Alt+W, H, F5–F8, Shift+H, Ctrl+Z/Y…) and lists them in *Customize › Hotkey Editor*. Keys that exist in Max but do nothing in a lab are greyed out there.
@@ -49,10 +50,13 @@ Both 3ds Max labs share one kit that reproduces the 3ds Max 2027 default workspa
 - `max-gizmo.js` draws the Move, Rotate and Scale gizmos as in Max (red X, green Y, blue Z, plane brackets, rotation circles, scale triangles). The part under the pointer turns yellow and dragging it constrains the transform; disabled axes are dimmed. It works in Max's Z-up coordinates.
 - `out-of-range.js` evaluates Parameter Curve Out-of-Range Types (Constant, Cycle, Loop, Ping Pong, Linear, Relative Repeat); the shell shows the dialog from the Track View button or *Edit › Controller › Out Of Range Types*. The Track View *Move Keys* button is a flyout (click and hold) with Move Keys Horizontal and Vertical.
 - *Tools › Preview - Grab Viewport › Create Preview Animation* (Shift+V) renders the lab's viewport frame by frame without helpers or gizmos and plays it in a Media Player that saves a .webm video or a .png frame.
+- Optional features used by the Viewport Lab, off unless a lab asks for them: `opts.enable` turns on buttons the kit greys out (Rectangular Selection Region, Window/Crossing, Absolute/Offset); `actions.refCoord` makes the Reference Coordinate System list clickable (`setRefCoord(name)` updates it); `setSelection(ids)` and `actions.treeClick(id, event)` give several selected objects with Ctrl/Alt in the Scene Explorer; `Group` objects get the group icon. The gizmo takes `setOrientation(quaternion)` for Local, Screen and View coordinates, and `axis(a)` returns a turned axis in Max coordinates. New default hotkeys: Ctrl+I Select Invert, Ctrl+V Clone, F12 Transform Type-In.
 - `max-icons.js` holds the toolbar icons. They are drawn for this project (not Autodesk artwork) but keep the symbol, colour code and position of each real button.
 - `max-ui.css` holds the 2027 dark theme colours sampled from screenshots.
 
 ## Available labs
+
+**3ds Max Viewport Lab** (`labs/3ds-max-viewport/`) teaches the first week of 3ds Max 2027 in the kit's main window with the default four viewports (Top, Front and Left in Wireframe Override, Perspective in Default Shading). Each viewport has its label menus, and the active one has the yellow border and the ViewCube; Alt+W maximizes it, T F L P change its view, orbiting a flat view turns it into Orthographic, Z and Ctrl+Shift+Z zoom to extents, F3, F4 and G switch wireframe, edged faces and the grid. Four stages: look around (viewports, orbit/pan/zoom, Zoom Extents and ViewCube, views); select and transform (click, Ctrl/Alt, Crossing or Window regions, H, W E R with the gizmo, F5–F8, Angle Snap, Transform Type-In in Absolute or Offset and F12, the Local coordinate system); create and modify (Standard Primitives built with the mouse on each viewport's construction plane, parameters and segments, a modifier stack with Bend, Taper and Twist, light bulbs, Remove and Make Unique); clone and organize (Shift+drag Clone Options with Copy, Instance and Reference, Tools › Array in 1D and 2D, Group, Open, Close, Ungroup, hide and freeze from the quad menu, the Display panel or the Scene Explorer). A free mode follows. Primitives use 3ds Max pivots and default segments (`prims.js`), and the scene model with instances, references and groups is pure JS (`scene.js`), tested in `tests/max-viewport.test.mjs`.
 
 **Material Lab** (`labs/materials/`) is a Blender-style Shader Editor in English with the full Principled BSDF (Subsurface, Specular, Transmission, Coat, Sheen, Emission, Thin Film), a live PBR preview and a Properties editor (Render Engine EEVEE/Cycles, Raytracing, the Compositor Glare node, Subdivision Surface with Adaptive Subdivision, the Displace modifier, Material Settings › Displacement and Raytraced Transmission). Seven stages: nodes and mapping; metal or not; maps and colour spaces (with alpha cut-outs); relief (Bump, the Displacement setting, enough vertices, the Displace modifier); light and glass (Emission, Glare in the Compositor, emission lighting, glass in Cycles and in EEVEE); layers of the Principled (car paint, velvet, skin and wax, soap bubble, brushed metal); and a Studio with presets. The preview can use the Lighting Lab's HDRIs.
 
@@ -62,20 +66,20 @@ Both 3ds Max labs share one kit that reproduces the 3ds Max 2027 default workspa
 
 **Code Lab 02** (`labs/csharp-objects/`) continues the Code Lab towards Unity with the same app and interpreter (the page sets `data-course="objects"` and loads `labs/csharp/levels-objects.js`). The interpreter adds classes and structs (fields, public/private/protected, constructors with `: base(…)`, instance methods, `this`, virtual/override with real dispatch rules), `new`, `null`, reference semantics, `List<T>` (Add, Remove, RemoveAt, Insert, Contains, IndexOf, Count, indexer, collection initializers, modification during foreach), and a Unity-like layer: `Vector3` as a struct (operators, `normalized`, `magnitude`, `Vector3.up`…), `MonoBehaviour` with `transform.position`, `Time.deltaTime`, `Mathf`, `Debug.Log` and `Scene.Add`, after which the lab calls `Start()` once and `Update()` every frame and draws each object (with a dot per frame). Real compiler errors teach the classic mistakes: CS0122 (private fields), CS1612 (changing `transform.position.y`), CS0037, CS1729, CS0506/CS0115, CS0108/CS0114 warnings, CS8803 (classes must come after the main program), plus NullReferenceException and InvalidOperationException at runtime. The Memory panel shows variables of a class as arrows (→ #3) to objects in a **heap**, structs inline, and objects nothing points to any more faded out. 30 challenges in 7 levels: classes and objects, references and null, lists, structs and Vector3, Update and time (from moving objects to the bouncing ball simulated in code), inheritance, and ready for Unity.
 
-**Animation Lab** (`labs/animation/`) teaches the bouncing ball in four stages with a Blender-style workspace.
+**Animation Lab** (`labs/animation/`) teaches the bouncing ball with a Blender-style workspace, following the same stages and frames as the class (scene from frame 0 to 100).
 
 The workspace has three editors:
 - **3D Viewport** (Three.js, Pose Mode) with a rigged ball. The rig follows the one used in class: a **Root** control at the base, two squash & stretch controls and a **Rotation** control. **SS_Top** moves the top of the ball (pivot at the base, for the contacts) and **SS_Bottom** moves the bottom (pivot at the top, to stretch towards the floor). The rig keeps the volume. Controls are selected with LMB and moved with G (only up and down, with typed values). I inserts a keyframe and Alt G clears. As in Blender, an unkeyed pose is discarded when the frame changes. The viewport also shows Motion Path dots, optional ghosts and a 1 m grid wall.
 - **Graph Editor** with a channel list grouped by bone and a sidebar (Active Keyframe, bounce heights and frame counts, rig values, lowest point). F-curves behave like Blender's: Constant, Linear and Bezier interpolation, and Free, Aligned, Vector, Automatic and Auto Clamped handles (automatic handles become Aligned when dragged).
-- **Timeline** where keyframes can be edited too. Drag the numbers to change frame. Click a keyframe to select it (Shift adds), drag it or press G to move it in time, drag on empty space to box-select, and press X to delete.
+- **Timeline** where keyframes can be edited too. Drag the numbers to change frame. Click a keyframe to select it (Shift adds), drag it or press G to move it in time, drag on empty space to box-select, The stages follow the bouncing ball as it is taught in class (the same as the 3ds Max Animation Lab):
+- **Keys**: block the bounce. First bounce with keys at 0 (up), 10 (contact) and 20 (lower top); then the vertical sequence, one key every 10 frames until frame 50.
+- **Timing**: bring the bounces closer in time (contacts 10 · 28 · 43 · 56 · 67 · 73, tops 20 · 36 · 50 · 62 · 70), then sharp contacts with Vector handles.
+- **Travel**: animate the X Location from frame 0 to the last contact (73); after it the curve stays flat, and the travel eases out to give weight.
+- **Rotation**: a Rotation control (R to turn it, typed degrees, Alt R) turns the ball inside its squash, so the squash stays vertical. Key it near frame 70–73 with the turn the travel needs (360° every π × diameter), then a last key near frame 99 with a flat end so the spin stops.
+- **Squash & Stretch**: a brief squash with SS_Top at the first contacts (round the frame before, keys like 9 · 10 · 12), a short stretch after the contact, round at the tops, and never through the floor.
+- **Weight** (extra): a bowling ball, a beach ball with hang time, and a match with a physically simulated bounce.
 
-Keys go to the editor under the mouse.
-
-The four stages:
-- **Timing**: ease in and out, sharp contacts with Vector handles, lower bounces, shorter bounces.
-- **Squash & Stretch**: squash with SS_Top at the contacts, stretch down with SS_Bottom before the contact and up with SS_Top after it, round at the tops, and never through the floor.
-- **Weight**: a bowling ball, a beach ball with hang time, and a match with a physically simulated bounce.
-- **Rotation**: a Rotation control (R to turn it, typed degrees, Alt R) turns the ball inside its squash, so the squash stays vertical. Roll the right way and the right amount (360° every π × diameter of travel), make the rotation follow a constant travel (Linear), and slow it down with an eased travel.
+nstant travel (Linear), and slow it down with an eased travel.
 
 The **Controls** switch in the 3D Viewport header hides the rig controls (as Overlays › Bones in Blender) to judge the motion on the ball alone.
 

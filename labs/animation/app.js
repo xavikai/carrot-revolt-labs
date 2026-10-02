@@ -2,9 +2,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../../vendor/OrbitControls.js';
 import { recalcHandles, evaluate, moveKey, moveHandle, key, contacts, tops, intervals, hangTime, matchScore, INTERPOLATIONS, HANDLE_TYPES } from './fcurve.js';
-import { STAGES, CHANNELS, FPS, RANGE, REFERENCE, BALL, startData, cloneData, shape, channelOf, lowestPoint, firstBounce, rollReport, rollAngle } from './stages.js?v=6';
+import { STAGES, CHANNELS, FPS, RANGE, REFERENCE, BALL, startData, cloneData, shape, channelOf, lowestPoint, firstBounce, rollReport, travelReport, rollAngle } from './stages.js?v=7';
 import { t, tr, onLangChange, addDictionary } from '../../i18n.js';
-import dictionary from './i18n.js?v=5';
+import dictionary from './i18n.js?v=6';
 addDictionary(dictionary);
 
 const $ = s => document.querySelector(s);
@@ -18,7 +18,7 @@ const HANDLE_LABELS = { FREE: 'Free', ALIGNED: 'Aligned', VECTOR: 'Vector', AUTO
 const INTERP_LABELS = { CONSTANT: 'Constant', LINEAR: 'Linear', BEZIER: 'Bezier' };
 
 const S = {
-  stageIndex: store.get('stage', 0), step: 0, data: null, frame: 1, start: RANGE[0], end: RANGE[1],
+  stageIndex: Math.min(store.get('stage-v2', 0), STAGES.length - 1), step: 0, data: null, frame: RANGE[0], start: RANGE[0], end: RANGE[1],
   playing: false, active: 'locZ', hidden: new Set(), activeKey: null,
   undo: [], redo: [], done: store.get('done', {}), toggles: { path: true, ghosts: false, ref: false, ctrls: store.get('ctrls', true) },
   view: null, drag: null, grab: null, hover: false,
@@ -27,9 +27,9 @@ const S = {
 const stage = () => STAGES[S.stageIndex];
 
 // ─── Data and persistence ───────────────────────────────────────────────────
-function saveData() { store.set(`data-${stage().id}-${stage().independent ? S.step : 0}`, S.data); }
+function saveData() { store.set(`data-v2-${stage().id}-${stage().independent ? S.step : 0}`, S.data); }
 function loadData() {
-  const saved = store.get(`data-${stage().id}-${stage().independent ? S.step : 0}`, null);
+  const saved = store.get(`data-v2-${stage().id}-${stage().independent ? S.step : 0}`, null);
   S.data = saved && saved.channels ? saved : startData(stage(), S.step);
   if (stage().free && !S.data.channels.scale) S.data.channels.scale = startData(stage()).channels.scale;
   for (const k of Object.values(S.data.channels)) { k.forEach(q => { q.select = false; }); recalcHandles(k); }
@@ -193,7 +193,7 @@ function drawView() {
     }
   }
   if (refGroup.visible) refBall.position.set(valueAt('locX', S.frame), REFERENCE(S.frame) + BALL / 2, 0);
-  const secs = ((S.frame - 1) / FPS).toFixed(2);
+  const secs = ((S.frame - RANGE[0]) / FPS).toFixed(2);
   $('#view-overlay').innerHTML = `<div>${esc(t('User Perspective'))}</div><div data-no-i18n>(${Math.round(S.frame)}) Armature : <b>${esc(S.bone)}</b></div><div>${secs} s · X ${p.x.toFixed(2)} m · ${esc(tr('Height {v} m', { v: Math.max(0, p.bottom).toFixed(2) }))} · ${esc(tr('Scale {x} × {z}', { x: p.sx.toFixed(2), z: p.sz.toFixed(2) }))}</div>${stage().channels.includes('rotY') ? `<div>${esc(tr('Rotation {v}°', { v: p.rot.toFixed(0) }))}</div>` : ''}${Object.keys(S.override).length ? `<div class="unkeyed">${esc(t('Unkeyed change: press I to keep it'))}</div>` : ''}`;
   render3();
 }
@@ -678,6 +678,13 @@ function renderSidebar() {
     if (fb) html += `<div class="sb-stat"><span>${esc(t('Hang time'))}</span><b>${Math.round(hangTime(z, fb[0], fb[1]) * 100)}%</b></div>`;
     if (S.toggles.ref) html += `<div class="sb-stat"><span>${esc(t('Match'))}</span><b>${matchScore(z, REFERENCE, 1, 60)}%</b></div>`;
   }
+  if (stage().id === 'travel') {
+    const r = travelReport(S.data), endOk = r.end >= 70 && r.end <= 76;
+    html += `<div class="sb-sep"></div><h4>${esc(t('Travel'))}</h4>`;
+    html += `<div class="sb-stat"><span>${esc(t('Distance'))}</span><b>${r.dist.toFixed(2)} m</b></div>`;
+    html += `<div class="sb-stat${endOk ? '' : ' bad'}"><span>${esc(t('Travel ends'))}</span><b>${esc(tr('frame {n}', { n: r.end }))}</b></div>`;
+    html += `<div class="sb-stat${r.easeOut ? '' : ' bad'}"><span>${esc(t('Slows down at the end'))}</span><b>${esc(t(r.easeOut ? 'Yes' : 'No'))}</b></div>`;
+  }
   if (stage().id === 'rotation') {
     const r = rollReport(S.data), bad = r.worst > 0.05;
     html += `<div class="sb-sep"></div><h4>${esc(t('Roll'))}</h4>`;
@@ -942,11 +949,11 @@ function renderStageSwitch() {
 }
 $('#stage-switch').addEventListener('click', e => {
   const b = e.target.closest('[data-stage]'); if (!b) return;
-  saveData(); S.stageIndex = +b.dataset.stage; S.step = 0; store.set('stage', S.stageIndex); enterStage();
+  saveData(); S.stageIndex = +b.dataset.stage; S.step = 0; store.set('stage-v2', S.stageIndex); enterStage();
 });
 function stepDone(i) {
   const st = stage();
-  if (st.independent) return i === S.step ? st.steps[i].check(S.data) : !!S.done[`${st.id}-${i}`];
+  if (st.independent) return i === S.step ? st.steps[i].check(S.data) : !!S.done[`v2-${st.id}-${i}`];
   return st.steps[i].check(S.data);
 }
 function currentStep() {
@@ -1007,7 +1014,7 @@ $('#step-card').addEventListener('click', e => {
     else S.focus = null;
     renderAll();
   }
-  if (e.target.id === 'next-stage') { saveData(); S.stageIndex++; S.step = 0; store.set('stage', S.stageIndex); enterStage(); }
+  if (e.target.id === 'next-stage') { saveData(); S.stageIndex++; S.step = 0; store.set('stage-v2', S.stageIndex); enterStage(); }
 });
 
 let lastDone = null;
@@ -1016,7 +1023,7 @@ function checkProgress() {
   if (st.free) return;
   const cur = currentStep();
   const states = st.steps.map((_, i) => stepDone(i));
-  if (st.independent && states[S.step]) S.done[`${st.id}-${S.step}`] = true;
+  if (st.independent && states[S.step]) S.done[`v2-${st.id}-${S.step}`] = true;
   store.set('done', S.done);
   if (lastDone) states.forEach((d, i) => { if (d && !lastDone[i]) msg(tr('✓ Step done: {s}', { s: t(st.steps[i].title) })); });
   lastDone = states;
@@ -1031,7 +1038,7 @@ function syncToggles() {
 function renderLive() {
   drawView(); drawGraph(); drawTimeline();
   $('#f-cur').value = Math.round(S.frame);
-  $('#time-sec').textContent = `${((S.frame - 1) / FPS).toFixed(2)} s`;
+  $('#time-sec').textContent = `${((S.frame - RANGE[0]) / FPS).toFixed(2)} s`;
   if (!S.playing) renderSidebar();
 }
 function renderAll() {

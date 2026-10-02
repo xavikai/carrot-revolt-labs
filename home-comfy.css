@@ -1,0 +1,11 @@
+.area-card-comfy{background:radial-gradient(circle at 85% 10%,#9e5bd335,transparent 50%),linear-gradient(145deg,#24252f,#1c2225);border-color:#795783}
+.area-card-comfy .area-card-icon{color:#d3a7fa;border-color:#9e6dc1}
+.area-card-comfy .area-card-count{color:#d1b0ef}
+.comfy-card .card-visual{display:flex;align-items:center;justify-content:center;gap:10px;padding:18px;background:radial-gradient(circle at 50% 40%,#3b3045,#24232e 67%,#202228)}
+.comfy-card .comfy-mini-node{width:86px;min-height:64px;border:1px solid #6e6680;border-radius:6px;background:#30313b;box-shadow:0 9px 18px #0005;color:#e9e8ee;font-size:.59rem;font-weight:700;overflow:hidden}
+.comfy-card .comfy-mini-node b{display:block;padding:6px;background:#4b4158;font-size:.55rem}
+.comfy-card .comfy-mini-node span{display:block;padding:6px;color:#b8bbc6}
+.comfy-card .comfy-mini-node:nth-of-type(3) b{background:#5a433f}
+.comfy-card .comfy-mini-wire{flex:0 0 27px;height:3px;background:linear-gradient(90deg,#c78ccf,#e5ad6a);border-radius:4px}
+.comfy-card .uv-decor{color:#e9c8f0}
+@media(max-width:560px){.comfy-card .comfy-mini-node{width:70px}.comfy-card .comfy-mini-wire{flex-basis:13px}}

@@ -87,6 +87,9 @@ export function createGizmo({ scene, camera, dom }) {
   add('scale', 'xyz', [new THREE.Mesh(innerGeo, meshMat(COL.tri, .28))], new THREE.Mesh(innerGeo, pickMat));
 
   let mode = 'move', hovered = null, locked = null, enabled = { x: true, y: true, z: true }, drag = null;
+  // Orientation of the gizmo (Reference Coordinate System: World, Local, View…). Identity = world axes.
+  const orient = new THREE.Quaternion(); let oriented = false;
+  const worldAxis = a => axisDir(a).applyQuaternion(orient);
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   const setNdc = e => { const r = dom.getBoundingClientRect(); ndc.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1); ray.setFromCamera(ndc, camera); };
   const partAxes = id => id === 'view' ? [] : id.split('');
@@ -111,11 +114,16 @@ export function createGizmo({ scene, camera, dom }) {
     attach(maxPos) { if (!maxPos) { root.visible = false; return; } root.visible = true; root.position.copy(fromMax(maxPos.x, maxPos.y, maxPos.z)); },
     setEnabled(axes) { enabled = { x: true, y: true, z: true, ...axes }; paint(); },
     setLocked(part) { locked = part; paint(); },          // F5–F8: the constrained axis or plane stays yellow
+    // Turn the gizmo to a coordinate system: q is a three.js quaternion (null = world). Drags then follow its axes.
+    setOrientation(q) { if (q) orient.copy(q); else orient.identity(); oriented = !!q && Math.abs(orient.w) < 1 - 1e-9; root.quaternion.copy(orient); },
+    // An axis of the gizmo in Max coordinates (after setOrientation).
+    axis(a) { return toMax(worldAxis(a)); },
     // Keep a constant size on screen, as Max does, and turn the view circles to the camera.
     update() {
       const dist = camera.position.distanceTo(root.position);
       root.scale.setScalar(dist * Math.tan(camera.fov * Math.PI / 360) * .42);
-      for (const b of billboards) b.quaternion.copy(camera.quaternion);
+      const inv = orient.clone().invert();
+      for (const b of billboards) b.quaternion.copy(inv).multiply(camera.quaternion);
     },
     pick(e) {
       if (!root.visible) return null;
@@ -135,19 +143,19 @@ export function createGizmo({ scene, camera, dom }) {
       if (mode === 'move') {
         const axes = part.split('').filter(a => 'xyz'.includes(a));
         let normal;
-        if (axes.length === 1) { const d = axisDir(axes[0]); normal = camDir.clone().sub(d.clone().multiplyScalar(camDir.dot(d))); if (normal.lengthSq() < 1e-6) normal = camera.up.clone(); normal.normalize(); }
-        else normal = axisDir(axes[0]).cross(axisDir(axes[1])).normalize();
+        if (axes.length === 1) { const d = worldAxis(axes[0]); normal = camDir.clone().sub(d.clone().multiplyScalar(camDir.dot(d))); if (normal.lengthSq() < 1e-6) normal = camera.up.clone(); normal.normalize(); }
+        else normal = worldAxis(axes[0]).cross(worldAxis(axes[1])).normalize();
         drag.axes = axes; drag.plane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, origin);
         drag.hit0 = ray.ray.intersectPlane(drag.plane, new THREE.Vector3()) || origin.clone();
       }
       if (mode === 'rotate' && part !== 'view') {
-        const d = axisDir(part); drag.axis = d; drag.plane = new THREE.Plane().setFromNormalAndCoplanarPoint(d, origin);
+        const d = worldAxis(part); drag.axis = d; drag.plane = new THREE.Plane().setFromNormalAndCoplanarPoint(d, origin);
         drag.edgeOn = Math.abs(camDir.dot(d)) < .2;
         const h = ray.ray.intersectPlane(drag.plane, new THREE.Vector3()); drag.last = h ? h.sub(origin) : null;
       }
       if (mode === 'rotate') {
         // Edge-on rings (and the view ring) turn by dragging along the ring's tangent on screen, as in Max.
-        const axis = part === 'view' ? camDir.clone().negate() : axisDir(part);
+        const axis = part === 'view' ? camDir.clone().negate() : worldAxis(part);
         const hit = ray.ray.closestPointToPoint(origin, new THREE.Vector3()).sub(origin);
         let radial = hit.sub(axis.clone().multiplyScalar(hit.dot(axis)));
         if (radial.lengthSq() < 1e-8) radial = new THREE.Vector3(0, 1, 0).cross(axis);
@@ -163,9 +171,12 @@ export function createGizmo({ scene, camera, dom }) {
       if (mode === 'move') {
         const h = ray.ray.intersectPlane(drag.plane, new THREE.Vector3()); if (!h) return { move: { x: 0, y: 0, z: 0 } };
         let d = h.sub(drag.hit0);
-        if (drag.axes.length === 1) { const a = axisDir(drag.axes[0]); d = a.multiplyScalar(d.dot(a)); }
+        if (drag.axes.length === 1) { const a = worldAxis(drag.axes[0]); d = a.multiplyScalar(d.dot(a)); }
+        // local: the move along each gizmo axis (equal to the world move when the gizmo is not turned)
+        const local = Object.fromEntries(['x', 'y', 'z'].map(a => [a, drag.axes.includes(a) ? d.dot(worldAxis(a)) : 0]));
+        if (oriented) return { move: toMax(d), local };
         const m = toMax(d); for (const a of ['x', 'y', 'z']) if (!drag.axes.includes(a)) m[a] = 0;
-        return { move: m };
+        return { move: m, local };
       }
       if (mode === 'rotate') {
         if (drag.part === 'view' || drag.edgeOn || !drag.last) { drag.angle = ((e.clientX - drag.x0) * drag.tan.x + (e.clientY - drag.y0) * drag.tan.y) * .6; return { angle: drag.angle }; }

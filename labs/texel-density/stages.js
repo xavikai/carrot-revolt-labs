@@ -1,6 +1,6 @@
 // Texel Density Lab: stages, steps and checks. Pure JS (tested with node).
 import { buildScene, objectsOf, packedUV, placeIsland, islandFaces, objectFaces, objectDensity, islandDensity, density, areas, inside, overlaps,
-  averageIslandsScale, pack, setTD, minRes, onTarget, rightTarget, CAMERAS, GAMES, camOf, targetFor, setMB, bbox, translate, scale, cutUV, stripsOf, stripReport, SHEET } from './td.js?v=5';
+  averageIslandsScale, pack, setTD, minRes, onTarget, rightTarget, CAMERAS, GAMES, camOf, targetFor, setMB, bbox, translate, scale, cutUV, stripsOf, stripReport, SHEET } from './td.js?v=6';
 
 const meshCache = new Map();
 export function meshOf(st) {
@@ -136,16 +136,54 @@ export function answerQuiz(st, list, a) {
 export const camFor = st => st.cam === 'custom' ? { name: 'Your game', ...(st.custom || { h: 1080, fov: 70, d: 2 }) } : camOf(st.cam);
 export function camAnswer(st) { const ok = st.camTarget === targetFor(camFor(st)); if (ok && st.cam !== 'custom') st.flags['cam_' + st.cam] = true; return ok; }
 
+// ─── Step c0: the criteria and the reference values ─────────────────────────
+export const TARGET_OPTIONS = [128, 256, 512, 1024, 2048];
+export const REFERENCE = [
+  { game: 'Strategy, city builder (camera far above)', v: '128' },
+  { game: 'Mobile, top-down camera', v: '256' },
+  { game: 'Third person, PC and console', v: '512' },
+  { game: 'First person', v: '1024' },
+  { game: 'First person in 4K, objects in the hand', v: '2048+' },
+];
+export const TARGET_CASES = [
+  { q: 'A city builder: the camera looks down on the city from 30 m or more.', a: 128, why: 'A very far camera: one metre of ground is only a few pixels on screen. 128 px/m is plenty.' },
+  { q: 'A top-down game for phones: small screen, camera a few metres above the character.', a: 256, why: 'Small screen, far camera and little memory: 256 px/m.' },
+  { q: 'A third-person adventure for PC and console: the camera follows 2–3 m behind the character.', a: 512, why: 'The classic third-person value: 512 px/m.' },
+  { q: 'A first-person horror game: the player walks along the walls and looks at everything up close.', a: 1024, why: 'The camera gets close to every surface: first person usually starts at 1024 px/m.' },
+  { q: 'The third-person game of case 3, ported to a handheld console with much less memory.', a: 256, why: 'Same camera, less memory: one step down (512 → 256), and 512 only for the hero assets.' },
+  { q: 'A first-person game in 4K where the player picks up objects and inspects them.', a: 2048, why: 'Twice the screen height of 1080p and objects very close to the eye: 2048 px/m.' },
+];
+
+// ─── Step a5: the whole recipe ───────────────────────────────────────────────
+export const RECIPE_TARGET = 512;
+export function textureEstimate(obj, target) {
+  const m = buildScene(obj === 'cabinet' ? 'cabinet' : 'trio'), a3 = areas(m, packedUV(m), objectFaces(m, obj)).a3;
+  const px = target * Math.sqrt(a3 / 0.7);
+  return { a3, px, res: [256, 512, 1024, 2048, 4096].find(r => r >= px) ?? 4096 };
+}
+export function recipe(st) {
+  const tg = RECIPE_TARGET, ok = st.target === tg;
+  return {
+    target: ok,
+    applied: !!st.flags.applied,
+    average: spread(st, 'cabinet') <= 1.06,
+    size: st.res.cabinet === minRes('cabinet', tg),
+    td: ok && islandsOk(st, 'cabinet', tg, 0.05),
+    checker: st.view === 'checker',
+  };
+}
+const messyCabinet = (s, list) => { const m = meshOf(s); list.forEach(([id, cu, cv, k, rot = 0]) => placeIsland(m, s.uv, 'cabinet.' + id, { d: 0.25, cu, cv, k, rot })); };
+
 // ─── Stages ──────────────────────────────────────────────────────────────────
 export const STAGES = [
   {
     id: 'see', name: 'See it', sub: 'Checker map · px/m',
     steps: [
       {
-        id: 's0', title: 'A ruler of one metre',
-        text: 'Texel density answers one question: if you lay a ruler of one metre on the surface, how many pixels of the texture does it cover? Click a prop: the yellow ruler lies on it, and the same ruler is drawn on its texture in the UV Editor, where you can count the pixels. That number is the texel density, in px/m. It belongs to the model, like its size: it comes from the size of the texture, the size of its UV islands and the size of the object, and it does not change with the camera.',
-        how: ['Click the <b>Wall</b> in the 3D view: 1 m of wall covers 335 px of its 1024 px texture, so it has 335 px/m.', 'Zoom into the ruler in the <b>UV Editor</b> (<b>Wheel</b>): every small square is one pixel of the texture.', 'Click the <b>Crate</b> and the <b>Barrel</b> too. The crate is only 0.5 m wide: its ruler is half a metre, so multiply its pixels by 2.'],
-        why: 'A number per metre lets you compare objects of any size. What the camera changes is how many px/m you need, the target, which is stage 4.',
+        id: 's0', title: 'What the number means',
+        text: 'A texture is an image, for example 1024 × 1024 pixels. When you unwrap, each face of the model is laid on a piece of that image (its UV island) and is painted with the pixels that piece covers. Texel density counts how many of those pixels end up on each metre of surface: pixels ÷ metres, in px/m. Example: the front of this wall is 3 m wide and its island is 1004 px wide on the 1024 px image. 1004 px ÷ 3 m = 335 px/m: every metre of wall gets 335 pixels of texture. The yellow ruler shows exactly that: one metre laid on the prop, and the same metre drawn on the image in the UV Editor.',
+        how: ['Click the <b>Wall</b> in the 3D view. The label reads <b>1 m → 335 px</b>: one metre of wall uses 335 pixels of the image, so 335 px/m.', 'Look at the <b>UV Editor</b>: the yellow line is the same metre on the image. Zoom in with the <b>Wheel</b>: each small square is one pixel.', 'Click the <b>Crate</b> and the <b>Barrel</b>: same 1024 px image, smaller objects, so each metre gets more pixels. The crate is only 0.5 m wide: its ruler is half a metre, so multiply its pixels by 2.'],
+        why: 'This number is a property of the model: it comes from the texture size, the island size and the object size, and the camera does not change it. How many px/m you need (the target) is a separate decision, made from the camera, the screen and the memory: that is stage 3.',
         start: { scene: 'trio', view: 'texture', uvImage: 'texture', ruler: true },
         check: s => !!(s.flags.rul_crate && s.flags.rul_wall && s.flags.rul_barrel),
         solve: s => { Object.assign(s.flags, { rul_crate: true, rul_wall: true, rul_barrel: true }); },
@@ -206,6 +244,47 @@ export const STAGES = [
     ],
   },
   {
+    id: 'choose', name: 'Choose it', sub: 'Criteria · camera · memory',
+    steps: [
+      {
+        id: 'c0', title: 'How to choose the number',
+        text: 'The target is decided once per project, before texturing, and written in the art bible so the whole team uses it. Four criteria decide it. 1. The camera: how close it usually gets to the surfaces (far and top-down: low; first person and close: high). 2. The screen: its resolution and the field of view. 3. The platform: the memory of the console, PC or phone; with little memory, one step down. 4. The exceptions: hero assets up, hidden faces down (stage 5). Studios start from the reference value of their game type, then confirm it with the calculation and the memory budget (the next steps). Choose the starting value for each game.',
+        how: ['Read the game in the <b>Case</b> panel.', 'Find its type in the <b>Reference values</b> table, and think about the platform and the screen.', 'Click a target. Read why after each answer.'],
+        why: 'The reference values are a starting point, not a law. The next three steps show where they come from: the camera distance, the screen and the memory.',
+        start: { scene: 'shop', view: 'texture', res: { crate: 1024, wall: 2048, barrel: 1024, vending: 2048 } },
+        check: s => (s.flags.quiz | 0) >= TARGET_CASES.length,
+        solve: s => { s.flags.quiz = TARGET_CASES.length; },
+      },
+      {
+        id: 'c1', title: 'The target comes from the camera',
+        text: 'How much density is enough? It depends on how close the camera gets. On a 2560 × 1440 screen, one metre of wall covers about 125 px from 10 m away, 500 px from 2.5 m and 1000 px from 1.25 m. Fewer texels than screen pixels looks blurry; many more is wasted, because the GPU shows a smaller mip anyway. For each camera, choose the smallest target that gives at least one texel per screen pixel.',
+        how: ['In the <b>Camera</b> panel, choose a camera: the 3D view moves to its distance.', 'Change the <b>Target</b> and look at the <b>Pixel loupe</b>: texels on the left, what the screen shows on the right.', 'Find the right target for the three cameras.'],
+        why: 'That is why third-person games often use about 512 px/m and first-person games 1024 px/m or more.',
+        start: { scene: 'wall', view: 'texture', cam: 'strategy', camTarget: 512 },
+        check: s => !!(s.flags.cam_strategy && s.flags.cam_third && s.flags.cam_first),
+        solve: s => { Object.assign(s.flags, { cam_strategy: true, cam_third: true, cam_first: true }); s.cam = 'first'; s.camTarget = 1024; },
+      },
+      {
+        id: 'g1', title: 'Your game, your number',
+        text: 'There is no single right density: each type of game gets its own, and they all come from the same calculation. Take three facts of your game: the screen height in pixels (H), the vertical field of view (FOV) and the closest distance the camera usually gets to a surface (d), not the rare moment the player presses their nose against a wall. One metre of surface then covers H ÷ (2 × d × tan(FOV ÷ 2)) pixels of the screen. The target is the power of two just above that number. Work it out for four games.',
+        how: ['In the <b>Game type</b> panel, choose a game: the calculation fills in with its screen, FOV and distance.', 'Choose the <b>Target</b>: the smallest one at or above the pixels that 1 m covers on screen. The Pixel loupe shows the result.', 'Then choose <b>Your game</b> and type the numbers of your own project.'],
+        why: 'Typical results: strategy and mobile 128–256 px/m, third person about 512, first person 1024, first-person weapons, VR and 4K more. Then the memory budget has the last word: many teams choose one step lower for the whole level and raise only the hero assets.',
+        start: { scene: 'wall', view: 'texture', cam: 'mobile', camTarget: 512 },
+        check: s => ['mobile', 'first4k', 'vr', 'weapon'].every(k => s.flags['cam_' + k]),
+        solve: s => { for (const k of ['mobile', 'first4k', 'vr', 'weapon']) s.flags['cam_' + k] = true; s.cam = 'weapon'; s.camTarget = 4096; },
+      },
+      {
+        id: 'c2', title: 'Texture size and memory',
+        text: 'The level uses 512 px/m and has a texture budget of 40 MB. Each prop needs a texture big enough to reach the target: the big wall and the tall vending machine need more pixels than the small crate. Choose the smallest size for each prop. Then look at the table: doubling the density multiplies the memory by four.',
+        how: ['In the <b>Budget</b> panel, choose the <b>Texture size</b> of each prop.', 'Every prop must reach 512 px/m, with no texture bigger than needed.', 'Compare the totals for 256, 512 and 1024 px/m.'],
+        why: 'Memory grows with the square of the density: 2 × the px/m is 4 × the pixels. The target is a budget decision too.',
+        start: { scene: 'shop', view: 'texture', target: 512, res: { crate: 4096, wall: 1024, barrel: 2048, vending: 1024 } },
+        check: s => { const st = sceneStats(s, 512); return Object.values(st.per).every(p => !p.low && !p.waste) && st.mb <= BUDGET_MB; },
+        solve: s => { for (const o of objectsOf(s.scene)) s.res[o] = minRes(o, 512); },
+      },
+    ],
+  },
+  {
     id: 'match', name: 'Match it', sub: 'S · Average Islands Scale · Set TD',
     steps: [
       {
@@ -240,7 +319,7 @@ export const STAGES = [
         id: 'a3', title: 'One density for the scene',
         text: 'Each prop was packed on its own, so each one has a different density. Give the whole scene 512 px/m. Texel Density Checker has a Set TD button that scales the islands to an exact density. But a small texture cannot reach 512 px/m on a big wall: first choose a texture big enough for each prop, and not bigger than needed.',
         how: ['Click a prop. In the <b>Texel Density</b> panel, choose its <b>Texture size</b>.', 'Press <b>Set TD</b>: the islands are scaled to 512 px/m. If they no longer fit in the square, the texture is too small.', 'Use the smallest texture that fits: a bigger one only wastes memory.'],
-        why: 'The target density is a project decision; the texture size of each object comes from it: size in px ≈ target × size of the object in m.',
+        why: 'The target density is a project decision; the texture size of each object comes from it. A quick estimate: target × √(surface in m² ÷ 0.7), rounded up to a power of two (0.7 because the islands never fill the whole square).',
         start: { scene: 'trio', view: 'checker', target: 512, res: { crate: 1024, wall: 1024, barrel: 2048 } },
         check: s => objectsOf(s.scene).every(o => onTarget(densityOf(s, o), 512, 0.05) && isInside(s, o) && !wasted(s, o, 512)),
         solve: s => { const m = meshOf(s); for (const o of objectsOf(s.scene)) { s.res[o] = minRes(o, 512); } s.uv = packedUV(m); for (const o of objectsOf(s.scene)) setTD(m, s.uv, o, s.res[o], 512); },
@@ -254,37 +333,15 @@ export const STAGES = [
         check: s => { const r = cutReport(s); return r.base && r.cornice && r.ok; },
         solve: s => { s.cuts = [0.25, 1.75]; s.zones = ['baseboard', 'bricks', 'cornice']; syncCuts(s); },
       },
-    ],
-  },
-  {
-    id: 'choose', name: 'Choose it', sub: 'Camera · texture size · memory',
-    steps: [
       {
-        id: 'c1', title: 'The target comes from the camera',
-        text: 'How much density is enough? It depends on how close the camera gets. On a 2560 × 1440 screen, one metre of wall covers about 125 px from 10 m away, 500 px from 2.5 m and 1000 px from 1.25 m. Fewer texels than screen pixels looks blurry; many more is wasted, because the GPU shows a smaller mip anyway. For each camera, choose the smallest target that gives at least one texel per screen pixel.',
-        how: ['In the <b>Camera</b> panel, choose a camera: the 3D view moves to its distance.', 'Change the <b>Target</b> and look at the <b>Pixel loupe</b>: texels on the left, what the screen shows on the right.', 'Find the right target for the three cameras.'],
-        why: 'That is why third-person games often use about 512 px/m and first-person games 1024 px/m or more.',
-        start: { scene: 'wall', view: 'texture', cam: 'strategy', camTarget: 512 },
-        check: s => !!(s.flags.cam_strategy && s.flags.cam_third && s.flags.cam_first),
-        solve: s => { Object.assign(s.flags, { cam_strategy: true, cam_third: true, cam_first: true }); s.cam = 'first'; s.camTarget = 1024; },
-      },
-      {
-        id: 'g1', title: 'Your game, your number',
-        text: 'There is no single right density: each type of game gets its own, and they all come from the same calculation. Take three facts of your game: the screen height in pixels (H), the vertical field of view (FOV) and the closest distance the camera usually gets to a surface (d), not the rare moment the player presses their nose against a wall. One metre of surface then covers H ÷ (2 × d × tan(FOV ÷ 2)) pixels of the screen. The target is the power of two just above that number. Work it out for four games.',
-        how: ['In the <b>Game type</b> panel, choose a game: the calculation fills in with its screen, FOV and distance.', 'Choose the <b>Target</b>: the smallest one at or above the pixels that 1 m covers on screen. The Pixel loupe shows the result.', 'Then choose <b>Your game</b> and type the numbers of your own project.'],
-        why: 'Typical results: strategy and mobile 128–256 px/m, third person about 512, first person 1024, first-person weapons, VR and 4K more. Then the memory budget has the last word: many teams choose one step lower for the whole level and raise only the hero assets.',
-        start: { scene: 'wall', view: 'texture', cam: 'mobile', camTarget: 512 },
-        check: s => ['mobile', 'first4k', 'vr', 'weapon'].every(k => s.flags['cam_' + k]),
-        solve: s => { for (const k of ['mobile', 'first4k', 'vr', 'weapon']) s.flags['cam_' + k] = true; s.cam = 'weapon'; s.camTarget = 4096; },
-      },
-      {
-        id: 'c2', title: 'Texture size and memory',
-        text: 'The level uses 512 px/m and has a texture budget of 40 MB. Each prop needs a texture big enough to reach the target: the big wall and the tall vending machine need more pixels than the small crate. Choose the smallest size for each prop. Then look at the table: doubling the density multiplies the memory by four.',
-        how: ['In the <b>Budget</b> panel, choose the <b>Texture size</b> of each prop.', 'Every prop must reach 512 px/m, with no texture bigger than needed.', 'Compare the totals for 256, 512 and 1024 px/m.'],
-        why: 'Memory grows with the square of the density: 2 × the px/m is 4 × the pixels. The target is a budget decision too.',
-        start: { scene: 'shop', view: 'texture', target: 512, res: { crate: 4096, wall: 1024, barrel: 2048, vending: 1024 } },
-        check: s => { const st = sceneStats(s, 512); return Object.values(st.per).every(p => !p.low && !p.waste) && st.mb <= BUDGET_MB; },
-        solve: s => { for (const o of objectsOf(s.scene)) s.res[o] = minRes(o, 512); },
+        id: 'a5', title: 'The whole recipe',
+        text: 'This is the order you follow in Blender for every asset. The cabinet is modelled and unwrapped, but nothing is set yet. 1. Read the target in the art bible of the project. 2. Apply the scale, so the tools measure the real size. 3. Average Islands Scale, so all the islands have the same density, and Pack Islands, so they do not overlap. 4. Choose the texture size: about target × √(surface ÷ 0.7), rounded up to a power of two. 5. Set TD: the islands are scaled to the target. 6. Check with the checker that the squares are the same on every side.',
+        how: ['Follow the <b>Recipe</b> panel from top to bottom: each line turns green when it is done.', 'Texture size: the cabinet has 3.3 m² of surface. 512 × √(3.3 ÷ 0.7) ≈ 1115 px, so <b>2048</b>: 1024 is too small, 4096 wastes memory.', 'Finish with the shading on <b>Checker</b>: the same squares on every side.'],
+        why: 'Texel Density Checker does steps 4 to 6 from its N panel, but the two decisions (the target and the texture size) are yours. With the target written in the art bible, every artist of the team gets the same density.',
+        start: { scene: 'cabinet', view: 'texture', res: { cabinet: 1024 } },
+        setup: s => messyCabinet(s, [['front', 0.3, 0.75, 1.3], ['back', 0.72, 0.3, 0.6], ['top', 0.3, 0.3, 1.7, 90], ['left', 0.62, 0.75, 0.7], ['right', 0.85, 0.72, 1.2]]),
+        check: s => Object.values(recipe(s)).every(Boolean),
+        solve: s => { const m = meshOf(s), ids = islandsOf(s, 'cabinet'); s.target = RECIPE_TARGET; s.flags.applied = true; averageIslandsScale(m, s.uv, ids); pack(m, s.uv, ids); s.res.cabinet = minRes('cabinet', RECIPE_TARGET); setTD(m, s.uv, 'cabinet', s.res.cabinet, RECIPE_TARGET); s.view = 'checker'; },
       },
     ],
   },

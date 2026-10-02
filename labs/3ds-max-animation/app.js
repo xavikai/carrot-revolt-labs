@@ -1,11 +1,11 @@
 // 3ds Max Animation Lab: a bouncing ball in a 3D viewport and Track View.
 import * as THREE from 'three';
 import { recalcHandles, evaluate, moveKey, moveHandle, key, contacts, tops, intervals, hangTime, matchScore, INTERPOLATIONS, HANDLE_TYPES } from './fcurve.js';
-import { STAGES, CHANNELS, FPS, RANGE, REFERENCE, BALL, startData, cloneData, shape, channelOf, lowestPoint, firstBounce, rollReport, rollAngle, trackAt } from './stages.js?v=9';
+import { STAGES, CHANNELS, FPS, RANGE, REFERENCE, BALL, startData, cloneData, shape, channelOf, lowestPoint, firstBounce, rollReport, travelReport, rollAngle, trackAt } from './stages.js?v=10';
 import { OBJECTS, CONTROLS, isControl, tracksOf, trackId, rigPose, worldOf, worldToLocalMove, TRACK_ORDER, restValue } from './rig.js?v=1';
 import { t, tr, onLangChange, addDictionary } from '../../i18n.js';
-import blenderConcepts from '../animation/i18n.js?v=5';
-import maxDictionary from './max-i18n.js?v=7';
+import blenderConcepts from '../animation/i18n.js?v=6';
+import maxDictionary from './max-i18n.js?v=8';
 import { createMaxShell, createTrackView, rollout, spinner, trackTreeHTML } from '../_max/max-shell.js?v=3';
 import { createMaxViewport } from '../_max/max-viewport.js?v=2';
 import { createGizmo, toMax } from '../_max/max-gizmo.js?v=2';
@@ -24,7 +24,7 @@ const HANDLE_LABELS = { FREE: 'Custom', ALIGNED: 'Spline', VECTOR: 'Linear', AUT
 const INTERP_LABELS = { CONSTANT: 'Step', LINEAR: 'Linear', BEZIER: 'Smooth curve' };
 
 const S = {
-  stageIndex: store.get('stage', 0), step: 0, data: null, frame: 1, start: RANGE[0], end: RANGE[1],
+  stageIndex: Math.min(store.get('stage-v2', 0), STAGES.length - 1), step: 0, data: null, frame: RANGE[0], start: RANGE[0], end: RANGE[1],
   playing: false, active: 'locZ', shown: new Set(['locZ']), activeKey: null, cat: new Set(store.get('cat', [])), xf: null, rotAxis: 'y',
   undo: [], redo: [], done: store.get('done', {}), toggles: { path: true, ghosts: false, ref: false, ctrls: store.get('ctrls', true) },
   view: null, drag: null, grab: null, hover: false,
@@ -34,9 +34,9 @@ const S = {
 const stage = () => STAGES[S.stageIndex];
 
 // ─── Data and persistence ───────────────────────────────────────────────────
-function saveData() { store.set(`data-${stage().id}-${stage().independent ? S.step : 0}`, S.data); }
+function saveData() { store.set(`data-v2-${stage().id}-${stage().independent ? S.step : 0}`, S.data); }
 function loadData() {
-  const saved = store.get(`data-${stage().id}-${stage().independent ? S.step : 0}`, null);
+  const saved = store.get(`data-v2-${stage().id}-${stage().independent ? S.step : 0}`, null);
   S.data = saved && saved.channels ? saved : startData(stage(), S.step);
   // older saves: a single Uniform Scale track (a factor) becomes the X/Y/Z Scale tracks (percent)
   if (S.data.channels.scale) { const sc = S.data.channels.scale; delete S.data.channels.scale; for (const a of ['sx', 'sy', 'sz']) S.data.channels[`ctrl_pilota.${a}`] = sc.map(k => ({ ...k, value: k.value * 100, left: { ...k.left, value: k.left.value * 100 }, right: { ...k.right, value: k.right.value * 100 } })); }
@@ -498,7 +498,7 @@ function drawView() {
   }
   pathDots.visible = ghosts.visible = !S.previewing;
   if (refGroup.visible) refBall.position.set(valueAt('locX', S.frame), REFERENCE(S.frame) + BALL / 2, 0);
-  const secs = ((S.frame - 1) / FPS).toFixed(2), rotNow = cur('rotY');
+  const secs = ((S.frame - RANGE[0]) / FPS).toFixed(2), rotNow = cur('rotY');
   $('#view-overlay').innerHTML = `<div data-no-i18n>(${Math.round(S.frame)}) ${esc(S.bone ? `${KIND[S.bone]} : ${S.bone}` : 'None Selected')}</div><div>${secs} s · X ${b.center[0].toFixed(2)} m · ${esc(tr('Height {v} m', { v: Math.max(0, b.bottom).toFixed(2) }))} · ${esc(tr('Scale {x} × {z}', { x: b.sx.toFixed(2), z: b.sz.toFixed(2) }))}</div>${S.data.channels.rotY ? `<div>${esc(tr('Rotation {v}°', { v: rotNow.toFixed(0) }))}</div>` : ''}${Object.keys(S.override).length && !S.xf ? `<div class="unkeyed">${esc(t('Unkeyed change: click Set Keys'))}</div>` : ''}`;
   render3();
 }
@@ -984,6 +984,13 @@ function renderSidebar() {
     if (fb) html += `<div class="sb-stat"><span>${esc(t('Hang time'))}</span><b>${Math.round(hangTime(z, fb[0], fb[1]) * 100)}%</b></div>`;
     if (S.toggles.ref) html += `<div class="sb-stat"><span>${esc(t('Match'))}</span><b>${matchScore(z, REFERENCE, 1, 60)}%</b></div>`;
   }
+  if (stage().id === 'travel') {
+    const r = travelReport(S.data), endOk = r.end >= 70 && r.end <= 76;
+    html += `<div class="sb-sep"></div><h4>${esc(t('Travel'))}</h4>`;
+    html += `<div class="sb-stat"><span>${esc(t('Distance'))}</span><b>${r.dist.toFixed(2)} m</b></div>`;
+    html += `<div class="sb-stat${endOk ? '' : ' bad'}"><span>${esc(t('Travel ends'))}</span><b>${esc(tr('frame {n}', { n: r.end }))}</b></div>`;
+    html += `<div class="sb-stat${r.easeOut ? '' : ' bad'}"><span>${esc(t('Slows down at the end'))}</span><b>${esc(t(r.easeOut ? 'Yes' : 'No'))}</b></div>`;
+  }
   if (stage().id === 'rotation') {
     const r = rollReport(S.data), bad = r.worst > 0.05;
     html += `<div class="sb-sep"></div><h4>${esc(t('Roll'))}</h4>`;
@@ -997,7 +1004,7 @@ function renderSidebar() {
     html += `<div class="sb-sep"></div><h4>${esc(t('Rig'))}</h4>`;
     html += `<div class="sb-stat"><span data-no-i18n>ctrl_top Z</span><b>${(S.override.topZ ?? valueAt('topZ', S.frame)).toFixed(2)} m</b></div>`;
     html += `<div class="sb-stat"><span data-no-i18n>ctrl_bottom Z</span><b>${(S.override.botZ ?? valueAt('botZ', S.frame)).toFixed(2)} m</b></div>`;
-    html += `<div class="sb-stat"><span>${esc(t('Z Scale now'))}</span><b>${p.sz.toFixed(2)}</b></div>`;
+    html += `<div class="sb-stat"><span>${esc(t('Z Scale now'))}</span><b>${p.ball.sz.toFixed(2)}</b></div>`;
     const low = lowestPoint(S.data);
     html += `<div class="sb-stat${low < -0.03 ? ' bad' : ''}"><span>${esc(t('Lowest point'))}</span><b>${low.toFixed(2)} m</b></div>`;
   }
@@ -1236,11 +1243,11 @@ function renderStageSwitch() {
 }
 $('#stage-switch').addEventListener('click', e => {
   const b = e.target.closest('[data-stage]'); if (!b) return;
-  saveData(); S.stageIndex = +b.dataset.stage; S.step = 0; store.set('stage', S.stageIndex); enterStage();
+  saveData(); S.stageIndex = +b.dataset.stage; S.step = 0; store.set('stage-v2', S.stageIndex); enterStage();
 });
 function stepDone(i) {
   const st = stage();
-  if (st.independent) return i === S.step ? st.steps[i].check(S.data) : !!S.done[`${st.id}-${i}`];
+  if (st.independent) return i === S.step ? st.steps[i].check(S.data) : !!S.done[`v2-${st.id}-${i}`];
   return st.steps[i].check(S.data);
 }
 function currentStep() {
@@ -1301,7 +1308,7 @@ $('#step-card').addEventListener('click', e => {
     else S.focus = null;
     renderAll();
   }
-  if (e.target.id === 'next-stage') { saveData(); S.stageIndex++; S.step = 0; store.set('stage', S.stageIndex); enterStage(); }
+  if (e.target.id === 'next-stage') { saveData(); S.stageIndex++; S.step = 0; store.set('stage-v2', S.stageIndex); enterStage(); }
 });
 
 let lastDone = null;
@@ -1310,7 +1317,7 @@ function checkProgress() {
   if (st.free) return;
   const cur = currentStep();
   const states = st.steps.map((_, i) => stepDone(i));
-  if (st.independent && states[S.step]) S.done[`${st.id}-${S.step}`] = true;
+  if (st.independent && states[S.step]) S.done[`v2-${st.id}-${S.step}`] = true;
   store.set('done', S.done);
   if (lastDone) states.forEach((d, i) => { if (d && !lastDone[i]) msg(tr('✓ Step done: {s}', { s: t(st.steps[i].title) })); });
   lastDone = states;

@@ -6,7 +6,7 @@
   <meta name="description" content="Understand texel density: see it with a checker map, compute it in px/m, match it with S, Average Islands Scale, Pack Islands and Set TD, choose a target from the camera and the memory budget, and break the rule on purpose.">
   <title>Texel Density Lab · Carrot Revolt Labs</title>
   <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./style.css?v=5">
+  <link rel="stylesheet" href="./style.css?v=6">
   <link rel="stylesheet" href="../../blender-ui.css?v=2">
   <script type="module">import { blenderize } from '../../blender-ui.js?v=2'; blenderize();</script>
   <link rel="stylesheet" href="../../lab-brief.css?v=3">
@@ -75,16 +75,16 @@
         <div><dt>Texel density</dt><dd>The texture pixels that a 1 m ruler on the surface covers (px/m). It is measured on the model: texture size, UV size and object size. The camera does not change it.</dd></div>
         <div><dt>The formula</dt><dd>Texture size × √(UV area ÷ 3D area). For a square island: island px ÷ face m.</dd></div>
         <div><dt>Checker map</dt><dd>Every square is the same number of texels: same square size = same density.</dd></div>
-        <div><dt>Target</dt><dd>The density you aim for, chosen per project from how close the camera gets (how big things look on screen) and the memory: about 512 px/m for third person, 1024 px/m for first person.</dd></div>
-        <div><dt>Texture size</dt><dd>≈ target × size of the object in metres, rounded up to a power of two.</dd></div>
+        <div><dt>Target</dt><dd>The density you aim for, decided once per project and written in the art bible. It comes from how close the camera gets, the screen and the memory of the platform. Starting values: 128 px/m strategy, 256 mobile, 512 third person, 1024 first person.</dd></div>
+        <div><dt>Texture size</dt><dd>≈ target × √(surface in m² ÷ 0.7), rounded up to a power of two.</dd></div>
         <div><dt>Memory</dt><dd>2 × the density = 4 × the pixels. A 2K texture costs four times a 1K.</dd></div>
       </dl>
     </section>
 
-    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>Texel density in Blender</h2><p>Blender measures UVs but has no texel density number of its own; add-ons such as <strong>Texel Density Checker</strong> add it. The rest is ordinary UV editing.</p></div><ol><li>Make a checker: <strong>Image › New</strong>, Generated Type <strong>Color Grid</strong> or <strong>UV Grid</strong>, at the size of your real texture. Show it in the UV Editor and in the material.</li><li><strong>Apply the scale</strong> of your objects first: <kbd>Ctrl</kbd> <kbd>A</kbd> › Scale in the 3D Viewport.</li><li>In the UV Editor: <strong>UV › Average Islands Scale</strong> (<kbd>Ctrl</kbd> <kbd>A</kbd>) evens the islands of an object, <strong>UV › Pack Islands</strong> fills the square with a margin.</li><li>With <strong>Texel Density Checker</strong> (N panel): set the texture size, read the density, type the target and press <strong>Set TD</strong>.</li><li>Scale islands by hand with <kbd>S</kbd> for exceptions: hero areas up, hidden faces down.</li><li>Write the target in the art bible of the project, with the texture sizes it gives for common object sizes.</li></ol></aside>
+    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>Texel density in Blender</h2><p>Blender measures UVs but has no texel density number of its own; add-ons such as <strong>Texel Density Checker</strong> add it. The rest is ordinary UV editing.</p></div><ol><li>Once per project: choose the <strong>target</strong> (camera, screen, memory) and write it in the art bible.</li><li>Make a checker: <strong>Image › New</strong>, Generated Type <strong>Color Grid</strong> or <strong>UV Grid</strong>, at the size of your real texture. Show it in the UV Editor and in the material.</li><li><strong>Apply the scale</strong> of your objects first: <kbd>Ctrl</kbd> <kbd>A</kbd> › Scale in the 3D Viewport.</li><li>In the UV Editor: <strong>UV › Average Islands Scale</strong> (<kbd>Ctrl</kbd> <kbd>A</kbd>) evens the islands of an object, <strong>UV › Pack Islands</strong> fills the square with a margin.</li><li>Choose the texture size: target × √(surface in m² ÷ 0.7), rounded up to a power of two.</li><li>With <strong>Texel Density Checker</strong> (N panel): set the texture size, read the density, type the target and press <strong>Set TD</strong>.</li><li>Without the add-on, measure one edge by hand: its length on the image in pixels (UV Editor, Sidebar › Image › UV Vertex, at both ends) ÷ its length in metres (Viewport Overlays › Edge Length).</li><li>Scale islands by hand with <kbd>S</kbd> for exceptions: hero areas up, hidden faces down.</li></ol></aside>
   </main>
   <footer><span>Carrot Revolt Labs · Texel Density Lab</span><a href="https://docs.blender.org/manual/en/latest/modeling/meshes/uv/editing.html" target="_blank" rel="noopener">Blender: UV editing ↗</a><span>Teaching model · simulated textures.</span><a href="../../">All labs ↑</a></footer>
-  <script type="module" src="./app.js?v=5"></script>
+  <script type="module" src="./app.js?v=6"></script>
   <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
 </body>
 </html>

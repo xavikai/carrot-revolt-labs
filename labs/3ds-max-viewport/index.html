@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#262a2f">
+  <meta name="description" content="3ds Max basics in a 3ds Max 2027 workspace: the four viewports, navigation and the ViewCube, selection, Move Rotate Scale and Transform Type-In, the Create and Modify panels, Copy Instance Reference, Array and groups.">
+  <title>3ds Max Viewport Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../_max/max-ui.css?v=4">
+  <link rel="stylesheet" href="./style.css?v=1">
+  <link rel="stylesheet" href="../../lab-brief.css?v=3">
+  <script type="module" src="../../lab-brief.js?v=4"></script>
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">3D SOFTWARE / 3DS MAX</span><strong>Viewport Lab</strong></div><a class="home-link" href="../../#max">3ds Max labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Four views, one scene. <span>Your first steps in 3ds Max.</span></h1>
+        <p>The basics of <strong>3ds Max 2027</strong>: the four <strong>viewports</strong> and how to move around them, <strong>selecting</strong> and <strong>transforming</strong> with exact values, building objects in the <strong>Create</strong> panel and changing them in the <strong>Modify</strong> panel, and <strong>cloning</strong>, <strong>arrays</strong> and <strong>groups</strong> to organise a scene.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="max-stage" id="workspace" aria-label="3ds Max 2027 workspace with four viewports">
+      <div id="max-app"></div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="3ds Max keyboard shortcuts in this lab">
+      <div><span class="eyebrow">3DS MAX WORKFLOW</span><h2>The same keys as in 3ds Max</h2><p>This workspace follows the default 3ds Max 2027 layout and keyboard shortcut set. Shortcuts work while the pointer is over the Max window. <b>Customize › Hotkey Editor</b> lists them all.</p></div>
+      <dl>
+        <div><dt>MMB · <kbd>Alt</kbd>+MMB · wheel</dt><dd>Middle mouse button: pan. With Alt: orbit. The wheel (or Ctrl+Alt+MMB) zooms.</dd></div>
+        <div><dt><kbd>Alt</kbd>+<kbd>W</kbd></dt><dd>Maximize Viewport Toggle: one big viewport or the four.</dd></div>
+        <div><dt><kbd>T</kbd> <kbd>F</kbd> <kbd>L</kbd> <kbd>P</kbd></dt><dd>Top, Front, Left and Perspective in the active viewport.</dd></div>
+        <div><dt><kbd>Z</kbd> · <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Z</kbd></dt><dd>Zoom Extents Selected · Zoom Extents All.</dd></div>
+        <div><dt><kbd>F3</kbd> · <kbd>F4</kbd> · <kbd>G</kbd></dt><dd>Wireframe Override · Edged Faces · grid on and off.</dd></div>
+        <div><dt><kbd>Q</kbd> <kbd>W</kbd> <kbd>E</kbd> <kbd>R</kbd></dt><dd>Select Object, Select and Move, Rotate and Scale.</dd></div>
+        <div><dt><kbd>Ctrl</kbd> · <kbd>Alt</kbd> + click</dt><dd>Add to the selection · remove from it. Drag on empty space for a region.</dd></div>
+        <div><dt><kbd>H</kbd> · <kbd>Ctrl</kbd><kbd>A</kbd> <kbd>D</kbd> <kbd>I</kbd></dt><dd>Select From Scene · select all, none, invert.</dd></div>
+        <div><dt><kbd>F5</kbd> <kbd>F6</kbd> <kbd>F7</kbd> <kbd>F8</kbd></dt><dd>Restrict to X, Y, Z, or cycle the planes. <kbd>A</kbd>: Angle Snap (5°).</dd></div>
+        <div><dt><kbd>F12</kbd></dt><dd>Transform Type-In dialog. The X Y Z fields of the status bar do the same.</dd></div>
+        <div><dt><kbd>Shift</kbd> + drag · <kbd>Ctrl</kbd><kbd>V</kbd></dt><dd>Clone: Copy, Instance or Reference.</dd></div>
+        <div><dt><kbd>Space</kbd> · <kbd>Delete</kbd> · <kbd>Ctrl</kbd><kbd>Z</kbd></dt><dd>Selection Lock · delete · undo (<kbd>Ctrl</kbd><kbd>Y</kbd> redo).</dd></div>
+      </dl>
+    </section>
+
+    <aside class="max-bridge"><div><span class="eyebrow">IN 3DS MAX</span><h2>The same, in the real program</h2><p>The lab keeps to the tools a first week in 3ds Max needs. Everything has the name and the place it has in 3ds Max 2027, so you can find it again there.</p></div><ol><li>Start with <strong>File › New › New All</strong> and check <strong>Customize › Units Setup</strong>: metric, metres, for display and for the system unit.</li><li>Click in a viewport to activate it, right-click to activate it without losing the selection. <strong>Alt+W</strong> maximizes it.</li><li>Navigate with the middle button: pan, <strong>Alt</strong> to orbit, the wheel to zoom. <strong>Z</strong> frames the selection.</li><li>Create from <strong>Create › Geometry › Standard Primitives</strong>. Name each object in the Name and Color rollout as soon as you make it.</li><li>Edit parameters and add modifiers in the <strong>Modify</strong> panel. Give enough segments to what you bend or twist.</li><li>Use <strong>Transform Type-In</strong> (F12 or the status bar) for exact positions, rotations and scales.</li><li>Clone with <strong>Shift</strong>: Instance for repeated parts, Copy for independent ones. <strong>Tools › Array</strong> for patterns.</li><li>Keep the scene tidy: <strong>Group</strong>, <strong>Freeze</strong> what should not move and <strong>Hide</strong> what is in the way.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · 3ds Max Viewport Lab</span><a href="https://help.autodesk.com/view/3DSMAX/2027/ENU/" target="_blank" rel="noopener">Autodesk: 3ds Max Help ↗</a><span>Teaching model · simplified 3ds Max 2027.</span><a href="../../#max">3ds Max labs ↑</a></footer>
+  <script type="module" src="./app.js?v=1"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

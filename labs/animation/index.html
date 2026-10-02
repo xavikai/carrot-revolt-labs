@@ -71,9 +71,9 @@
             <button type="button" id="b-nextkey" title="Next keyframe (↑)">▸◆</button>
             <button type="button" id="b-end" title="Jump to end (Shift →)">⏭</button>
           </div>
-          <label class="frame-field">Frame <input type="number" id="f-cur" class="current" min="0" max="250" value="1"></label>
-          <label class="frame-field">Start <input type="number" id="f-start" min="0" max="249" value="1"></label>
-          <label class="frame-field">End <input type="number" id="f-end" min="2" max="250" value="72"></label>
+          <label class="frame-field">Frame <input type="number" id="f-cur" class="current" min="0" max="250" value="0"></label>
+          <label class="frame-field">Start <input type="number" id="f-start" min="0" max="249" value="0"></label>
+          <label class="frame-field">End <input type="number" id="f-end" min="2" max="250" value="100"></label>
           <span class="fps">24 fps · <span id="time-sec">0.00 s</span></span>
         </div>
         <div class="timeline-host" id="timeline-host"><canvas id="timeline" aria-label="Timeline or Dope Sheet with keyframes"></canvas></div>
@@ -113,7 +113,7 @@
     <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>The same bounce in Blender</h2><p>This lab shows a simplified Blender: one object, a side camera and a few channels. The curves, handles and keys behave like Blender's F-curves.</p></div><ol><li>Append the ball rig: a <strong>Root</strong> control at the base and two squash & stretch controls, <strong>SS_Top</strong> and <strong>SS_Bottom</strong>. Select it and switch to <strong>Pose Mode</strong>.</li><li>Open the <strong>Animation</strong> workspace. Pose the Root at frame 1 with <strong>G</strong> and key it with <strong>I</strong>; key the contacts and the tops. Move keys in time in the <strong>Timeline</strong> or the <strong>Dope Sheet</strong>.</li><li>In the <strong>Graph Editor</strong>, select all and press <strong>T</strong> › Bezier; select the contacts and press <strong>V</strong> › Vector.</li><li>Make every bounce lower and shorter. Turn on <strong>Motion Paths</strong> (Object properties) to see the spacing.</li><li>Use the rig's squash & stretch controls: the top one at the contacts (pivot at the base), the bottom one to stretch towards the floor. The rig keeps the volume.</li><li>Shape weight with the handles: long at the top for light objects, short and sharp for heavy ones.</li></ol></aside>
   </main>
   <footer><span>Carrot Revolt Labs · Animation Lab</span><a href="https://docs.blender.org/manual/en/latest/editors/graph_editor/fcurves/introduction.html" target="_blank" rel="noopener">Blender: F-Curves ↗</a><span>Teaching model · simplified Graph Editor.</span><a href="../../">All labs ↑</a></footer>
-  <script type="module" src="./app.js?v=7"></script>
+  <script type="module" src="./app.js?v=8"></script>
   <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
 </body>
 </html>

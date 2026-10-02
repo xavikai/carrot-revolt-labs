@@ -2,11 +2,12 @@
 import * as THREE from 'three';
 import { OrbitControls } from '../../vendor/OrbitControls.js';
 import { RES, CHECKER, OBJECTS, MARGIN, TARGETS, SCREEN, islandFaces, objectFaces, bbox, cloneUV, translate, scale as scaleUV, rotate as rotateUV,
-  averageIslandsScale, pack, setTD, realSize, onTarget, screenDensity, rightTarget, CAMERAS, GAMES, camDensity, screenOf, setMB, packedDensity1, minRes, brickColor, objectsOf, areas, paintTexture, ruler, SHEET, paintSheet } from './td.js?v=5';
+  averageIslandsScale, pack, setTD, realSize, onTarget, screenDensity, rightTarget, CAMERAS, GAMES, camDensity, screenOf, setMB, packedDensity1, minRes, brickColor, objectsOf, areas, paintTexture, ruler, SHEET, paintSheet } from './td.js?v=6';
 import { STAGES, MEASURE, SEE_QUIZ, RULES, HERO, HERO_WHY, BUDGET_MB, startState, meshOf, densityOf, islandDensityOf, islandsOf, isInside, overlapsOf,
-  answerMeasure, answerQuiz, knobs, updateKnobs, resetKnobs, camAnswer, camFor, sceneStats, memoryFor, wasted, syncCuts, addCut, cutReport } from './stages.js?v=5';
+  answerMeasure, answerQuiz, knobs, updateKnobs, resetKnobs, camAnswer, camFor, sceneStats, memoryFor, wasted, syncCuts, addCut, cutReport,
+  TARGET_CASES, TARGET_OPTIONS, REFERENCE, RECIPE_TARGET, recipe, textureEstimate } from './stages.js?v=6';
 import { t, tr, onLangChange, addDictionary } from '../../i18n.js';
-import dictionary from './i18n.js?v=5';
+import dictionary from './i18n.js?v=6';
 addDictionary(dictionary);
 
 const $ = s => document.querySelector(s);
@@ -21,7 +22,7 @@ const S = {
 };
 const stage = () => STAGES[S.stageIndex], step = () => stage().steps[S.step];
 const sid = () => step().id;
-const EDIT = new Set(['m2', 'a1', 'a2', 'a3', 'e1']);
+const EDIT = new Set(['m2', 'a1', 'a2', 'a3', 'a5', 'e1']);
 const canEdit = () => EDIT.has(sid());
 const isLoupe = () => sid() === 'c1' || sid() === 'g1';
 let msgTimer;
@@ -634,7 +635,7 @@ function reportSelection() {
 // ─── Operators ───────────────────────────────────────────────────────────────
 function selectAll(on) { if (isLoupe() || sid() === 's2') return; S.sel = new Set(on ? islandsOf(S.st, S.st.active) : []); uvDirty = true; buildOverlay(); renderProps(); }
 function opAverage() {
-  if (sid() !== 'a2') { msg('Average Islands Scale is used in the step Average and pack.', true); return; }
+  if (sid() !== 'a2' && sid() !== 'a5') { msg('Average Islands Scale is used in the step Average and pack.', true); return; }
   pushUndo(); const m = meshOf(S.st); averageIslandsScale(m, S.st.uv, islandsOf(S.st, S.st.active)); S.st.flags.averaged = true;
   changed(); msg('Average Islands Scale: every island has the same density now.');
 }
@@ -643,7 +644,9 @@ function opPack() {
   changed(); msg(tr('Pack Islands: they fill the square. Density now {a} px/m.', { a: Math.round(densityOf(S.st, S.st.active)) }));
 }
 function opSetTD() {
-  const st = S.st, o = st.active; pushUndo();
+  const st = S.st, o = st.active;
+  if (!st.target) { msg('Choose the target first: Set TD needs a number to aim at.', true); return; }
+  pushUndo();
   const fits = setTD(meshOf(st), st.uv, o, st.res[o], st.target);
   changed();
   if (!fits) msg(tr('{o}: at {r} px the islands no longer fit in the square. Choose a bigger texture and press Set TD again.', { o: objName(o), r: st.res[o] }), true);
@@ -781,6 +784,30 @@ function quizPanel(list, answers) {
     ${answers && !done ? `<div class="rule-grid">${[['higher', 'Higher'], ['same', 'Same'], ['lower', 'Lower']].map(([k, n]) => `<button type="button" data-rule="${k}">${esc(t(n))}</button>`).join('')}</div>` : ''}
     ${S.feedback ? `<p class="td-note ${S.feedback.ok ? 'good' : 'bad'}">${esc(S.feedback.text)}</p>` : ''}</div>`;
 }
+function referencePanel() {
+  return `<div class="panel"><h4>${esc(t('Reference values'))}<small>${esc(t('starting point'))}</small></h4>
+    <table class="mem-table ref-table"><thead><tr><th>${esc(t('Game type'))}</th><th>px/m</th></tr></thead><tbody>${REFERENCE.map(r => `<tr><td>${esc(t(r.game))}</td><td data-no-i18n>${r.v}</td></tr>`).join('')}</tbody></table>
+    <p class="td-note">${esc(t('Little memory (phones, handhelds): one step down. Hero assets up, hidden faces down.'))}</p></div>`;
+}
+function targetQuizPanel() {
+  const i = S.st.flags.quiz | 0, done = i >= TARGET_CASES.length;
+  return `<div class="panel quiz"><h4>${esc(t('Case'))}<small>${Math.min(i + 1, TARGET_CASES.length)} / ${TARGET_CASES.length}</small></h4>
+    ${done ? `<p class="q done">${esc(t('✓ All right.'))}</p>` : `<p class="q">${esc(t(TARGET_CASES[i].q))}</p><div class="rule-grid tq-grid" data-no-i18n>${TARGET_OPTIONS.map(v => `<button type="button" data-tq="${v}">${v}</button>`).join('')}</div>`}
+    ${S.feedback ? `<p class="td-note ${S.feedback.ok ? 'good' : 'bad'}">${esc(S.feedback.text)}</p>` : ''}</div>`;
+}
+function recipePanel() {
+  const st = S.st, r = recipe(st), tg = RECIPE_TARGET, est = textureEstimate('cabinet', tg), d = densityOf(st, 'cabinet');
+  const li = (ok, n, title, body) => `<li class="${ok ? 'done' : ''}"><b>${n}</b><div><strong>${esc(t(title))}</strong>${body}</div></li>`;
+  const tsel = `<select id="r-target"><option value=""${st.target ? '' : ' selected'}>—</option>${[256, 512, 1024].map(v => `<option value="${v}"${v === st.target ? ' selected' : ''}>${v} px/m</option>`).join('')}</select>`;
+  return `<div class="panel"><h4>${esc(t('Recipe'))}<small>${esc(objName('cabinet'))}</small></h4><ol class="recipe">
+    ${li(r.target, 1, 'Target from the art bible', `<p class="td-note">${esc(t('Art bible: third-person game, 512 px/m.'))}</p>${tsel}${st.target && !r.target ? `<p class="td-note bad">${esc(t('The art bible says 512 px/m.'))}</p>` : ''}`)}
+    ${li(r.applied, 2, 'Apply the scale', `<p class="td-note" data-no-i18n>Scale ${r.applied ? '1.000 · 1.000 · 1.000' : '1.500 · 1.500 · 1.500'} · ${OBJECTS.cabinet.size}</p><button type="button" class="td-set" data-op="apply"${r.applied ? ' disabled' : ''}><span data-no-i18n>Apply › Scale</span> <kbd>Ctrl A</kbd></button>`)}
+    ${li(r.average && !overlapsOf(st, 'cabinet').length, 3, 'Same density on every island, then pack', `<div class="tool-grid" data-no-i18n><button type="button" data-op="average">Average Islands Scale</button><button type="button" data-op="pack">Pack Islands</button></div>${overlapsOf(st, 'cabinet').length ? `<p class="td-note bad">${esc(t('Two islands overlap: they would share the same pixels.'))}</p>` : ''}`)}
+    ${li(r.size, 4, 'Texture size', `<p class="formula" data-no-i18n>${tg} × √(${est.a3.toFixed(1)} m² ÷ 0.7) ≈ ${Math.round(est.px)} px → ${est.res}</p><label class="bl-row two"><span>${esc(t('Texture size'))}</span>${resSelect('id="td-res"', st.res.cabinet)}</label>`)}
+    ${li(r.td, 5, 'Scale the islands to the target', `<button type="button" class="td-set" id="td-set"${st.target ? '' : ' disabled'}><span data-no-i18n>Set TD${st.target ? ` · ${st.target} px/m` : ''}</span></button>${statRow('Density', px(d), r.td ? 'good' : 'bad')}${!isInside(st, 'cabinet') ? `<p class="td-note bad">${esc(t('The islands do not fit in the square: this texture is too small for the target.'))}</p>` : ''}`)}
+    ${li(r.checker, 6, 'Check with the checker', `<p class="td-note">${esc(t('3D Viewport header: Shading › Checker. Same squares on every side?'))}</p>`)}
+  </ol></div>`;
+}
 function cutsPanel() {
   const st = S.st, r = cutReport(st), rows = r.rows.map((x, i) => ({ ...x, i })).reverse();
   const zoneSel = (i, z) => `<select data-zone="${i}">${Object.entries(SHEET.zones).map(([k, v]) => `<option value="${k}"${k === z ? ' selected' : ''}>${esc(t(v.name))}</option>`).join('')}</select>`;
@@ -806,6 +833,8 @@ function renderProps() {
   else if (id === 'a2') h += tdPanel() + islandsPanel() + uvToolsPanel(true);
   else if (id === 'a3') h += tdPanel({ resEdit: true, set: true }) + objectsPanel();
   else if (id === 'a4') h += cutsPanel();
+  else if (id === 'c0') h += targetQuizPanel() + referencePanel();
+  else if (id === 'a5') h += recipePanel() + islandsPanel();
   else if (id === 'c1') h += cameraPanel();
   else if (id === 'g1') h += gamePanel();
   else if (id === 'c2') h += budgetPanel() + objectsPanel();
@@ -816,6 +845,13 @@ function renderProps() {
 $('#props').addEventListener('click', e => {
   const b = e.target.closest('button, li[data-isl], li[data-obj]'); if (!b) return;
   const d = b.dataset, st = S.st;
+  if (d.tq) {
+    pushUndo(); const r = answerQuiz(st, TARGET_CASES, +d.tq);
+    S.feedback = { ok: r.ok, text: r.ok ? '✓ ' + t(r.item.why) : '✗ ' + t('Not that one. Think about how close the camera gets, the screen and the memory.') };
+    if (!r.ok) S.undo.pop();
+    changed(); return;
+  }
+  if (d.op === 'apply') { pushUndo(); st.flags.applied = true; changed(); msg('Scale applied: the size stays the same, but now the mesh itself measures it and the tools read the real metres.'); return; }
   if (d.op === 'addcut') { pushUndo(); addCut(st); changed(); msg('Loop cut added: type its height, then choose the zone of each strip.'); }
   else if (d.op === 'delcut') { pushUndo(); const i = +d.i; st.cuts.splice(i, 1); st.zones.splice(i + 1, 1); syncCuts(st); changed(); }
   else if (d.op === 'average') opAverage();
@@ -845,6 +881,7 @@ function submitMeasure() {
 $('#props').addEventListener('change', e => {
   const el = e.target, st = S.st;
   if (el.id === 'td-res') { pushUndo(); st.res[st.active] = +el.value; changed(); }
+  else if (el.id === 'r-target') { pushUndo(); st.target = el.value ? +el.value : null; changed(); }
   else if (el.id === 'k-res') { pushUndo(); st.res.crate = +el.value; changed(); }
   else if (el.id === 'k-scale') { pushUndo(); st.scale.crate = +el.value; changed(); }
   else if (el.id === 'cam-target') { pushUndo(); st.camTarget = +el.value; changed(); }

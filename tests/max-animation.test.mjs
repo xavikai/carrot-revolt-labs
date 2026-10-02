@@ -5,7 +5,7 @@ import commonDictionary from '../labs/animation/i18n.js';
 import maxDictionary from '../labs/3ds-max-animation/max-i18n.js';
 
 test('Max bouncing-ball stages have working start states and solutions', () => {
-  assert.deepEqual(STAGES.map(stage => stage.id), ['timing', 'weight', 'rotation', 'squash', 'free']);
+  assert.deepEqual(STAGES.map(stage => stage.id), ['keys', 'timing', 'travel', 'rotation', 'squash', 'weight', 'free']);
   for (const stage of STAGES) stage.steps.forEach((step, i) => {
     const starting = startData(stage, i);
     assert.equal(Boolean(step.check(starting)), false, `${stage.id}/${step.id} starts unfinished`);
@@ -26,8 +26,8 @@ test('Max free animation makes every controller track available', () => {
   first.channels.rotY[0].value = 90;
   assert.equal(startData(free).channels.rotY[0].value, 0);
   for (const a of ['sx', 'sy', 'sz']) first.channels[`ctrl_pilota.${a}`][0].value = 200;
-  assert.ok(Math.abs(shape(first, 1).sx - 2) < 1e-9);
-  assert.ok(Math.abs(shape(first, 1).sz - 2) < 1e-9);
+  assert.ok(Math.abs(shape(first, 0).sx - 2) < 1e-9);
+  assert.ok(Math.abs(shape(first, 0).sz - 2) < 1e-9);
 });
 
 test('Max lesson uses Position and Rotation controllers and every step has Catalan and Spanish text', () => {
