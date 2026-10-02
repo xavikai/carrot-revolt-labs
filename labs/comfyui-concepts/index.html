@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Understand what ComfyUI nodes actually do, and how LoRA and ControlNet change an image workflow.">
+  <title>ComfyUI Concept Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../../brand.css?v=1">
+  <link rel="stylesheet" href="./style.css?v=1">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a>
+    <span class="header-divider" aria-hidden="true"></span>
+    <div class="header-title"><small>GENERATIVE IMAGE / COMFYUI</small><strong>Concept Lab</strong></div>
+    <a class="back-link" href="../../#comfyui">All ComfyUI labs ↗</a>
+  </header>
+  <main>
+    <section class="intro">
+      <p class="eyebrow">01 / UNDERSTAND THE NODES</p>
+      <h1>What does each node <em>actually do?</em></h1>
+      <p class="lede">A checkpoint is not an image. A LoRA is not a filter. ControlNet is not a prompt. Explore what enters each node, what it changes, and what it sends forward.</p>
+      <div class="intro-notes"><span>Node by node</span><span>LoRA vs ControlNet</span><span>Conceptual simulation · no AI generation</span></div>
+    </section>
+
+    <nav class="chapter-nav" aria-label="Lab sections">
+      <button type="button" data-section="nodes" aria-current="true"><small>01</small>What each node does</button>
+      <button type="button" data-section="lora"><small>02</small>LoRA</button>
+      <button type="button" data-section="controlnet"><small>03</small>ControlNet</button>
+      <button type="button" data-section="diagnose"><small>04</small>Check your understanding</button>
+    </nav>
+
+    <section class="chapter active" id="nodes" aria-labelledby="nodes-title">
+      <div class="section-heading"><div><span class="eyebrow">THE BASE WORKFLOW</span><h2 id="nodes-title">Read the job, not just the wire.</h2></div><p>Select a node to inspect its inputs, action, output, and a common misconception.</p></div>
+      <div class="node-layout"><div class="node-list" id="node-list" role="group" aria-label="Select a node"></div><article class="node-detail" id="node-detail" aria-live="polite"></article></div>
+      <div class="pipeline" aria-label="Basic image workflow"><span>Checkpoint → MODEL / CLIP / VAE</span><span>Prompt → CONDITIONING</span><span>Sampler → LATENT</span><span>VAE Decode → IMAGE</span></div>
+    </section>
+
+    <section class="chapter" id="lora" aria-labelledby="lora-title" hidden>
+      <div class="section-heading"><div><span class="eyebrow">MODEL ADAPTATION</span><h2 id="lora-title">A LoRA changes the model's behaviour.</h2></div><p>A LoRA stores learned adjustments. Load LoRA applies them to a compatible model, and often its text encoder, before sampling.</p></div>
+      <div class="concept-grid"><article class="explain-card"><h3>What Load LoRA receives</h3><p><b>MODEL + CLIP + LoRA file.</b> It needs a compatible base checkpoint. Its outputs are modified MODEL and CLIP objects; the VAE passes separately from the checkpoint.</p><div class="route" aria-label="LoRA data route"><span>Checkpoint<br><b>MODEL + CLIP</b></span><strong>→</strong><span>Load LoRA<br><b>weight adjustments</b></span><strong>→</strong><span>Sampler + prompt encoder<br><b>use modified versions</b></span></div><p class="note">The LoRA is not painted onto the finished image. It influences generation because the sampler uses the modified model and the prompt encoder may use the modified CLIP.</p></article><article class="sim-card"><span class="eyebrow">CHANGE ONE PARAMETER</span><h3>Where is the LoRA applied?</h3><label for="model-strength">MODEL strength <output id="model-value">0.75</output></label><input id="model-strength" type="range" min="0" max="1.5" step="0.05" value="0.75"><p id="model-explain" class="live-copy"></p><label for="clip-strength">CLIP strength <output id="clip-value">0.75</output></label><input id="clip-strength" type="range" min="0" max="1.5" step="0.05" value="0.75"><p id="clip-explain" class="live-copy"></p><div class="impact-bars"><div><span>Sampling model</span><meter id="model-meter" min="0" max="1.5" value="0.75"></meter></div><div><span>Text encoder</span><meter id="clip-meter" min="0" max="1.5" value="0.75"></meter></div></div><p class="sim-disclaimer">The bars show which branch receives the adjustment; they do not predict visual intensity or image quality.</p></article></div>
+      <div class="compare"><h3>When would you use it?</h3><p><b>LoRA:</b> adapt appearance, a learned subject, or a visual concept, subject to the training and compatibility of the LoRA. <b>Prompt:</b> describe what you want using the existing model. A stronger LoRA is not automatically better.</p></div>
+    </section>
+
+    <section class="chapter" id="controlnet" aria-labelledby="controlnet-title" hidden>
+      <div class="section-heading"><div><span class="eyebrow">STRUCTURAL GUIDANCE</span><h2 id="controlnet-title">ControlNet gives the sampler a guide.</h2></div><p>It steers structure from a guide image, such as edges, depth, or pose. The result is still generated by the base model.</p></div>
+      <div class="concept-grid"><article class="explain-card"><h3>Three jobs that are easy to confuse</h3><ol class="steps"><li><b>Prepare a guide.</b> Load an image and, if needed, run a suitable preprocessor to make an edge, depth, or pose map. A preprocessor may come from an extension.</li><li><b>Load ControlNet Model.</b> Choose a ControlNet model compatible with the base model and the guide type.</li><li><b>Apply ControlNet.</b> Combine the guide image and ControlNet model with the prompt conditioning. The modified conditioning goes to the sampler.</li></ol><p class="note">Apply ControlNet does not automatically extract edges, depth, or pose from an ordinary photo. A guide map is not the final image.</p></article><article class="sim-card"><span class="eyebrow">GUIDE THE GENERATION</span><h3>What information is supplied?</h3><div class="guide-tabs" role="group" aria-label="Guide type"><button type="button" data-guide="edges" aria-pressed="true">Edges</button><button type="button" data-guide="depth" aria-pressed="false">Depth</button><button type="button" data-guide="pose" aria-pressed="false">Pose</button></div><div class="guide-visual" id="guide-visual" aria-hidden="true"></div><p id="guide-explain" class="live-copy"></p><label for="control-strength">Strength <output id="control-value">0.80</output></label><input id="control-strength" type="range" min="0" max="1.5" step="0.05" value="0.8"><div class="timeline-labels"><span>Start <output id="start-value">0.00</output></span><span>End <output id="end-value">1.00</output></span></div><div class="dual-range"><input id="start-percent" aria-label="Start percentage" type="range" min="0" max="1" step="0.05" value="0"><input id="end-percent" aria-label="End percentage" type="range" min="0" max="1" step="0.05" value="1"></div><div class="timeline" id="timeline" aria-label="Active part of sampling"><span></span></div><p id="control-explain" class="live-copy"></p><p class="sim-disclaimer">Schematic influence only. The actual image depends on the model, prompt, guide, sampler, and settings.</p></article></div>
+      <div class="compare"><h3>LoRA or ControlNet?</h3><p><b>LoRA</b> changes learned model behaviour. <b>ControlNet</b> adds guidance from an external image to conditioning. They can be used together: one can influence appearance while the other steers structure.</p></div>
+    </section>
+
+    <section class="chapter" id="diagnose" aria-labelledby="diagnose-title" hidden>
+      <div class="section-heading"><div><span class="eyebrow">APPLY THE IDEA</span><h2 id="diagnose-title">Choose the right explanation.</h2></div><p>Each case asks what is happening inside the workflow. Select an answer to reveal why.</p></div>
+      <div id="questions" class="questions"></div>
+      <div class="next-step"><h3>Want to practise the graph?</h3><p>The connection exercise is available as an optional next step.</p><a href="../comfyui-flow/">Open Flow Lab ↗</a></div>
+    </section>
+
+    <section class="sources"><h2>Grounded in ComfyUI</h2><p>The diagrams explain the built-in workflow conceptually. Node availability and supported model families can vary by installation and ComfyUI version.</p><a href="https://github.com/comfyorg/comfyui/blob/master/nodes.py" target="_blank" rel="noopener noreferrer">Built-in node definitions ↗</a><a href="https://github.com/comfyanonymous/ComfyUI_examples/blob/master/controlnet/README.md" target="_blank" rel="noopener noreferrer">Official ControlNet examples ↗</a><a href="https://docs.comfy.org/essentials/core-concepts/links" target="_blank" rel="noopener noreferrer">Data types and links ↗</a></section>
+  </main>
+  <footer><span>CARROT REVOLT <strong>LABS</strong></span><span>Interactive studies for the classroom</span><a href="../../#comfyui">Back to ComfyUI labs ↑</a></footer>
+  <script type="module" src="./app.js?v=1"></script>
+</body>
+</html>
