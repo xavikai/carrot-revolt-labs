@@ -46,7 +46,7 @@
         <a class="area-card" href="#game-engines"><span class="area-card-top">GAME DEVELOPMENT <span aria-hidden="true">↗</span></span><span class="area-card-icon" aria-hidden="true">G</span><h3>Game engines</h3><p>Optimize assets and bake lighting for real-time scenes.</p><span class="area-card-count">2 labs available</span></a>
         <a class="area-card" href="#programming"><span class="area-card-top">GAME DEVELOPMENT <span aria-hidden="true">↗</span></span><span class="area-card-icon" aria-hidden="true">C#</span><h3>Programming</h3><p>Learn C# through interactive game examples.</p><span class="area-card-count">2 labs available</span></a>
         <a class="area-card" href="#video"><span class="area-card-top">IMAGE &amp; VIDEO <span aria-hidden="true">↗</span></span><span class="area-card-icon" aria-hidden="true">V</span><h3>Video</h3><p>Explore color grading with scopes, wheels and nodes.</p><span class="area-card-count">1 lab available</span></a>
-        <a class="area-card area-card-comfy" href="#comfyui"><span class="area-card-top">GENERATIVE IMAGE <span aria-hidden="true">↗</span></span><span class="area-card-icon" aria-hidden="true">N</span><h3>ComfyUI</h3><p>Understand what each node does and how LoRA and ControlNet change generation.</p><span class="area-card-count">2 labs available</span></a>
+        <a class="area-card area-card-comfy" href="#comfyui"><span class="area-card-top">GENERATIVE IMAGE <span aria-hidden="true">↗</span></span><span class="area-card-icon" aria-hidden="true">N</span><h3>ComfyUI</h3><p>Learn the interface, the shortcuts, LoRA and ControlNet in a ComfyUI-style workspace.</p><span class="area-card-count">1 lab available</span></a>
         <a class="area-card" href="#stage"><span class="area-card-top">SCENOGRAPHY <span aria-hidden="true">↗</span></span><span class="area-card-icon" aria-hidden="true">S</span><h3>Stage &amp; scenography</h3><p>Understand stage machinery, lighting and live cues.</p><span class="area-card-count">2 labs available</span></a>
         <a class="area-card" href="#design"><span class="area-card-top">VISUAL DESIGN <span aria-hidden="true">↗</span></span><span class="area-card-icon" aria-hidden="true">D</span><h3>Graphic design</h3><p>Work with color, type and accessibility for screens and print.</p><span class="area-card-count">1 lab available</span></a>
       </nav>
@@ -222,15 +222,11 @@
 </div>
 </section>
 <section class="area-section" id="comfyui" aria-labelledby="comfyui-title">
-  <div class="area-heading"><div><p class="eyebrow">GENERATIVE IMAGE · 2 LABS</p><h2 id="comfyui-title">ComfyUI</h2></div><p>Understand what each node receives, changes and outputs. Explore LoRA and ControlNet before practising the graph.</p></div>
+  <div class="area-heading"><div><p class="eyebrow">GENERATIVE IMAGE · 1 LAB</p><h2 id="comfyui-title">ComfyUI</h2></div><p>Learn the interface and the shortcuts, what each node does, and how LoRA and ControlNet change a generation.</p></div>
   <div class="lab-grid">
     <article class="lab-card comfy-card">
-      <div class="card-visual" aria-hidden="true"><div class="comfy-mini-node"><b>Checkpoint</b><span>MODEL · CLIP · VAE</span></div><i class="comfy-mini-wire"></i><div class="comfy-mini-node"><b>Load LoRA</b><span>WEIGHT ADJUSTMENTS</span></div><i class="comfy-mini-wire"></i><div class="comfy-mini-node"><b>ControlNet</b><span>STRUCTURE GUIDE</span></div><span class="uv-decor">UNDERSTAND THE NODES</span></div>
-      <div class="card-content"><div class="card-topline"><span class="lab-number">01 / COMFYUI CONCEPTS</span><span class="available"><span></span> AVAILABLE</span></div><h3>Concept Lab</h3><p>Inspect what each core node does, compare LoRA with ControlNet, and test your understanding through short diagnostic cases. No model or GPU needed.</p><div class="card-bottom"><span>Node roles · LoRA · ControlNet</span><a href="./labs/comfyui-concepts/" aria-label="Open ComfyUI Concept Lab">Open lab <span aria-hidden="true">↗</span></a></div></div>
-    </article>
-    <article class="lab-card comfy-card">
-      <div class="card-visual" aria-hidden="true"><div class="comfy-mini-node"><b>Checkpoint</b><span>MODEL · CLIP · VAE</span></div><i class="comfy-mini-wire"></i><div class="comfy-mini-node"><b>KSampler</b><span>CONDITIONING + LATENT</span></div><i class="comfy-mini-wire"></i><div class="comfy-mini-node"><b>Save Image</b><span>IMAGE</span></div><span class="uv-decor">NODES → FLOW → IMAGE</span></div>
-      <div class="card-content"><div class="card-topline"><span class="lab-number">02 / OPTIONAL PRACTICE</span><span class="available"><span></span> AVAILABLE</span></div><h3>Flow Lab</h3><p>Practise connecting compatible sockets, repairing a broken workflow and tracing execution. This follow-up is optional.</p><div class="card-bottom"><span>Connections · execution</span><a href="./labs/comfyui-flow/" aria-label="Open ComfyUI Flow Lab">Open lab <span aria-hidden="true">↗</span></a></div></div>
+      <div class="card-visual" aria-hidden="true"><div class="comfy-mini-node"><b>Load LoRA</b><span>STYLE</span></div><i class="comfy-mini-wire"></i><div class="comfy-mini-node"><b>KSampler</b><span>SEED · STEPS · CFG</span></div><i class="comfy-mini-wire"></i><div class="comfy-mini-node"><b>ControlNet</b><span>SHAPE</span></div><span class="uv-decor">RUN · QUEUE · CTRL ENTER</span></div>
+      <div class="card-content"><div class="card-topline"><span class="lab-number">01 / COMFYUI</span><span class="available"><span></span> AVAILABLE</span></div><h3>ComfyUI Lab</h3><p>Learn ComfyUI in a copy of its interface, with the real shortcuts: canvas, node search, Run and Queue, the seven nodes of text-to-image, seed, steps, CFG and samplers, image to image, what a LoRA is and what a ControlNet is, bypass, groups and workflows saved in the image. A simulator draws the pictures: no model or GPU needed.</p><div class="card-bottom"><span>Interface · KSampler · LoRA · ControlNet · shortcuts</span><a href="./labs/comfyui/" aria-label="Open ComfyUI Lab">Open lab <span aria-hidden="true">↗</span></a></div></div>
     </article>
   </div>
 </section>
@@ -260,6 +256,6 @@
     <section class="method" aria-label="How to use the labs"><span class="method-label">A SIMPLE LOOP</span><div><b>01</b> Open a lab</div><span class="method-arrow" aria-hidden="true">→</span><div><b>02</b> Change something</div><span class="method-arrow" aria-hidden="true">→</span><div><b>03</b> Observe the result</div></section>
   </main>
   <footer><span>CARROT REVOLT <strong>LABS</strong></span><span>Interactive studies for the classroom</span><a href="#labs">Back to labs ↑</a></footer>
-  <script type="module">import { initI18n } from './i18n.js'; import dict from './home.i18n.js?v=29'; initI18n({ dictionaries: [dict], mount: '.site-header', append: true });</script>
+  <script type="module">import { initI18n } from './i18n.js'; import dict from './home.i18n.js?v=30'; initI18n({ dictionaries: [dict], mount: '.site-header', append: true });</script>
 </body>
 </html>
