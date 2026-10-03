@@ -43,7 +43,13 @@ export const NODES = {
   SaveImage: { title: 'Save Image', cat: ['image'], w: 315, inputs: [I('images', 'IMAGE')], widgets: [W('filename_prefix', 'string', 'ComfyUI')], output: true, preview: true },
   PreviewImage: { title: 'Preview Image', cat: ['image'], w: 260, inputs: [I('images', 'IMAGE')], output: true, preview: true },
 };
-export const CATEGORIES = ['loaders', 'conditioning', 'latent', 'sampling', 'image'];
+export const CATEGORIES = ['loaders', 'conditioning', 'latent', 'sampling', 'image', 'mask'];
+// Other labs add their own nodes: a definition in NODES and an execute handler here.
+export const HANDLERS = {};
+// Checks a lab can add before a node runs (for example, running out of GPU memory). Return { msg, detail, … } to stop the run.
+export const PRECHECKS = [];
+export function registerNodes(defs) { for (const [type, d] of Object.entries(defs)) { NODES[type] = d.def; if (d.run) HANDLERS[type] = d.run; } }
+export function addOptions(type, widget, values) { const w = NODES[type].widgets.find(x => x.name === widget); for (const v of values) if (!w.options.includes(v)) w.options.push(v); }
 
 let uid = 1;
 export function makeNode(type, x, y, values = {}, id) {
@@ -149,6 +155,8 @@ export function execute(g, { images = {} } = {}) {
   let runtime = null;
   for (const id of v.order) {
     const n = g.nodes.find(x => x.id === id), w = n.widgets;
+    for (const chk of PRECHECKS) { const rt = chk({ n, w, get: name => get(id, name), warnings }); if (rt) { runtime = { node: id, ...rt }; break; } }
+    if (runtime) break;
     switch (n.type) {
       case 'CheckpointLoaderSimple': { const c = CHECKPOINTS[w.ckpt_name]; values[id] = [{ ckpt: w.ckpt_name, ...c, loras: [] }, { ckpt: w.ckpt_name, arch: c.arch, loras: [] }, { ckpt: w.ckpt_name, arch: c.arch }]; break; }
       case 'LoraLoader': {
@@ -165,7 +173,7 @@ export function execute(g, { images = {} } = {}) {
         values[id] = [{ ...p, controls: [...p.controls, ctl] }, { ...ng, controls: [...ng.controls, ctl] }]; break;
       }
       case 'EmptyLatentImage': values[id] = [{ w: w.width, h: w.height, batch: w.batch_size, source: null }]; break;
-      case 'LoadImage': values[id] = [{ kind: 'photo', name: w.image, w: 512, h: 512 }, { kind: 'mask', name: w.image }]; break;
+      case 'LoadImage': values[id] = [{ kind: 'photo', name: w.image, w: 512, h: 512 }, { kind: 'mask', name: w.image, strokes: w.mask || [], invert: !!w.mask_invert, w: 512, h: 512 }]; break;
       case 'Canny': { const img = get(id, 'image'); values[id] = [{ kind: 'canny', of: img, low: w.low_threshold, high: w.high_threshold, name: img.name, w: img.w, h: img.h }]; break; }
       case 'VAEEncode': { const img = get(id, 'pixels'); values[id] = [{ w: img.w, h: img.h, batch: 1, source: img }]; break; }
       case 'KSampler': {
@@ -181,6 +189,7 @@ export function execute(g, { images = {} } = {}) {
         break;
       }
       case 'SaveImage': case 'PreviewImage': values[id] = []; break;
+      default: if (HANDLERS[n.type]) { const out = HANDLERS[n.type]({ n, w, get, warnings, graph: g }); if (out?.runtime) runtime = runtime || { node: id, ...out.runtime }; else values[id] = out; }
     }
     if (runtime) break;
   }
@@ -193,7 +202,7 @@ export function describeRecipe(r) {
   if (!r) return null;
   const pos = r.pos.prompt, neg = r.neg.prompt;
   const loras = r.model.loras.map((l, i) => ({ ...l, clip: r.pos.clip?.loras?.[i]?.strength ?? 0 }));
-  return { seed: r.seed, steps: r.steps, cfg: r.cfg, sampler: r.sampler, scheduler: r.scheduler, denoise: r.denoise, w: r.latent.w, h: r.latent.h, ckpt: r.model.ckpt, arch: r.model.arch, native: r.model.native, look: r.model.look, pos, neg, loras, controls: r.pos.controls, source: r.latent.source };
+  return { model: r.model, latent: r.latent, seed: r.seed, steps: r.steps, cfg: r.cfg, sampler: r.sampler, scheduler: r.scheduler, denoise: r.denoise, w: r.latent.w, h: r.latent.h, ckpt: r.model.ckpt, arch: r.model.arch, native: r.model.native, look: r.model.look, pos, neg, loras, controls: r.pos.controls, source: r.latent.source };
 }
 // Convergence of a sampler: how finished the picture is after a number of steps.
 export function convergence(steps, sampler, scheduler) {
@@ -212,7 +221,7 @@ export function effects(d) {
   let overload = 0;
   for (const l of d.loras) {
     if (!l.strength) continue;
-    const trig = l.trigger ? (d.pos.triggers.includes(l.trigger) ? Math.min(1.2, Math.max(0, l.clip)) : .35) : 1;
+    const trig = l.trigger ? (d.pos.triggers.includes(l.trigger) ? Math.min(1.2, Math.max(0, l.modelOnly ? 1 : l.clip)) : .35) : 1;
     const a = l.strength * trig;
     styles[l.style] = (styles[l.style] || 0) + a;
     overload += Math.max(0, Math.abs(l.strength) - 1.2);

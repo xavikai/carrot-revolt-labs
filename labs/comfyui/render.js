@@ -153,15 +153,23 @@ function stylize(d, style, a, r) {
 }
 
 /* ── Render a full picture from an IMAGE value ── */
+// Other labs register extra image kinds, sample photos and recipe renderers here.
+export const KIND_RENDERERS = {}, PHOTOS = {}, RECIPE_HOOKS = [];
 export function renderValue(v, opts = {}) {
   const [W, H] = sizeOf(v?.w || 512, v?.h || 512);
+  if (v && KIND_RENDERERS[v.kind]) return KIND_RENDERERS[v.kind](v, opts);
+  if (v?.kind === 'photo' && PHOTOS[v.name]) return PHOTOS[v.name](W, H);
   if (!v || v.kind === 'empty') { const cv = canvas(W, H), c = cv.getContext('2d'); c.fillStyle = '#7b7566'; c.fillRect(0, 0, W, H); return cv; }
   if (v.kind === 'photo') return drawPhoto(v.name, W, H);
   if (v.kind === 'canny') { const src = renderValue(v.of); return put(canvas(src.width, src.height), cannyOf(data(src), v.low, v.high)); }
   if (v.kind === 'generated') return renderRecipe(describeRecipe(v.recipe), opts);
   return drawPhoto('example.png', W, H);
 }
-export function renderRecipe(d, { progress = 1, index = 0 } = {}) {
+export function renderRecipe(d, opts = {}) {
+  for (const h of RECIPE_HOOKS) if (h.match(d)) return h.render(d, opts);
+  return renderBase(d, opts);
+}
+export function renderBase(d, { progress = 1, index = 0 } = {}) {
   const [W, H] = sizeOf(d.w, d.h), fx = effects(d);
   const seed = Number.isFinite(+d.seed) ? `${d.seed}` : '0', layoutSeed = ANCESTRAL.has(d.sampler) ? `${seed}:${index}:${d.steps}` : `${seed}:${index}`;
   const r = rng(layoutSeed), look = d.look;
@@ -207,3 +215,6 @@ export function renderRecipe(d, { progress = 1, index = 0 } = {}) {
   return put(cv, img);
 }
 export const KNOWN_WORDS = { subjects: [...new Set(Object.keys(VOCAB.subjects))], settings: Object.keys(VOCAB.settings), colors: Object.keys(VOCAB.colors), styles: Object.keys(VOCAB.styles) };
+
+// Building blocks for other labs' renderers.
+export const KIT = { canvas, data, put, boxBlur, sobel, lerpData, mapPixels, drawScene, drawSubject, stylize, rng, hex, rgb, mix, shade, sizeOf, DEFAULT_COL };

@@ -71,6 +71,7 @@ export const UI = {
   mult8: L('width and height must be multiples of 8.', 'width i height han de ser múltiples de 8.', 'width y height deben ser múltiplos de 8.'),
   validationHint: L('Connect the inputs listed above (red outline) and run again.', 'Connecta les entrades de la llista (contorn vermell) i torna a executar.', 'Conecta las entradas de la lista (contorno rojo) y vuelve a ejecutar.'),
   shapeHint: L('Model families are mixed: an SD 1.5 part (ControlNet, CLIP…) is used with an SDXL model, or the other way round.', 'Hi ha famílies de models barrejades: una peça SD 1.5 (ControlNet, CLIP…) amb un model SDXL, o al revés.', 'Hay familias de modelos mezcladas: una pieza SD 1.5 (ControlNet, CLIP…) con un modelo SDXL, o al revés.'),
+  maskHint: L('Paint the area to change. Right button or Eraser to remove. Invert swaps inside and outside.', 'Pinta la zona que vols canviar. Botó dret o Eraser per esborrar. Invert intercanvia dins i fora.', 'Pinta la zona que quieres cambiar. Botón derecho o Eraser para borrar. Invert intercambia dentro y fuera.'),
   loraArch: L('this LoRA is not for {a}: it has no effect', 'aquesta LoRA no és per a {a}: no fa res', 'esta LoRA no es para {a}: no hace nada'),
 };
 

@@ -1,8 +1,12 @@
 // Carrot Revolt Labs · ComfyUI Lab · a ComfyUI-style interface on top of a model-free simulator.
 import { NODES, CATEGORIES, TYPE_COLOR, CHECKPOINTS, LORAS, CONTROLNETS, IMAGES, makeNode, makeLink, connect, canConnect, validate, cacheKeys, execute, describeRecipe, effects, defaultGraph } from './engine.js';
 import { renderValue, renderRecipe, hashSeed } from './render.js';
-import { STAGES, TEMPLATES, L } from './lessons.js';
 import { DOCS, UI, KEYS } from './texts.js';
+// A lab is this interface plus a config module (stages, templates, texts, extra nodes). Default: the ComfyUI Lab.
+const CFG = await import(document.body.dataset.config ? new URL(document.body.dataset.config, location.href).href : './lessons.js');
+const { STAGES, TEMPLATES } = CFG, META = CFG.META || {};
+if (CFG.UI) Object.assign(UI, CFG.UI);
+if (CFG.DOCS) Object.assign(DOCS, CFG.DOCS);
 import { getLang, onLangChange, initI18n } from '../../i18n.js';
 
 const $ = (q, r = document) => r.querySelector(q), $$ = (q, r = document) => [...r.querySelectorAll(q)];
@@ -10,7 +14,7 @@ const T = v => typeof v === 'string' ? v : (v?.[getLang()] ?? v?.en ?? '');
 const U = (k, vars) => { let s = T(UI[k]); for (const [a, b] of Object.entries(vars || {})) s = s.replaceAll(`{${a}}`, b); return s; };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const clone = v => JSON.parse(JSON.stringify(v));
-const KEY = 'carrot-revolt-comfy:';
+const KEY = META.key || 'carrot-revolt-comfy:';
 const store = { get(k, d) { try { const v = localStorage.getItem(KEY + k); return v == null ? d : JSON.parse(v); } catch { return d; } }, set(k, v) { try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch { /* full or private */ } } };
 
 /* ── State ── */
@@ -54,9 +58,9 @@ const ICON = {
   info: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v6M12 7.5v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
 };
 function shell() {
-  document.title = `ComfyUI Lab · Carrot Revolt Labs`;
+  document.title = `${META.title || 'ComfyUI Lab'} · Carrot Revolt Labs`;
   document.body.innerHTML = `
-  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">GENERATIVE IMAGE / COMFYUI</span><strong>ComfyUI Lab</strong></div><a class="home-link" href="../../#comfyui">${esc(U('all'))}</a></header>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">${META.label || 'GENERATIVE IMAGE / COMFYUI'}</span><strong>${META.title || 'ComfyUI Lab'}</strong></div><a class="home-link" href="../../#comfyui">${esc(U('all'))}</a></header>
   <main>
     <section class="lab-top"><div class="lab-lead"><h1>${U('headline')}</h1><p>${U('lead')}</p><p class="sim-note">${U('simNote')}</p></div></section>
     <nav class="stages" id="stages" aria-label="Stages"></nav>
@@ -81,7 +85,7 @@ function shell() {
       </div>
     </section>
     <section class="concepts" id="concepts"></section>
-    <footer><span>Carrot Revolt Labs · ComfyUI Lab</span><span class="foot-note">${esc(U('footer'))}</span><a href="https://docs.comfy.org/" target="_blank" rel="noopener">ComfyUI docs ↗</a></footer>
+    <footer><span>Carrot Revolt Labs · ${META.title || 'ComfyUI Lab'}</span><span class="foot-note">${esc(U('footer'))}</span><a href="https://docs.comfy.org/" target="_blank" rel="noopener">ComfyUI docs ↗</a></footer>
   </main>
   <div class="cy-menu-pop" id="pop" hidden></div><div class="cy-search" id="search" hidden></div><div class="cy-dialog" id="dialog" hidden></div><div class="cy-tip" id="tip" hidden></div>`;
 }
@@ -132,7 +136,7 @@ function nodeHtml(n) {
   }
   const img = def.preview ? `<div class="n-img" data-img="${esc(n.id)}">${n.type === 'LoadImage' ? '' : '<span>—</span>'}</div>` : '';
   if (n.collapsed) return `<article class="cn collapsed${S.sel.has(n.id) ? ' sel' : ''}${n.mode === 4 ? ' bypass' : ''}${n.mode === 2 ? ' mute' : ''}" data-node="${esc(n.id)}" style="${style};width:auto"><header class="cn-title"><i class="cn-dot" data-collapse></i><span>${esc(n.title || def.title)}</span></header></article>`;
-  return `<article class="cn${S.sel.has(n.id) ? ' sel' : ''}${n.mode === 4 ? ' bypass' : ''}${n.mode === 2 ? ' mute' : ''}" data-node="${esc(n.id)}" style="${style}"><header class="cn-title"><i class="cn-dot" data-collapse title="Collapse (Alt C)"></i><span class="cn-name">${esc(n.title || def.title)}</span><span class="cn-badge" hidden></span></header><div class="cn-prog"><i></i></div><div class="cn-body">${slots}<div class="cn-widgets">${widgetDefs(n).map(w => widgetHtml(n, w)).join('')}</div>${img}</div></article>`;
+  return `<article class="cn${S.sel.has(n.id) ? ' sel' : ''}${n.mode === 4 ? ' bypass' : ''}${n.mode === 2 ? ' mute' : ''}" data-node="${esc(n.id)}" style="${style}"><header class="cn-title"><i class="cn-dot" data-collapse title="Collapse (Alt C)"></i><span class="cn-name">${esc(n.title || def.title)}</span>${def.custom ? `<span class="cn-src" title="Custom node pack: ${esc(def.custom)}">🦊 ${esc(def.custom)}</span>` : ''}<span class="cn-badge" hidden></span></header><div class="cn-prog"><i></i></div><div class="cn-body">${slots}<div class="cn-widgets">${widgetDefs(n).map(w => widgetHtml(n, w)).join('')}</div>${img}</div></article>`;
 }
 function renderGroups() { $('#groups').innerHTML = (S.graph.groups || []).map((g, i) => `<div class="cg" data-group="${i}" style="left:${g.x}px;top:${g.y}px;width:${g.w}px;height:${g.h}px;--g:${g.color}"><div class="cg-title" data-gtitle="${i}">${esc(g.title)}</div></div>`).join(''); }
 function renderGraph() { $('#nodes').innerHTML = S.graph.nodes.map(nodeHtml).join(''); renderGroups(); paintImages(); requestAnimationFrame(() => { drawLinks(); toolbox(); minimap(); }); }
@@ -140,13 +144,54 @@ function paintImages() {
   for (const el of $$('[data-img]')) {
     const n = nodeById(el.dataset.img); if (!n) continue;
     let url = S.images[n.id];
-    if (n.type === 'LoadImage') url = imageUrl({ kind: 'photo', name: n.widgets.image, w: 512, h: 512 }, 220);
+    if (n.type === 'LoadImage') { url = imageUrl({ kind: 'photo', name: n.widgets.image, w: 512, h: 512 }, 220); if (n.widgets.mask?.length || n.widgets.mask_invert) url = maskedUrl(n); el.title = 'Click: Open in MaskEditor'; el.classList.add('can-mask'); }
     el.innerHTML = url ? `<img src="${url}" alt="">` : '<span>—</span>';
   }
 }
 const urlCache = new Map();
 function imageUrl(v, max = 256) { const k = JSON.stringify(v).slice(0, 3000) + max; if (urlCache.has(k)) return urlCache.get(k); const cv = renderValue(v); const out = toUrl(cv, max); urlCache.set(k, out); return out; }
 function toUrl(cv, max = 256, type = 'image/png') { const c = document.createElement('canvas'), s = Math.min(1, max / Math.max(cv.width, cv.height)); c.width = Math.round(cv.width * s); c.height = Math.round(cv.height * s); c.getContext('2d').drawImage(cv, 0, 0, c.width, c.height); return c.toDataURL(type, .8); }
+// The preview of Load Image shows the painted mask, darkened, as the Mask Editor does.
+const maskCache = new Map();
+function maskedUrl(n) {
+  const k = n.widgets.image + JSON.stringify(n.widgets.mask) + n.widgets.mask_invert; if (maskCache.has(k)) return maskCache.get(k);
+  const c = document.createElement('canvas'); c.width = 220; c.height = 220; const x = c.getContext('2d');
+  x.drawImage(renderValue({ kind: 'photo', name: n.widgets.image, w: 512, h: 512 }), 0, 0, 220, 220);
+  const m = paintStrokes(n.widgets.mask, 220, 220, n.widgets.mask_invert); x.globalAlpha = .62; x.drawImage(m, 0, 0); x.globalAlpha = 1;
+  const out = c.toDataURL(); maskCache.set(k, out); return out;
+}
+function paintStrokes(strokes = [], W, H, invert = false, color = '#000') {
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  x.fillStyle = color; x.strokeStyle = color; x.lineCap = 'round'; x.lineJoin = 'round';
+  if (invert) { x.fillRect(0, 0, W, H); }
+  for (const s of strokes) { x.globalCompositeOperation = (s.e ? !invert : invert) ? 'destination-out' : 'source-over'; x.lineWidth = s.r * 2 * W; x.beginPath(); s.p.forEach(([px, py], i) => i ? x.lineTo(px * W, py * H) : x.moveTo(px * W, py * H)); if (s.p.length === 1) x.lineTo(s.p[0][0] * W + .01, s.p[0][1] * H); x.stroke(); }
+  return c;
+}
+/* ── Mask Editor (Load Image › Open in MaskEditor) ── */
+function openMaskEditor(id) {
+  const n = nodeById(id); if (!n) return;
+  let strokes = clone(n.widgets.mask || []), invert = !!n.widgets.mask_invert, erase = false, size = .05, cur = null;
+  const d = $('#dialog'); d.hidden = false;
+  d.innerHTML = `<div class="dlg mask-ed"><header><b>Mask Editor</b><button type="button" data-close>×</button></header><div class="me-body"><div class="me-tools"><button type="button" data-me="brush" class="on">Brush</button><button type="button" data-me="erase">Eraser</button><label>Thickness <input type="range" id="me-size" min="1" max="20" value="5"></label><button type="button" data-me="invert">Invert</button><button type="button" data-me="clear">Clear</button></div><div class="me-canvas"><img id="me-img" alt=""><canvas id="me-c" width="512" height="512"></canvas></div><p class="dlg-hint">${esc(U('maskHint'))}</p></div><footer><button type="button" data-close>Cancel</button><button type="button" class="primary" data-me="save">Save</button></footer></div>`;
+  $('#me-img').src = imageUrl({ kind: 'photo', name: n.widgets.image, w: 512, h: 512 }, 512);
+  const cv = $('#me-c'), ctx = cv.getContext('2d');
+  const draw = () => { ctx.clearRect(0, 0, 512, 512); ctx.globalAlpha = .7; ctx.drawImage(paintStrokes(strokes, 512, 512, invert), 0, 0); ctx.globalAlpha = 1; };
+  draw();
+  const pos = e => { const r = cv.getBoundingClientRect(); return [Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), Math.max(0, Math.min(1, (e.clientY - r.top) / r.height))]; };
+  cv.onpointerdown = e => { e.preventDefault(); cv.setPointerCapture(e.pointerId); cur = { p: [pos(e)], r: size, ...(erase || e.button === 2 ? { e: 1 } : {}) }; strokes.push(cur); draw(); };
+  cv.onpointermove = e => { if (!cur) return; cur.p.push(pos(e).map(v => Math.round(v * 1000) / 1000)); draw(); };
+  cv.onpointerup = () => { cur = null; };
+  cv.oncontextmenu = e => e.preventDefault();
+  $('#me-size').oninput = e => { size = Number(e.target.value) / 100; };
+  d.onclick = e => {
+    const a = e.target.closest('[data-me]')?.dataset.me;
+    if (a === 'brush' || a === 'erase') { erase = a === 'erase'; $$('[data-me="brush"],[data-me="erase"]', d).forEach(b => b.classList.toggle('on', b.dataset.me === a)); }
+    if (a === 'clear') { strokes = []; invert = false; draw(); }
+    if (a === 'invert') { invert = !invert; draw(); }
+    if (a === 'save') { snapshot(); n.widgets.mask = strokes.filter(s => s.p.length); n.widgets.mask_invert = invert; closeDialog(); flag('maskPainted'); changed(); }
+    if (e.target.closest('[data-close]')) closeDialog();
+  };
+}
 function worldRect() { return $('#world').getBoundingClientRect(); }
 function slotPos(id, dir, key) {
   const el = $(`[data-slot="${CSS.escape(`${id}|${dir}|${key}`)}"]`);
@@ -239,6 +284,8 @@ function setupCanvas() {
     if (mid) { linkMenu(e.clientX, e.clientY, Number(mid.dataset.link)); return; }
     const gt = e.target.closest('[data-gtitle]');
     if (gt) { e.preventDefault(); const gi = Number(gt.dataset.gtitle), g = S.graph.groups[gi]; const inside = S.graph.nodes.filter(n => n.x >= g.x && n.y >= g.y && n.x < g.x + g.w && n.y < g.y + g.h); drag = { kind: 'group', moved: false, gi, x: e.clientX, y: e.clientY, gx: g.x, gy: g.y, nodes: inside.map(n => ({ n, x: n.x, y: n.y })) }; return; }
+    const canMask = e.target.closest('.n-img.can-mask');
+    if (canMask && !e.ctrlKey && !e.shiftKey) { openMaskEditor(canMask.dataset.img); return; }
     const nodeEl = e.target.closest('.cn');
     if (nodeEl) {
       e.preventDefault(); const id = nodeEl.dataset.node;
@@ -391,7 +438,7 @@ function canvasMenu(x, y) {
 }
 function nodeMenu(x, y, id) {
   const n = nodeById(id);
-  showPop(x, y, [{ label: 'Title', act: () => { const t = prompt('Title', n.title || NODES[n.type].title); if (t != null) { snapshot(); n.title = t.trim() || null; changed(); } } }, { label: 'Mode', sub: [['Always', 0], ['Never (Mute)', 2], ['Bypass', 4]].map(([l, m]) => ({ label: l, on: n.mode === m, act: () => { snapshot(); [...S.sel].forEach(s => { nodeById(s).mode = m; }); changed(); } })) }, { label: 'Bypass', key: 'Ctrl B', act: () => setMode(4) }, { label: n.collapsed ? 'Expand' : 'Collapse', key: 'Alt C', act: () => { snapshot(); n.collapsed = !n.collapsed; changed(); } }, { label: 'Colors', sub: Object.keys(COLORS).map(c => ({ label: c, act: () => { snapshot(); [...S.sel].forEach(s => { nodeById(s).color = c; }); changed(); } })) }, { sep: true }, { label: 'Clone', key: 'Alt drag', act: () => { snapshot(); const c = { ...clone(n), id: `${n.type}-${uid++}`, x: n.x + 30, y: n.y + 30 }; S.graph.nodes.push(c); S.sel = new Set([c.id]); changed(); } }, { label: 'Node info', act: () => showInfo(id, true) }, { label: 'Remove', key: 'Del', act: () => removeNodes([...S.sel]) }]);
+  showPop(x, y, [...(n.type === 'LoadImage' ? [{ label: 'Open in MaskEditor', act: () => openMaskEditor(id) }, { sep: true }] : []), { label: 'Title', act: () => { const t = prompt('Title', n.title || NODES[n.type].title); if (t != null) { snapshot(); n.title = t.trim() || null; changed(); } } }, { label: 'Mode', sub: [['Always', 0], ['Never (Mute)', 2], ['Bypass', 4]].map(([l, m]) => ({ label: l, on: n.mode === m, act: () => { snapshot(); [...S.sel].forEach(s => { nodeById(s).mode = m; }); changed(); } })) }, { label: 'Bypass', key: 'Ctrl B', act: () => setMode(4) }, { label: n.collapsed ? 'Expand' : 'Collapse', key: 'Alt C', act: () => { snapshot(); n.collapsed = !n.collapsed; changed(); } }, { label: 'Colors', sub: Object.keys(COLORS).map(c => ({ label: c, act: () => { snapshot(); [...S.sel].forEach(s => { nodeById(s).color = c; }); changed(); } })) }, { sep: true }, { label: 'Clone', key: 'Alt drag', act: () => { snapshot(); const c = { ...clone(n), id: `${n.type}-${uid++}`, x: n.x + 30, y: n.y + 30 }; S.graph.nodes.push(c); S.sel = new Set([c.id]); changed(); } }, { label: 'Node info', act: () => showInfo(id, true) }, { label: 'Remove', key: 'Del', act: () => removeNodes([...S.sel]) }]);
 }
 function colorMenu(x, y) { showPop(x, y, [{ label: 'No color', act: () => { snapshot(); [...S.sel].forEach(s => { nodeById(s).color = null; }); changed(); } }, ...Object.keys(COLORS).map(c => ({ label: c, act: () => { snapshot(); [...S.sel].forEach(s => { nodeById(s).color = c; }); changed(); } }))]); }
 function linkMenu(x, y, i) { const l = S.graph.links[i]; showPop(x, y, [{ label: 'Add Node', act: () => openSearch(x, y, { from: { id: l.from, dir: 'out', key: l.out, type: NODES[nodeById(l.from).type].outputs[l.out].type } }) }, { label: 'Delete', act: () => { snapshot(); S.graph.links.splice(i, 1); changed(); } }]); }
@@ -476,8 +523,8 @@ function saveWorkflow() {
 }
 function exportJson() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(S.graph, null, 2)], { type: 'application/json' })); a.download = `${$('#wf-name').textContent}.json`; a.click(); }
 function showResult(h) {
-  if (!h) return; const d = $('#dialog'); d.hidden = false;
-  d.innerHTML = `<div class="dlg result"><header><b>${esc(h.file)}</b><button type="button" data-close>×</button></header><div class="res-body"><img src="${h.full || h.thumb}" alt=""><dl><dt>seed</dt><dd>${h.seed}</dd><dt>steps · cfg</dt><dd>${h.steps} · ${h.cfg}</dd><dt>sampler</dt><dd>${h.sampler} · ${h.scheduler}</dd><dt>denoise</dt><dd>${h.denoise}</dd><dt>size</dt><dd>${h.w} × ${h.h}</dd><dt>checkpoint</dt><dd>${esc(h.ckpt)}</dd>${h.loras.length ? `<dt>LoRA</dt><dd>${h.loras.map(l => `${esc(l.name)} ${l.strength}`).join('<br>')}</dd>` : ''}${h.ctlKind ? `<dt>ControlNet</dt><dd>${h.ctlKind} · ${h.ctlStrength} · ${h.ctlStart}–${h.ctlEnd}</dd>` : ''}<dt>prompt</dt><dd class="pr">${esc(h.posText)}</dd><dt>negative</dt><dd class="pr">${esc(h.negText)}</dd></dl></div><footer><span>${esc(U('pngNote'))}</span><button type="button" class="primary" data-loadwf>Load Workflow</button></footer></div>`;
+  if (!h) return; flag('resultOpened'); const d = $('#dialog'); d.hidden = false;
+  d.innerHTML = `<div class="dlg result"><header><b>${esc(h.file)}</b><button type="button" data-close>×</button></header><div class="res-body"><div class="res-pic"><img src="${h.full || h.thumb}" alt="">${CFG.resultExtra ? CFG.resultExtra(h) : ''}</div><dl><dt>seed</dt><dd>${h.seed}</dd><dt>steps · cfg</dt><dd>${h.steps} · ${h.cfg}</dd><dt>sampler</dt><dd>${h.sampler} · ${h.scheduler}</dd><dt>denoise</dt><dd>${h.denoise}</dd><dt>size</dt><dd>${h.w} × ${h.h}</dd><dt>checkpoint</dt><dd>${esc(h.ckpt)}</dd>${h.loras.length ? `<dt>LoRA</dt><dd>${h.loras.map(l => `${esc(l.name)} ${l.strength}`).join('<br>')}</dd>` : ''}${h.ctlKind ? `<dt>ControlNet</dt><dd>${h.ctlKind} · ${h.ctlStrength} · ${h.ctlStart}–${h.ctlEnd}</dd>` : ''}<dt>prompt</dt><dd class="pr">${esc(h.posText)}</dd><dt>negative</dt><dd class="pr">${esc(h.negText)}</dd></dl></div><footer><span>${esc(U('pngNote'))}</span><button type="button" class="primary" data-loadwf>Load Workflow</button></footer></div>`;
   d.onclick = e => { if (e.target.closest('[data-close]') || e.target === d) closeDialog(); if (e.target.closest('[data-loadwf]')) { snapshot(); S.graph = clone(h.graph); closeDialog(); flag('loadedFromImage'); changed(); fitView(); toast(U('wfFromImage')); } };
 }
 const closeDialog = () => { $('#dialog').hidden = true; };
@@ -509,7 +556,7 @@ async function runOnce() {
   for (const n of g.nodes.filter(x => x.type === 'KSampler' && x.mode === 0)) { const c = n.widgets.control_after_generate; if (c === 'randomize') n.widgets.seed = Math.floor(Math.random() * 1e15); else if (c === 'increment') n.widgets.seed++; else if (c === 'decrement') n.widgets.seed = Math.max(0, n.widgets.seed - 1); }
   renderGraph(); if (S.panel === 'queue') renderPanel();
   const res = execute(graph), t0 = performance.now();
-  for (const w of res.warnings) { log(`<b>[LoRA]</b> lora key not loaded: ${esc(w.lora)} <i>(${esc(U('loraArch', { a: w.arch }))})</i>`, 'warn'); S.flags.loraWarn = true; }
+  for (const w of res.warnings) { if (w.text) { log(w.text, w.level || 'warn'); continue; } log(`<b>[LoRA]</b> lora key not loaded: ${esc(w.lora)} <i>(${esc(U('loraArch', { a: w.arch }))})</i>`, 'warn'); S.flags.loraWarn = true; }
   for (const id of v.order) {
     if (S.cancel) break;
     const n = graph.nodes.find(x => x.id === id), el = nodeEl(id), cached = S.lastKeys[id] === keys[id] && !NODES[n.type].output;
@@ -533,7 +580,7 @@ async function runOnce() {
   if (S.cancel) { renderGraph(); return false; }
   if (res.runtime) {
     nodeEl(res.runtime.node)?.classList.add('err');
-    const d = $('#dialog'); d.hidden = false; d.innerHTML = `<div class="dlg error"><header><b>Error occurred when executing KSampler:</b><button type="button" data-close>×</button></header><pre>${esc(res.runtime.detail)}\n\n  File "comfy/samplers.py", line 1104, in sample\n  File "comfy/controlnet.py", in get_control\nRuntimeError: ${esc(res.runtime.detail)}</pre><p class="dlg-hint">${esc(U('shapeHint'))}</p><footer><button type="button" class="primary" data-close>Close</button></footer></div>`;
+    const d = $('#dialog'); d.hidden = false; const rt = res.runtime; flag('rt_' + rt.msg); d.innerHTML = `<div class="dlg error"><header><b>Error occurred when executing ${esc(rt.title || NODES[nodeById(rt.node)?.type]?.title || 'KSampler')}:</b><button type="button" data-close>×</button></header><pre>${esc(rt.detail)}\n\n${esc(rt.trace || '  File "comfy/samplers.py", line 1104, in sample\n  File "comfy/controlnet.py", in get_control')}\n${esc(rt.error || 'RuntimeError')}: ${esc(rt.detail)}</pre><p class="dlg-hint">${rt.hint ? T(rt.hint) : esc(U('shapeHint'))}</p><footer><button type="button" class="primary" data-close>Close</button></footer></div>`;
     d.onclick = e => { if (e.target.closest('[data-close]') || e.target === d) closeDialog(); };
     S.lastKeys = {}; renderGraph(); return false;
   }
@@ -547,7 +594,7 @@ async function runOnce() {
     const n = graph.nodes.find(x => x.id === id);
     if (img.kind === 'canny') flag('cannySeen');
     if (n.type === 'SaveImage' || (n.type === 'PreviewImage' && !Object.keys(res.outputs).some(k => graph.nodes.find(x => x.id === k)?.type === 'SaveImage'))) {
-      if (img.kind === 'generated') S.history.push(historyEntry(img.recipe, cv, graph, secs, n.widgets.filename_prefix));
+      if (img.recipe || img.kind === 'generated' || CFG.findRecipe?.(img)) { const rec = img.recipe || CFG.findRecipe?.(img) || nodeRecipe; const h = historyEntry(rec, cv, graph, secs, n.widgets.filename_prefix); if (CFG.outputExtra) Object.assign(h, CFG.outputExtra(img, graph)); S.history.push(h); }
       else if (!nodeRecipe) S.history.push({ id: Date.now(), thumb: toUrl(cv, 110, 'image/jpeg'), full: toUrl(cv, 300), file: `${n.widgets.filename_prefix || 'ComfyUI_temp'}_${String(S.history.length + 1).padStart(5, '0')}_.png`, graph, secs, seed: '—', steps: '—', cfg: '—', sampler: '—', scheduler: '', denoise: '—', w: img.w, h: img.h, ckpt: '—', loras: [], pos: { subjects: [], settings: [], styles: [], colors: [], weights: {}, triggers: [], text: '' }, neg: { subjects: [], settings: [], colors: [] }, posText: '', negText: '', key: 'img', kind: img.kind });
     }
   }
@@ -561,7 +608,7 @@ function historyEntry(recipe, cv, graph, secs, prefix) {
   const d = describeRecipe(recipe), fx = effects(d), c = d.controls[0];
   return { id: Date.now() + Math.random(), thumb: toUrl(cv, 110, 'image/jpeg'), full: toUrl(cv, 320), file: `${prefix || 'ComfyUI'}_${String(S.history.length + 1).padStart(5, '0')}_.png`, graph, secs, key: hashSeed(JSON.stringify([d.seed, d.steps, d.cfg, d.sampler, d.scheduler, d.denoise, d.w, d.h, d.ckpt, d.pos.text, d.neg.text, d.loras, d.controls.map(x => [x.net.name, x.strength, x.start, x.end, x.image?.kind])])),
     seed: d.seed, steps: d.steps, cfg: d.cfg, sampler: d.sampler, scheduler: d.scheduler, denoise: d.denoise, w: d.w, h: d.h, ckpt: d.ckpt, arch: d.arch, pos: d.pos, neg: d.neg, posText: d.pos.text, negText: d.neg.text,
-    loras: d.loras.map(l => ({ name: l.name, strength: l.strength, trigger: l.trigger })), img2img: !!d.source, control: Math.max(0, ...fx.control.map(x => x.amount)), ctlStrength: c?.strength ?? null, ctlStart: c?.start ?? null, ctlEnd: c?.end ?? null, ctlKind: c?.net.kind ?? null };
+    loras: d.loras.map(l => ({ name: l.name, strength: l.strength, trigger: l.trigger })), img2img: !!d.source, control: Math.max(0, ...fx.control.map(x => x.amount)), ctlStrength: c?.strength ?? null, ctlStart: c?.start ?? null, ctlEnd: c?.end ?? null, ctlKind: c?.net.kind ?? null, ...(CFG.historyExtra ? CFG.historyExtra(recipe, graph) : {}) };
 }
 
 /* ── Steps ── */
