@@ -65,3 +65,37 @@ test('Weighted Normal keeps the big faces flat and Smooth bends them', () => {
   for (const n of w[top]) assert.ok(n[1] > 0.999);
   assert.ok(Math.min(...s[top].map(n => n[1])) < 0.95);
 });
+import { PLATFORMS, platformTD, screenPxPerM, sheetNeed, rightSheet, sharpness } from '../labs/trim-sheet/plan.js';
+import { normalReport, idReport, painterReport, layerReport, wearReport, defaultBake, rightMaterials, MAX_H, PLANE_M } from '../labs/trim-sheet/bake.js';
+test('texel density from the platform and the camera', () => {
+  assert.equal(Math.round(screenPxPerM(1440, 60, 2.5)), 499);
+  assert.equal(platformTD('pc3'), 512); assert.equal(platformTD('mobile'), 256); assert.equal(platformTD('pc1'), 1024); assert.equal(platformTD('vr'), 1024);
+  assert.equal(sharpness(128, 499).verdict, 'blurry'); assert.equal(sharpness(2048, 499).verdict, 'wasted'); assert.equal(sharpness(512, 499).verdict, 'sharp');
+  assert.ok(Object.keys(PLATFORMS).length >= 5);
+});
+test('the sheet size follows from the density', () => {
+  assert.equal(sheetNeed(512, 1024).px, 1024); assert.equal(rightSheet(512), 1024);
+  assert.equal(rightSheet(256), 512); assert.equal(rightSheet(1024), 2048);
+  assert.ok(!sheetNeed(1024, 1024).fits); assert.equal(sheetNeed(512, 1024).repeat, 2);
+});
+test('bake rules: selected to active, extrusion, ray distance, size, ID passes', () => {
+  assert.equal(PLANE_M, 2);
+  const good = { ...defaultBake(), type: 'normal', s2a: true, extrusion: MAX_H, rayDist: 0 };
+  assert.ok(normalReport(good).ok);
+  assert.ok(normalReport({ ...good, s2a: false }).flat);
+  assert.deepEqual(normalReport({ ...good, extrusion: 0.02 }).clipped.sort(), ['bevelStone', 'bevelWood', 'beam', 'molding', 'stone'].sort());
+  assert.ok(normalReport({ ...good, rayDist: 0.02 }).lost);
+  assert.ok(!normalReport({ ...good, size: 512 }).ok);
+  const id = { ...good, type: 'diffuse', direct: false, indirect: false, color: true };
+  assert.ok(idReport(id, rightMaterials()).ok);
+  assert.ok(idReport({ ...id, direct: true }, rightMaterials()).lit);
+  assert.deepEqual(idReport(id, { ...rightMaterials(), iron: 'wood' }).wrong, ['iron']);
+});
+test('Painter: distance, ID source, masks and wear', () => {
+  const p = { high: true, maps: { normal: true, wsn: true, id: true, ao: true, curvature: true, position: true, thickness: true }, idSource: 'material', frontal: 0.02, size: 1024 };
+  assert.ok(painterReport(p).ok); assert.ok(painterReport({ ...p, frontal: 0.01 }).clipped); assert.ok(!painterReport({ ...p, idSource: 'vertex' }).ok);
+  assert.ok(!layerReport([{ mat: 'wood', mask: null }]).ok);
+  const L = [{ mat: 'wood', mask: 'wood' }, { mat: 'stone', mask: 'stone' }, { mat: 'iron', mask: 'iron' }];
+  assert.ok(layerReport(L).ok); assert.ok(!layerReport([...L, { mat: 'stone', mask: null }]).ok, 'an unmasked layer on top covers everything');
+  assert.ok(!wearReport(L).ok); assert.ok(wearReport(L.map(l => ({ ...l, edge: true, dirt: true }))).ok);
+});

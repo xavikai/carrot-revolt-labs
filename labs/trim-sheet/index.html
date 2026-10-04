@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#191b1e">
-  <meta name="description" content="Understand trim sheets: read and design a medieval wood and stone sheet, map UV islands to its strips in a Blender-style UV Editor, round edges with bevel strips and Weighted Normal, and reuse one sheet on many props.">
+  <meta name="description" content="Build a trim sheet from scratch and use it: texel density from the platform and the camera, strips planned at real scale, high poly, normal and ID bakes in Blender, ID masks in Substance Painter, then read and design a medieval wood and stone sheet, map UV islands to its strips in a Blender-style UV Editor, round edges with bevel strips and Weighted Normal, and reuse one sheet on many props.">
   <title>Trim Sheet Lab · Carrot Revolt Labs</title>
   <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./style.css?v=1">
+  <link rel="stylesheet" href="./style.css?v=2">
   <link rel="stylesheet" href="../../blender-ui.css?v=2">
   <script type="module">import { blenderize } from '../../blender-ui.js?v=2'; blenderize();</script>
   <link rel="stylesheet" href="../../lab-brief.css?v=3">
@@ -20,7 +20,7 @@
     <section class="lab-top">
       <div class="lab-lead">
         <h1>One texture, <span>a whole castle.</span></h1>
-        <p>A <strong>trim sheet</strong> is a texture made of horizontal strips that repeat along U: planks, stone courses, beams, moldings, iron straps and bevels. Read one, plan one by <strong>texel density</strong>, put UV islands on its strips with <strong>G</strong>, <strong>S</strong> and <strong>R</strong> as in Blender, round edges with a bevel strip and <strong>Weighted Normal</strong>, and texture many props with a single material.</p>
+        <p>A <strong>trim sheet</strong> is a texture made of horizontal strips that repeat along U: planks, stone courses, beams, moldings, iron straps and bevels. Build one from scratch, in production order: choose the <strong>texel density</strong> from the platform and the camera, plan the strips, model the <strong>high poly</strong> at real scale, <strong>bake</strong> it in Blender (normal and ID maps), texture it in <strong>Substance Painter</strong> with ID masks, and then use it: UV islands on the strips with <strong>G</strong>, <strong>S</strong> and <strong>R</strong>, bevel strips with <strong>Weighted Normal</strong>, and many props with a single material.</p>
       </div>
       <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
         <span class="control-label">STAGE</span>
@@ -83,7 +83,7 @@
     <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>Working with trim sheets in Blender</h2><p>Blender has no special trim-sheet mode: it is ordinary UV editing with a plan. These are the tools used in this lab.</p></div><ol><li>Open the sheet in the <strong>UV Editor</strong> (Image › Open) and assign it to one material shared by all the props.</li><li>In Edit Mode, select a band of faces and unwrap it with <strong>UV › Follow Active Quads</strong> (<kbd>U</kbd> in the 3D Viewport) so it comes out straight. <strong>UV › Align Rotation</strong> turns it to the axes.</li><li>Move, scale and rotate islands with <kbd>G</kbd> <kbd>S</kbd> <kbd>R</kbd>; <kbd>X</kbd>/<kbd>Y</kbd> lock an axis and <kbd>Ctrl</kbd> snaps. Scale uniformly to keep one texel density; add-ons such as <strong>Texel Density Checker</strong> measure and set it.</li><li>Islands can overlap and run past the edges of the image in U: the texture repeats. Keep them inside their strip in V.</li><li>For round edges: <strong>Bevel</strong> modifier (Width Type: Width, Segments 1), map the chamfer faces to a bevel strip, then <strong>Shade Smooth</strong> and a <strong>Weighted Normal</strong> modifier (Face Area).</li><li>Trim-sheet add-ons add a <strong>fit to trim</strong> operator that does the scaling and placing in one click.</li></ol></aside>
   </main>
   <footer><span>Carrot Revolt Labs · Trim Sheet Lab</span><a href="https://docs.blender.org/manual/en/latest/editors/uv/index.html" target="_blank" rel="noopener">Blender: UV Editor ↗</a><span>Teaching model · procedural medieval sheet.</span><a href="../../">All labs ↑</a></footer>
-  <script type="module" src="./app.js?v=2"></script>
+  <script type="module" src="./app.js?v=3"></script>
   <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
 </body>
 </html>

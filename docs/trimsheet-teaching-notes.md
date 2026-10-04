@@ -67,3 +67,30 @@ With 8 px of padding after each strip the sheet is used exactly (960 + 64 = 1024
 - **d3**: show mip 3 to 5 with no padding and look at the 3D board from far away: coloured lines appear at the strip edges.
 - **u2**: before staggering, turn the wall to see the continuous vertical joints.
 - **b1–b3**: compare the beam with Flat shading and the planks mapping, then the final version: the difference is a handful of quads and one strip.
+
+## Production order (since the rework)
+
+The lab now follows the order of a real trim sheet: Read → Choose the texel density → Design the sheet → Model the high poly → Bake in Blender → Texture in Painter → UVs → Bevels → Reuse. The old steps keep their ids; the new ones are td1–td2, h1–h2, k1–k3 and s1–s3.
+
+### Choose the texel density (td1, td2) · `plan.js`
+- Screen pixels per metre = H ÷ (2 · d · tan(FOV ÷ 2)); target = the power of two at or just above it.
+- Platforms (H, FOV, usual closest distance d → px/m → target): mobile top-down 1080, 60°, 4 m → 234 → 256 · handheld 720, 60°, 3 m → 208 → 256 · PC/console third person 1440, 60°, 2.5 m → 499 → **512** (the project of the lab) · PC/console first person 1440, 60°, 1.5 m → 831 → 1024 · VR 2200 per eye, 96°, 1 m → 990 → 1024.
+- td1: the 3D view becomes the game camera (the platform's FOV at distance d) and the board is drawn with the chosen density; the loupe shows 25 × 25 cm of planks as texels and as screen pixels: < 0.9 texels per screen pixel is blurry, > 2.2 is wasted memory. Check: three platforms compared, PC third person, 512.
+- td2: rows needed = 1.875 m × density + 8 strips × padding (padding = sheet ÷ 128). 256 px/m → 512 sheet, 512 → 1024, 1024 → 2048. The sheet width ÷ density is the repeat length (2 m in all three). Memory of a set (colour + normal + ORM, compressed, with mips): 512 → 1 MB, 1K → 4 MB, 2K → 16 MB.
+- Talking point: the density is a project decision written in the art bible; budgets often lower it a step; hero props are exceptions.
+
+### Model the high poly (h1, h2)
+- The low poly is one quad of sheet ÷ density = 1024 ÷ 512 = **2 m**, UVs filling 0–1. The high poly is modelled at real scale on top of it, inside the strip bands. h1 starts with a 1 m plane: the bake preview shows the strips twice too big (1024 px/m) and out of their bands.
+- Heights of the high poly above the plane (bake.js `DEPTH`): planks 2 cm, stone 3, beam 2.5, molding **5** (the tallest), iron 1.5, plinth 2, bevels 3.
+- h2: without pieces past the edges the bake has rounded ends at the left and right borders: a seam every 2 m when the sheet repeats. Array modifier, offset 2 m (or copies at ±2 m).
+
+### Bake in Blender (k1–k3)
+- Panel modelled on Render Properties › Bake (Cycles). Rules (bake.js): Selected to Active off → flat normals; Extrusion below a piece's height → its top is cut flat; Max Ray Distance shorter than the extrusion → grooves and joints lost; image ≠ 1024 → wrong density; no overhang → seam.
+- k1 engine preview is Blender (OpenGL). k2 targets Unreal (DirectX): +Y reads inverted (bevels look dented); Swizzle G −Y fixes it. The preview flips G as the engine would.
+- k3: ID map = Diffuse with only Color (Direct and Indirect off), one flat colour per material: Wood red, Stone green, Iron blue. Starts with the beam without material (default grey), the iron strap as wood and the stone bevel as wood.
+
+### Texture in Painter (s1–s3)
+- s1 Bake Mesh Maps: load the high poly, maps Normal, ID, AO, Curvature; ID Color Source Material Color (Vertex Color gives an empty ID); Max Frontal Distance is relative to the mesh size (diagonal 2.83 m): 0.01 → 2.8 cm (cuts the molding), 0.02 → 5.7 cm.
+- s2 Fill layers (Oak Planks, Sandstone Blocks, Wrought Iron) with masks by Color Selection on the ID colours. An unmasked layer on top covers everything.
+- s3 Edge wear from Curvature, Dirt from AO, export preset Unreal Engine (Packed): BaseColor, Normal DirectX, OcclusionRoughnessMetallic.
+- Simplifications: AO and curvature come from the height field of the sheet (blurred differences), not ray-traced; Painter materials reuse the painted colours of the sheet.
