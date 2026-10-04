@@ -1,5 +1,5 @@
 // Carrot Revolt Labs · ComfyUI Lab · a ComfyUI-style interface on top of a model-free simulator.
-import { NODES, CATEGORIES, TYPE_COLOR, CHECKPOINTS, LORAS, CONTROLNETS, IMAGES, makeNode, makeLink, connect, canConnect, validate, cacheKeys, execute, describeRecipe, effects, defaultGraph } from './engine.js';
+import { NODES, CATEGORIES, TYPE_COLOR, CHECKPOINTS, LORAS, CONTROLNETS, IMAGES, makeNode, makeLink, connect, canConnect, validate, cacheKeys, execute, describeRecipe, effects, defaultGraph, outType, inSpec, widgetSpec, WIDGET_TYPE, ENV, isMissing, registerSubgraphs, isSubgraphNode, SUBGRAPH, makeSubgraph } from './engine.js';
 import { renderValue, renderRecipe, hashSeed } from './render.js';
 import { DOCS, UI, KEYS } from './texts.js';
 // A lab is this interface plus a config module (stages, templates, texts, extra nodes). Default: the ComfyUI Lab.
@@ -20,10 +20,12 @@ const store = { get(k, d) { try { const v = localStorage.getItem(KEY + k); retur
 /* ── State ── */
 const S = {
   stage: Math.min(STAGES.length - 1, store.get('stage', 0)), step: 0,
-  graph: null, flags: {}, history: [], sel: new Set(), clip: null,
+  root: null, view: null, flags: {}, history: [], sel: new Set(), clip: null,
   zoom: 1, panX: 0, panY: 0, panel: null, running: false, cancel: false, lastKeys: {}, images: {}, undo: [], redo: [],
   hideLinks: false, info: null, done: store.get('done', {}),
 };
+// S.graph is what the canvas shows: the workflow, or the subgraph open in it. Assigning it loads a new workflow.
+Object.defineProperty(S, 'graph', { get() { return (S.view && S.root?.subgraphs?.[S.view]) || S.root; }, set(v) { S.root = v; S.view = null; } });
 const stage = () => STAGES[S.stage], step = () => stage().steps[S.step];
 const sk = () => `${stage().id}:${S.step}`;
 S.step = Math.min(stage().steps.length - 1, store.get(`step:${stage().id}`, 0));
@@ -31,9 +33,11 @@ function loadStep() {
   S.graph = store.get(`graph:${sk()}`, null) || step().starter();
   S.graph.groups ||= [];
   S.flags = store.get(`flags:${sk()}`, {}); S.history = store.get(`hist:${sk()}`, []);
-  S.sel.clear(); S.undo = []; S.redo = []; S.images = {}; S.lastKeys = {};
+  S.sel.clear(); S.undo = []; S.redo = []; S.images = {}; S.lastKeys = {}; syncEnv();
 }
-const save = () => { store.set(`graph:${sk()}`, S.graph); store.set(`flags:${sk()}`, S.flags); store.set(`hist:${sk()}`, S.history.slice(-24)); store.set('stage', S.stage); store.set(`step:${stage().id}`, S.step); store.set('done', S.done); };
+// What is installed in this step: a step can start without some custom node packs or model files (see the Manager).
+function syncEnv() { const st = step(); ENV.missingPacks = new Set((st.missing || []).filter(p => !S.flags[`ready_${p}`])); ENV.missingFiles = new Set((st.missingModels || []).filter(f => !S.flags[`dl_${f}`])); }
+const save = () => { store.set(`graph:${sk()}`, S.root); store.set(`flags:${sk()}`, S.flags); store.set(`hist:${sk()}`, S.history.slice(-24)); store.set('stage', S.stage); store.set(`step:${stage().id}`, S.step); store.set('done', S.done); };
 const nodeById = id => S.graph.nodes.find(n => n.id === id);
 const flag = k => { if (!S.flags[k]) { S.flags[k] = true; save(); checkGoals(); } };
 
@@ -67,12 +71,13 @@ function shell() {
     <ol class="guide" id="guide" aria-label="Steps"></ol>
     <section class="below"><div class="step-card" id="step-card"></div></section>
     <section class="cy" id="workspace" aria-label="ComfyUI-style workspace">
-      <div class="cy-top"><span class="cy-logo" aria-hidden="true">C</span><nav class="cy-menu"><button type="button" data-menu="workflow">Workflow</button><button type="button" data-menu="edit">Edit</button><button type="button" data-menu="help">Help</button></nav><div class="cy-tabs"><span class="cy-tab on"><span id="wf-name">Unsaved Workflow</span><i id="wf-dirty">•</i></span><span class="cy-tab add">+</span></div><span class="cy-spacer"></span>
+      <div class="cy-top"><span class="cy-logo" aria-hidden="true">C</span><nav class="cy-menu"><button type="button" data-menu="workflow">Workflow</button><button type="button" data-menu="edit">Edit</button><button type="button" data-menu="help">Help</button>${CFG.PACKS || CFG.MODELS ? '<button type="button" class="cy-mgr" data-manager>Manager</button>' : ''}</nav><div class="cy-tabs"><span class="cy-tab on"><span id="wf-name">Unsaved Workflow</span><i id="wf-dirty">•</i></span><span class="cy-tab add">+</span></div><span class="cy-spacer"></span>
         <div class="cy-actionbar"><span class="cy-grip">⋮⋮</span><div class="cy-run"><button type="button" class="run" id="run" title="Run (Ctrl Enter)">${ICON.play}<span>Run</span></button><button type="button" class="run-more" title="Run options">▾</button></div><label class="cy-batch" title="Batch count"><input type="number" id="batch" min="1" max="8" value="1"></label><button type="button" class="cy-stop" id="stop" title="Interrupt (Ctrl Alt Enter)" disabled>${ICON.stop}</button><span class="cy-qcount" id="qcount" title="Queue size">0</span></div></div>
       <div class="cy-body">
         <nav class="cy-side" aria-label="Sidebar">${[['queue', 'Queue', 'Q'], ['nodes', 'Node Library', 'N'], ['models', 'Model Library', 'M'], ['workflows', 'Workflows', 'W'], ['templates', 'Templates', '']].map(([k, t, h]) => `<button type="button" data-panel="${k}" title="${t}${h ? ` (${h})` : ''}">${ICON[k]}<span>${t.split(' ')[0]}</span></button>`).join('')}<span class="cy-side-spacer"></span><button type="button" title="Settings" disabled>${ICON.gear}</button></nav>
         <aside class="cy-panel" id="panel" hidden></aside>
         <div class="cy-canvas" id="canvas" tabindex="0" aria-label="Graph canvas">
+          <nav class="cy-crumbs" id="crumbs" hidden></nav>
           <div class="cy-world" id="world"><div id="groups"></div><svg class="cy-links" id="links" width="10" height="10" aria-hidden="true"></svg><div id="nodes"></div></div>
           <svg class="cy-overlay" id="overlay" aria-hidden="true"></svg>
           <div class="cy-toolbox" id="toolbox" hidden><button type="button" data-tb="color" title="Color">${ICON.palette}</button><button type="button" data-tb="bypass" title="Bypass (Ctrl B)">${ICON.bypass}</button><button type="button" data-tb="info" title="Node info">${ICON.info}</button><button type="button" data-tb="delete" title="Delete">${ICON.trash}</button></div>
@@ -105,7 +110,7 @@ function renderCard() {
 function renderGoals() { const el = $('#goals'); if (el) el.innerHTML = step().goals.map((g, i) => `<li class="${goalState[i] ? 'ok' : ''} ${g.optional ? 'opt' : ''}"><i aria-hidden="true">${goalState[i] ? '✓' : ''}</i><span>${T(g.text)}${g.optional ? ` <em>(${esc(U('optional'))})</em>` : ''}</span></li>`).join(''); }
 function checkGoals() {
   const ctx = { flags: S.flags, history: S.history };
-  goalState = step().goals.map(g => { try { return !!g.test(S.graph, ctx); } catch { return false; } });
+  goalState = step().goals.map(g => { try { return !!g.test(S.root, ctx); } catch { return false; } });
   const ok = step().goals.every((g, i) => g.optional || goalState[i]);
   if (ok !== !!S.done[sk()]) { S.done[sk()] = ok; save(); renderStages(); renderGuide(); renderCard(); } else renderGoals();
 }
@@ -115,31 +120,46 @@ function renderConcepts() {
 
 /* ── Canvas rendering ── */
 const widgetDefs = n => (NODES[n.type].widgets || []);
-const prec = w => w.kind === 'int' ? 0 : w.step >= 1 ? 0 : w.step >= .1 ? 1 : w.step >= .01 ? 2 : 3;
+const prec = w => w.kind === 'int' ? 0 : w.step >= 1 ? 0 : w.step >= .1 ? 1 : w.step >= .01 ? 2 : w.step >= .001 ? 3 : Math.min(7, Math.ceil(-Math.log10(w.step)));
 const fmtW = (w, v) => w.kind === 'int' || w.kind === 'float' ? (w.kind === 'int' ? String(Math.round(v)) : Number(v).toFixed(prec(w))) : String(v);
 function widgetHtml(n, w) {
   const v = n.widgets[w.name], id = `${esc(n.id)}|${esc(w.name)}`;
-  if (w.kind === 'text') return `<textarea class="w-text" data-w="${id}" spellcheck="false" placeholder="${esc(w.name)}">${esc(v)}</textarea>`;
+  // Every widget has a socket: link an Int, a String… to it and the widget shows the link instead of its value.
+  const wt = WIDGET_TYPE[w.kind], linked = wt && S.graph.links.some(l => l.to === n.id && l.input === w.name);
+  const dot = wt && !NODES[n.type].noWidgetSockets ? `<i class="dot wdot${linked ? ' on' : ''}" style="--c:${TYPE_COLOR[wt] || '#aaa'}" data-slot="${esc(n.id)}|in|${esc(w.name)}"></i>` : '';
+  if (linked) return `<div class="w linked" data-wl="${id}">${dot}<span class="wl">${esc(w.name)}</span><span class="wv">⟵ link</span></div>`;
+  if (w.kind === 'text') return `<div class="w-tw">${dot}<textarea class="w-text" data-w="${id}" spellcheck="false" placeholder="${esc(w.name)}">${esc(v)}</textarea></div>`;
   if (w.kind === 'button') return `<button type="button" class="w-btn" data-wbtn="${id}">${esc(w.value)}</button>`;
   const arrows = w.kind !== 'string';
-  return `<div class="w" data-w="${id}" data-kind="${w.kind}">${arrows ? '<i class="wa l" data-dir="-1">◀</i>' : ''}<span class="wl">${esc(w.name)}</span><span class="wv">${esc(fmtW(w, v))}</span>${arrows ? '<i class="wa r" data-dir="1">▶</i>' : ''}</div>`;
+  return `<div class="w" data-w="${id}" data-kind="${w.kind}">${dot}${arrows ? '<i class="wa l" data-dir="-1">◀</i>' : ''}<span class="wl">${esc(w.name)}</span><span class="wv">${esc(fmtW(w, v))}</span>${arrows ? '<i class="wa r" data-dir="1">▶</i>' : ''}</div>`;
 }
 function nodeHtml(n) {
-  const def = NODES[n.type], ins = def.inputs || [], outs = def.outputs || [], rows = Math.max(ins.length, outs.length);
-  const linked = name => S.graph.links.some(l => l.to === n.id && l.input === name), used = i => S.graph.links.some(l => l.from === n.id && l.out === i);
+  const def = NODES[n.type] || { title: n.type, cat: [], w: 260, inputs: [], outputs: [] }, ins = def.inputs || [], outs = def.outputs || [], rows = Math.max(ins.length, outs.length);
+  const bnd = S.view ? S.graph : null;
+  const linked = name => S.graph.links.some(l => l.to === n.id && l.input === name) || !!bnd?.inputs.some(i => i.targets.some(t => t.id === n.id && t.input === name)), used = i => S.graph.links.some(l => l.from === n.id && l.out === i) || !!bnd?.outputs.some(o => o.from.id === n.id && o.from.out === i);
+  const tcol = t => TYPE_COLOR[t] || '#aaa';
+  if (def.reroute) { const t = outType(S.graph, n.id, 0); return `<article class="cn reroute${S.sel.has(n.id) ? ' sel' : ''}${n.mode === 2 ? ' mute' : ''}" data-node="${esc(n.id)}" style="left:${n.x}px;top:${n.y}px"><i class="dot${linked(ins[0].name) ? ' on' : ''}" style="--c:${tcol(t)}" data-slot="${esc(n.id)}|in|${esc(ins[0].name)}"></i><i class="dot${used(0) ? ' on' : ''}" style="--c:${tcol(t)}" data-slot="${esc(n.id)}|out|0"></i></article>`; }
   const col = n.color && COLORS[n.color];
   const style = `left:${n.x}px;top:${n.y}px;width:${def.w}px;${col ? `--title:${col[0]};--body:${col[1]};` : ''}`;
   let slots = '';
   for (let i = 0; i < rows; i++) {
     const a = ins[i], b = outs[i];
-    slots += `<div class="slot-row">${a ? `<span class="slot in${a.optional ? ' opt' : ''}"><i class="dot${linked(a.name) ? ' on' : ''}" style="--c:${TYPE_COLOR[a.type]}" data-slot="${esc(n.id)}|in|${esc(a.name)}"></i>${esc(a.name)}</span>` : '<span></span>'}${b ? `<span class="slot out">${esc(b.name)}<i class="dot${used(i) ? ' on' : ''}" style="--c:${TYPE_COLOR[b.type]}" data-slot="${esc(n.id)}|out|${i}"></i></span>` : ''}</div>`;
+    slots += `<div class="slot-row">${a ? `<span class="slot in${a.optional ? ' opt' : ''}"><i class="dot${linked(a.name) ? ' on' : ''}" style="--c:${tcol(a.type)}" data-slot="${esc(n.id)}|in|${esc(a.name)}"></i>${esc(a.name)}</span>` : '<span></span>'}${b ? `<span class="slot out">${esc(b.name)}<i class="dot${used(i) ? ' on' : ''}" style="--c:${tcol(b.type === '*' ? outType(S.graph, n.id, i) : b.type)}" data-slot="${esc(n.id)}|out|${i}"></i></span>` : ''}</div>`;
   }
   const img = def.preview ? `<div class="n-img" data-img="${esc(n.id)}">${n.type === 'LoadImage' ? '' : '<span>—</span>'}</div>` : '';
   if (n.collapsed) return `<article class="cn collapsed${S.sel.has(n.id) ? ' sel' : ''}${n.mode === 4 ? ' bypass' : ''}${n.mode === 2 ? ' mute' : ''}" data-node="${esc(n.id)}" style="${style};width:auto"><header class="cn-title"><i class="cn-dot" data-collapse></i><span>${esc(n.title || def.title)}</span></header></article>`;
-  return `<article class="cn${S.sel.has(n.id) ? ' sel' : ''}${n.mode === 4 ? ' bypass' : ''}${n.mode === 2 ? ' mute' : ''}" data-node="${esc(n.id)}" style="${style}"><header class="cn-title"><i class="cn-dot" data-collapse title="Collapse (Alt C)"></i><span class="cn-name">${esc(n.title || def.title)}</span>${def.custom ? `<span class="cn-src" title="Custom node pack: ${esc(def.custom)}">🦊 ${esc(def.custom)}</span>` : ''}<span class="cn-badge" hidden></span></header><div class="cn-prog"><i></i></div><div class="cn-body">${slots}<div class="cn-widgets">${widgetDefs(n).map(w => widgetHtml(n, w)).join('')}</div>${img}</div></article>`;
+  const miss = isMissing(n), sg = isSubgraphNode(n);
+  return `<article class="cn${S.sel.has(n.id) ? ' sel' : ''}${n.mode === 4 ? ' bypass' : ''}${n.mode === 2 ? ' mute' : ''}${miss ? ' missing' : ''}${sg ? ' sgnode' : ''}" data-node="${esc(n.id)}" style="${style}"><header class="cn-title"><i class="cn-dot" data-collapse title="Collapse (Alt C)"></i><span class="cn-name">${esc(n.title || def.title)}</span>${def.custom ? `<span class="cn-src" title="Custom node pack: ${esc(def.custom)}">🦊 ${esc(def.custom)}</span>` : ''}${sg ? '<button type="button" class="cn-open" data-opensg title="Open subgraph">⧉</button>' : ''}<span class="cn-badge" hidden></span></header><div class="cn-prog"><i></i></div><div class="cn-body">${miss ? `<p class="cn-miss">${esc(U('nodeMissing', { t: n.type }))}</p>` : ''}${slots}<div class="cn-widgets">${widgetDefs(n).map(w => widgetHtml(n, w)).join('')}</div>${img}</div></article>`;
+}
+// Inside a subgraph: its inputs and outputs, drawn as two fixed nodes at the edges.
+function boundaryHtml() {
+  const sg = S.graph, io = sg.io || { inX: -300, outX: 1600, y: 0 }, tc = t => TYPE_COLOR[t] || '#aaa';
+  const box = (id, title, x, rows) => `<article class="cn virtual" data-node="${id}" style="left:${x}px;top:${io.y}px;width:200px"><header class="cn-title"><span class="cn-name">${title}</span></header><div class="cn-body">${rows}</div></article>`;
+  return box('__in', 'Inputs', io.inX, sg.inputs.map((i, k) => `<div class="slot-row"><span></span><span class="slot out">${esc(i.name)}<i class="dot on" style="--c:${tc(i.type)}" data-slot="__in|out|${k}"></i></span></div>`).join(''))
+    + box('__out', 'Outputs', io.outX, sg.outputs.map(o => `<div class="slot-row"><span class="slot in"><i class="dot on" style="--c:${tc(o.type)}" data-slot="__out|in|${esc(o.name)}"></i>${esc(o.name)}</span></div>`).join(''));
 }
 function renderGroups() { $('#groups').innerHTML = (S.graph.groups || []).map((g, i) => `<div class="cg" data-group="${i}" style="left:${g.x}px;top:${g.y}px;width:${g.w}px;height:${g.h}px;--g:${g.color}"><div class="cg-title" data-gtitle="${i}">${esc(g.title)}</div></div>`).join(''); }
-function renderGraph() { $('#nodes').innerHTML = S.graph.nodes.map(nodeHtml).join(''); renderGroups(); paintImages(); requestAnimationFrame(() => { drawLinks(); toolbox(); minimap(); }); }
+function renderGraph() { registerSubgraphs(S.root); $('#nodes').innerHTML = S.graph.nodes.map(nodeHtml).join('') + (S.view ? boundaryHtml() : ''); renderCrumbs(); renderGroups(); paintImages(); requestAnimationFrame(() => { drawLinks(); toolbox(); minimap(); }); }
 function paintImages() {
   for (const el of $$('[data-img]')) {
     const n = nodeById(el.dataset.img); if (!n) continue;
@@ -204,10 +224,11 @@ function drawLinks() {
   let html = '';
   if (!S.hideLinks) for (const [i, l] of S.graph.links.entries()) {
     const a = slotPos(l.from, 'out', l.out), b = slotPos(l.to, 'in', l.input); if (!a || !b) continue;
-    const type = NODES[nodeById(l.from).type].outputs[l.out].type, col = TYPE_COLOR[type], dim = nodeById(l.from).mode === 2 || nodeById(l.to).mode === 2;
+    const type = outType(S.graph, l.from, l.out), col = TYPE_COLOR[type] || '#aaa', dim = nodeById(l.from)?.mode === 2 || nodeById(l.to)?.mode === 2;
     const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
     html += `<path class="lk-back" d="${spline(a, b)}"/><path class="lk${dim ? ' dim' : ''}" d="${spline(a, b)}" stroke="${col}"/><circle class="lk-mid" cx="${mid.x}" cy="${mid.y}" r="5" fill="${col}" data-link="${i}"/>`;
   }
+  if (S.view) { const sg = S.graph; sg.inputs.forEach((inp, k) => inp.targets.forEach(t => { const a = slotPos('__in', 'out', k), b = slotPos(t.id, 'in', t.input); if (a && b) html += `<path class="lk-back" d="${spline(a, b)}"/><path class="lk" d="${spline(a, b)}" stroke="${TYPE_COLOR[inp.type] || '#aaa'}"/>`; })); sg.outputs.forEach(o => { const a = slotPos(o.from.id, 'out', o.from.out), b = slotPos('__out', 'in', o.name); if (a && b) html += `<path class="lk-back" d="${spline(a, b)}"/><path class="lk" d="${spline(a, b)}" stroke="${TYPE_COLOR[o.type] || '#aaa'}"/>`; }); }
   if (dragLink?.to) { const a = dragLink.dir === 'out' ? slotPos(dragLink.id, 'out', dragLink.key) : dragLink.to, b = dragLink.dir === 'out' ? dragLink.to : slotPos(dragLink.id, 'in', dragLink.key); if (a && b) html += `<path class="lk drag" d="${spline(a, b)}" stroke="${TYPE_COLOR[dragLink.type] || '#9a9'}"/>`; }
   $('#links').innerHTML = html;
 }
@@ -239,8 +260,8 @@ const toast = (msg, kind = '') => { const t = $('#toast'); t.innerHTML = msg; t.
 const log = (msg, kind = '') => { const el = $('#log'); el.insertAdjacentHTML('beforeend', `<p class="${kind}">${msg}</p>`); while (el.children.length > 6) el.firstChild.remove(); el.classList.add('show'); clearTimeout(log.t); log.t = setTimeout(() => el.classList.remove('show'), 9000); };
 
 /* ── Editing ── */
-function snapshot() { S.undo.push(clone(S.graph)); if (S.undo.length > 60) S.undo.shift(); S.redo.length = 0; $('#wf-dirty').hidden = false; }
-function restore(from, to) { if (!from.length) return; to.push(clone(S.graph)); S.graph = from.pop(); S.sel.clear(); changed(); }
+function snapshot() { S.undo.push(clone(S.root)); if (S.undo.length > 60) S.undo.shift(); S.redo.length = 0; $('#wf-dirty').hidden = false; }
+function restore(from, to) { if (!from.length) return; to.push(clone(S.root)); S.root = from.pop(); if (S.view && !S.root.subgraphs?.[S.view]) S.view = null; S.sel.clear(); changed(); }
 function changed(structure = true) { save(); if (structure) renderGraph(); else { drawLinks(); minimap(); } checkGoals(); }
 let uid = Date.now() % 100000;
 function addNode(type, x, y, values) { const n = makeNode(type, Math.round(x), Math.round(y), values, `${type}-${uid++}`); S.graph.nodes.push(n); S.sel = new Set([n.id]); return n; }
@@ -258,6 +279,66 @@ function group() {
   S.graph.groups.push({ title: 'Group', x: b.x0 - 14, y: b.y0 - 46, w: b.x1 - b.x0 + 28, h: b.y1 - b.y0 + 60, color: '#3f789e' }); changed(); toast(U('grouped'));
 }
 
+/* ── Reroutes and subgraphs ── */
+function addReroute(i, x, y) {
+  const l = S.graph.links[i]; if (!l) return; snapshot(); const at = toWorld(x, y), r = addNode('Reroute', at.x - 12, at.y - 10);
+  S.graph.links.splice(i, 1); S.graph.links.push(makeLink(l.from, l.out, r.id, 'input'), makeLink(r.id, 0, l.to, l.input)); changed();
+}
+function renderCrumbs() {
+  const c = $('#crumbs'); if (!c) return; c.hidden = !S.view; if (!S.view) return;
+  c.innerHTML = `<button type="button" data-crumb>${esc($('#wf-name')?.textContent || 'Workflow')}</button><span>›</span><b>${esc(S.graph.name)}</b><button type="button" class="exit" data-crumb>${esc(U('exitSubgraph'))}</button>`;
+  c.onclick = e => { if (e.target.closest('[data-crumb]')) { S.view = null; S.sel.clear(); renderGraph(); requestAnimationFrame(() => fitView()); } };
+}
+function openSubgraph(id) {
+  const n = nodeById(id); if (!isSubgraphNode(n)) return;
+  S.view = n.type.slice(SUBGRAPH.length); S.graph.groups ||= []; S.sel.clear(); renderGraph(); requestAnimationFrame(() => fitView()); flag('enteredSubgraph');
+}
+// Convert to Subgraph: the selected nodes go inside; links that cross the edge become its inputs and outputs.
+function convertToSubgraph(ids) {
+  const g = S.root, set = new Set(ids), inner = g.nodes.filter(n => set.has(n.id));
+  if (S.view || inner.some(isSubgraphNode)) { toast(U('subgraphNested'), 'bad'); return; }
+  snapshot();
+  const nid = makeSubgraph(g, ids, { sid: `sg${Date.now().toString(36)}${uid++}`, nid: `Subgraph-${uid++}` });
+  registerSubgraphs(g); S.sel = new Set([nid]); changed(); flag('subgraphMade'); toast(U('subgraphMade'));
+}
+function unpackSubgraph(id) {
+  const g = S.root, n = nodeById(id); if (!isSubgraphNode(n) || S.view) return;
+  const sid = n.type.slice(SUBGRAPH.length), sg = g.subgraphs[sid], map = {}; snapshot();
+  const dx = n.x - Math.min(...sg.nodes.map(m => m.x)), dy = n.y - Math.min(...sg.nodes.map(m => m.y));
+  for (const m of sg.nodes) { const mid = `${m.type}-${uid++}`; map[m.id] = mid; g.nodes.push({ ...clone(m), id: mid, x: m.x + dx, y: m.y + dy }); }
+  const add = [...sg.links.map(l => makeLink(map[l.from], l.out, map[l.to], l.input))];
+  for (const l of g.links.filter(l => l.to === id)) for (const t of sg.inputs.find(x => x.name === l.input)?.targets || []) add.push(makeLink(l.from, l.out, map[t.id], t.input));
+  for (const l of g.links.filter(l => l.from === id)) { const o = sg.outputs[l.out]; if (o) add.push(makeLink(map[o.from.id], o.from.out, l.to, l.input)); }
+  g.links = g.links.filter(l => l.from !== id && l.to !== id).concat(add); g.nodes = g.nodes.filter(x => x.id !== id);
+  if (!g.nodes.some(x => x.type === n.type)) delete g.subgraphs[sid];
+  S.sel = new Set(Object.values(map)); changed(); flag('unpacked');
+}
+
+/* ── Manager: custom node packs and models, as on a fresh install ── */
+function packUsed(p) { const all = [...S.root.nodes, ...Object.values(S.root.subgraphs || {}).flatMap(x => x.nodes)]; return all.some(n => NODES[n.type]?.custom === p); }
+function openManager(tab = 'nodes') {
+  flag('managerOpen'); const d = $('#dialog'); d.hidden = false;
+  const packs = CFG.PACKS || [], models = CFG.MODELS || [], pending = packs.some(p => S.flags[`inst_${p.id}`] && !S.flags[`ready_${p.id}`]);
+  const state = p => !ENV.missingPacks.has(p.id) ? 'ready' : S.flags[`inst_${p.id}`] ? 'pending' : 'missing';
+  const list = tab === 'models' ? models : tab === 'missing' ? packs.filter(p => state(p) !== 'ready' && packUsed(p.id)) : packs;
+  const row = p => { const st = state(p); return `<li><div><b>${esc(p.title)}</b><small>${esc(p.author || '')}${p.nodes ? ` · ${p.nodes.length} node${p.nodes.length > 1 ? 's' : ''}` : ''}</small><p>${esc(T(p.desc))}</p></div>${st === 'ready' ? '<span class="mg-ok">Installed ✓</span>' : st === 'pending' ? '<span class="mg-pend">Restart required</span>' : `<button type="button" class="primary" data-install="${esc(p.id)}">Install</button>`}</li>`; };
+  const mrow = m => { const have = !ENV.missingFiles.has(m.file); return `<li><div><b>${esc(m.file)}</b><small>models/${esc(m.dir)} · ${esc(m.size || '')}</small><p>${esc(T(m.desc))}</p></div>${have ? '<span class="mg-ok">Installed ✓</span>' : `<button type="button" class="primary" data-dl="${esc(m.file)}">Download</button>`}</li>`; };
+  d.innerHTML = `<div class="dlg manager"><header><b>ComfyUI Manager</b><button type="button" data-close>×</button></header><nav class="mg-tabs">${[['nodes', 'Custom Nodes Manager'], ['missing', 'Install Missing Custom Nodes'], ['models', 'Model Manager']].filter(([k]) => k !== 'models' || models.length).map(([k, t]) => `<button type="button" data-mtab="${k}" class="${k === tab ? 'on' : ''}">${t}</button>`).join('')}</nav><ul class="mg-list">${list.map(tab === 'models' ? mrow : row).join('') || `<li class="mg-none">${esc(U('mgNone'))}</li>`}</ul><p class="dlg-hint">${esc(U('mgNote'))}</p><footer>${pending ? `<span class="mg-pend">${esc(U('restartNeeded'))}</span>` : '<span></span>'}<button type="button" class="${pending ? 'primary' : ''}" data-restart>Restart</button></footer></div>`;
+  d.onclick = e => {
+    if (e.target.closest('[data-close]') || e.target === d) { closeDialog(); return; }
+    const t = e.target.closest('[data-mtab]'); if (t) { openManager(t.dataset.mtab); return; }
+    const i = e.target.closest('[data-install]'); if (i) { S.flags[`inst_${i.dataset.install}`] = true; save(); flag('installed'); openManager(tab); return; }
+    const m = e.target.closest('[data-dl]'); if (m) { const f = m.dataset.dl, mm = models.find(x => x.file === f); S.flags[`dl_${f}`] = true; syncEnv(); save(); flag('downloaded'); toast(U('downloaded', { d: mm.dir, f })); renderGraph(); openManager(tab); return; }
+    if (e.target.closest('[data-restart]')) { for (const p of packs) if (S.flags[`inst_${p.id}`]) S.flags[`ready_${p.id}`] = true; syncEnv(); save(); closeDialog(); flag('restarted'); renderGraph(); toast(U('restarted')); }
+  };
+}
+function missingDialog() {
+  const all = [...S.root.nodes, ...Object.values(S.root.subgraphs || {}).flatMap(x => x.nodes)].filter(isMissing); if (!all.length) return;
+  const types = [...new Set(all.map(n => n.type))], d = $('#dialog'); d.hidden = false;
+  d.innerHTML = `<div class="dlg error"><header><b>${esc(U('missingTitle'))}</b><button type="button" data-close>×</button></header><p class="dlg-hint">${esc(U('missingBody'))}</p><ul>${types.map(t => `<li><b>${esc(t)}</b> <small>(${esc(NODES[t].custom)})</small></li>`).join('')}</ul><footer><button type="button" data-close>Close</button>${CFG.PACKS ? '<button type="button" class="primary" data-open-mgr>Open Manager</button>' : ''}</footer></div>`;
+  d.onclick = e => { if (e.target.closest('[data-close]') || e.target === d) closeDialog(); if (e.target.closest('[data-open-mgr]')) openManager('missing'); };
+}
+
 /* ── Interaction ── */
 let mouse = { x: 0, y: 0, cx: 0, cy: 0 }, drag = null, space = false;
 const toWorld = (cx, cy) => { const r = worldRect(); return { x: (cx - r.left) / S.zoom, y: (cy - r.top) / S.zoom }; };
@@ -270,16 +351,17 @@ function setupCanvas() {
     if (e.target.closest('.cy-controls, .cy-minimap, .cy-toolbox, .cy-info, .cy-log')) return;
     if (e.button === 1 || (e.button === 0 && space)) { e.preventDefault(); drag = { kind: 'pan', x: e.clientX, y: e.clientY, px: S.panX, py: S.panY }; return; }
     if (e.button !== 0) return;
-    if (e.target.closest('textarea, .w-btn')) return;
-    const w = e.target.closest('.w');
-    if (w) { e.preventDefault(); widgetDown(e, w); return; }
+    if (e.target.closest('.cn.virtual')) return;
     const dot = e.target.closest('[data-slot]');
     if (dot) {
       e.preventDefault(); const [id, dir, key] = dot.dataset.slot.split('|');
-      if (dir === 'in') { const l = S.graph.links.find(x => x.to === id && x.input === key); if (l) { snapshot(); S.graph.links = S.graph.links.filter(x => x !== l); dragLink = { id: l.from, dir: 'out', key: l.out, type: NODES[nodeById(l.from).type].outputs[l.out].type, to: toWorld(e.clientX, e.clientY), picked: true }; renderGraph(); return; } dragLink = { id, dir, key, type: NODES[nodeById(id).type].inputs.find(i => i.name === key).type, to: toWorld(e.clientX, e.clientY) }; }
-      else dragLink = { id, dir, key: Number(key), type: NODES[nodeById(id).type].outputs[key].type, to: toWorld(e.clientX, e.clientY) };
+      if (dir === 'in') { const l = S.graph.links.find(x => x.to === id && x.input === key); if (l) { snapshot(); dragLink = { id: l.from, dir: 'out', key: l.out, type: outType(S.graph, l.from, l.out), to: toWorld(e.clientX, e.clientY), picked: true }; S.graph.links = S.graph.links.filter(x => x !== l); renderGraph(); return; } dragLink = { id, dir, key, type: inSpec(S.graph, id, key).type, to: toWorld(e.clientX, e.clientY) }; }
+      else dragLink = { id, dir, key: Number(key), type: outType(S.graph, id, Number(key)), to: toWorld(e.clientX, e.clientY) };
       highlight(); return;
     }
+    if (e.target.closest('textarea, .w-btn, .w.linked')) return;
+    const w = e.target.closest('.w');
+    if (w) { e.preventDefault(); widgetDown(e, w); return; }
     const mid = e.target.closest('[data-link]');
     if (mid) { linkMenu(e.clientX, e.clientY, Number(mid.dataset.link)); return; }
     const gt = e.target.closest('[data-gtitle]');
@@ -290,6 +372,7 @@ function setupCanvas() {
     if (nodeEl) {
       e.preventDefault(); const id = nodeEl.dataset.node;
       if (e.target.closest('[data-collapse]')) { snapshot(); nodeById(id).collapsed = !nodeById(id).collapsed; changed(); return; }
+      if (e.target.closest('[data-opensg]')) { openSubgraph(id); return; }
       if (e.ctrlKey || e.shiftKey) { S.sel.has(id) ? S.sel.delete(id) : S.sel.add(id); }
       else if (!S.sel.has(id)) S.sel = new Set([id]);
       $$('.cn').forEach(el => el.classList.toggle('sel', S.sel.has(el.dataset.node))); toolbox(); minimap(); if (S.info) showInfo(id);
@@ -320,8 +403,9 @@ function setupCanvas() {
   });
   cv.addEventListener('dblclick', e => {
     const gt = e.target.closest('[data-gtitle]'); if (gt) { const g = S.graph.groups[gt.dataset.gtitle]; const name = prompt('Group title', g.title); if (name) { snapshot(); g.title = name; changed(); } return; }
-    const title = e.target.closest('.cn-name'); if (title) { const n = nodeById(title.closest('.cn').dataset.node); const name = prompt('Title', n.title || NODES[n.type].title); if (name != null) { snapshot(); n.title = name.trim() || null; changed(); } return; }
-    if (e.target.closest('.cn, .cy-controls, .cy-minimap, .cy-toolbox, .cy-info')) return;
+    const title = e.target.closest('.cn-name'); if (title) { const n = nodeById(title.closest('.cn').dataset.node); const name = prompt('Title', n.title || NODES[n.type].title); if (name != null) { snapshot(); n.title = name.trim() || null; if (isSubgraphNode(n) && n.title) S.root.subgraphs[n.type.slice(SUBGRAPH.length)].name = n.title; changed(); } return; }
+    const sgEl = e.target.closest('.cn.sgnode'); if (sgEl) { openSubgraph(sgEl.dataset.node); return; }
+    if (e.target.closest('.cn, .cy-controls, .cy-minimap, .cy-toolbox, .cy-info, .cy-crumbs')) return;
     openSearch(e.clientX, e.clientY, {});
   });
   cv.addEventListener('wheel', e => { e.preventDefault(); const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, old = S.zoom; S.zoom = Math.max(.1, Math.min(4, S.zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1))); S.panX = x - (x - S.panX) * S.zoom / old; S.panY = y - (y - S.panY) * S.zoom / old; applyView(); flag('zoomed'); }, { passive: false });
@@ -329,7 +413,7 @@ function setupCanvas() {
   cv.addEventListener('change', e => { if (e.target.closest('textarea[data-w]')) { checkGoals(); } });
   cv.addEventListener('keydown', e => { const t = e.target.closest('textarea[data-w]'); if (t && e.ctrlKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { e.preventDefault(); weightSelection(t, e.key === 'ArrowUp' ? .05 : -.05); } });
   cv.addEventListener('click', e => { const b = e.target.closest('[data-wbtn]'); if (b) toast(U('uploadNote')); });
-  cv.addEventListener('pointerover', e => { const dot = e.target.closest('[data-slot]'); if (dot && !dragLink) { const [id, dir, key] = dot.dataset.slot.split('|'); const n = nodeById(id), s = dir === 'in' ? NODES[n.type].inputs.find(i => i.name === key) : NODES[n.type].outputs[key]; tipSoon(e, `<b style="color:${TYPE_COLOR[s.type]}">${s.type}</b><br>${esc(T(UI['type_' + s.type]))}${s.optional ? `<br><i>${esc(U('optionalInput'))}</i>` : ''}`); } });
+  cv.addEventListener('pointerover', e => { const dot = e.target.closest('[data-slot]'); if (dot && !dragLink) { const [id, dir, key] = dot.dataset.slot.split('|'); if (id.startsWith('__')) return; const s = dir === 'in' ? inSpec(S.graph, id, key) : { type: outType(S.graph, id, Number(key)) }; if (!s) return; tipSoon(e, `<b style="color:${TYPE_COLOR[s.type] || '#ccc'}">${s.type}</b><br>${esc(T(UI['type_' + s.type]))}${s.widget ? `<br><i>${esc(U('widgetInput'))}</i>` : s.optional ? `<br><i>${esc(U('optionalInput'))}</i>` : ''}`); } });
   cv.addEventListener('pointerout', e => { if (e.target.closest('[data-slot]')) hideTip(); });
   $('.cy-controls').addEventListener('click', e => { const z = e.target.closest('[data-zoom]')?.dataset.zoom; if (z === 'in') zoomBy(1.2); if (z === 'out') zoomBy(1 / 1.2); if (z === 'fit') { fitView(); flag('fitted'); } if (z === 'links') { S.hideLinks = !S.hideLinks; drawLinks(); } });
   $('#minimap').addEventListener('pointerdown', e => { const r = e.target.getBoundingClientRect(), b = bounds(); if (!b) return; const view = $('#canvas'), s = Math.min(170 / (b.x1 - b.x0 + view.clientWidth / S.zoom), 110 / (b.y1 - b.y0 + view.clientHeight / S.zoom)); const wx = b.x0 + (e.clientX - r.left - 5) / s, wy = b.y0 + (e.clientY - r.top - 5) / s; S.panX = view.clientWidth / 2 - wx * S.zoom; S.panY = view.clientHeight / 2 - wy * S.zoom; applyView(); });
@@ -346,9 +430,11 @@ function finishLink(d, e) {
   if (dot) { const [id, dir, key] = dot.dataset.slot.split('|'); target = { id, dir, key: dir === 'out' ? Number(key) : key }; }
   else if (nodeEl && nodeEl.dataset.node !== d.id) { // Dropped on a node: the first free compatible socket, as in ComfyUI.
     const n = nodeById(nodeEl.dataset.node), def = NODES[n.type];
-    if (d.dir === 'out') { const inp = (def.inputs || []).find(i => i.type === d.type && !S.graph.links.some(l => l.to === n.id && l.input === i.name)) || (def.inputs || []).find(i => i.type === d.type); if (inp) target = { id: n.id, dir: 'in', key: inp.name }; }
-    else { const k = (def.outputs || []).findIndex(o => o.type === d.type); if (k >= 0) target = { id: n.id, dir: 'out', key: k }; }
+    const fit = t => t === d.type || t === '*' || d.type === '*';
+    if (d.dir === 'out') { const inp = (def.inputs || []).find(i => fit(i.type) && !S.graph.links.some(l => l.to === n.id && l.input === i.name)) || (def.inputs || []).find(i => fit(i.type)); if (inp) target = { id: n.id, dir: 'in', key: inp.name }; }
+    else { const k = (def.outputs || []).findIndex(o => fit(o.type)); if (k >= 0) target = { id: n.id, dir: 'out', key: k }; }
   }
+  if (target?.id?.startsWith('__')) target = null;
   if (target) {
     const link = d.dir === 'out' ? makeLink(d.id, d.key, target.id, target.key) : makeLink(target.id, target.key, d.id, d.key);
     if ((d.dir === 'out' && target.dir === 'in') || (d.dir === 'in' && target.dir === 'out')) { if (!d.picked) snapshot(); if (!connect(S.graph, link)) toast(U('badType', { a: d.type }), 'bad'); changed(); return; }
@@ -383,6 +469,7 @@ function onKey(e) {
   if (e.altKey && e.key === '-') { zoomBy(1 / 1.1); return; }
   if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeNodes([...S.sel]); return; }
   if (e.key === '.') { fitView(S.sel.size ? [...S.sel] : null); flag('fitted'); return; }
+  if (k === 'r') { syncEnv(); renderGraph(); toast(U('refreshed')); return; }
   if (k === 'q') openPanel('queue'); if (k === 'n') openPanel('nodes'); if (k === 'm') openPanel('models'); if (k === 'w') openPanel('workflows');
   if (e.key === 'Escape') { S.sel.clear(); renderGraph(); }
 }
@@ -418,7 +505,7 @@ function editNumber(el, n, w) {
 }
 function afterWidget(n, name) { save(); renderGraph(); checkGoals(); }
 function comboMenu(x, y, n, w) {
-  const list = w.options.map(o => ({ label: o, act: () => { snapshot(); n.widgets[w.name] = o; afterWidget(n, w.name); }, on: o === n.widgets[w.name] }));
+  const list = w.options.filter(o => !ENV.missingFiles.has(o)).map(o => ({ label: o, act: () => { snapshot(); n.widgets[w.name] = o; afterWidget(n, w.name); }, on: o === n.widgets[w.name] }));
   showPop(x, y, list, true);
 }
 
@@ -437,11 +524,12 @@ function canvasMenu(x, y) {
   showPop(x, y, [{ label: 'Add Node', sub: cats }, { label: 'Add Group', act: () => { snapshot(); S.graph.groups.push({ title: 'Group', x: at.x, y: at.y, w: 400, h: 260, color: '#3f789e' }); changed(); } }, { sep: true }, { label: 'Fit view', key: '.', act: () => { fitView(); flag('fitted'); } }, { label: 'Load Default', key: 'Ctrl D', act: () => { snapshot(); S.graph = defaultGraph(); changed(); fitView(); } }]);
 }
 function nodeMenu(x, y, id) {
-  const n = nodeById(id);
-  showPop(x, y, [...(n.type === 'LoadImage' ? [{ label: 'Open in MaskEditor', act: () => openMaskEditor(id) }, { sep: true }] : []), { label: 'Title', act: () => { const t = prompt('Title', n.title || NODES[n.type].title); if (t != null) { snapshot(); n.title = t.trim() || null; changed(); } } }, { label: 'Mode', sub: [['Always', 0], ['Never (Mute)', 2], ['Bypass', 4]].map(([l, m]) => ({ label: l, on: n.mode === m, act: () => { snapshot(); [...S.sel].forEach(s => { nodeById(s).mode = m; }); changed(); } })) }, { label: 'Bypass', key: 'Ctrl B', act: () => setMode(4) }, { label: n.collapsed ? 'Expand' : 'Collapse', key: 'Alt C', act: () => { snapshot(); n.collapsed = !n.collapsed; changed(); } }, { label: 'Colors', sub: Object.keys(COLORS).map(c => ({ label: c, act: () => { snapshot(); [...S.sel].forEach(s => { nodeById(s).color = c; }); changed(); } })) }, { sep: true }, { label: 'Clone', key: 'Alt drag', act: () => { snapshot(); const c = { ...clone(n), id: `${n.type}-${uid++}`, x: n.x + 30, y: n.y + 30 }; S.graph.nodes.push(c); S.sel = new Set([c.id]); changed(); } }, { label: 'Node info', act: () => showInfo(id, true) }, { label: 'Remove', key: 'Del', act: () => removeNodes([...S.sel]) }]);
+  const n = nodeById(id); if (!n) return;
+  const sgItems = [...(S.sel.size >= 1 && !S.view && ![...S.sel].some(s => isSubgraphNode(nodeById(s))) ? [{ label: 'Convert to Subgraph', act: () => convertToSubgraph([...S.sel]) }] : []), ...(isSubgraphNode(n) ? [{ label: 'Open Subgraph', act: () => openSubgraph(id) }, { label: 'Unpack Subgraph', act: () => unpackSubgraph(id) }] : [])];
+  showPop(x, y, [...sgItems, ...(sgItems.length ? [{ sep: true }] : []), ...(n.type === 'LoadImage' ? [{ label: 'Open in MaskEditor', act: () => openMaskEditor(id) }, { sep: true }] : []), { label: 'Title', act: () => { const t = prompt('Title', n.title || NODES[n.type].title); if (t != null) { snapshot(); n.title = t.trim() || null; changed(); } } }, { label: 'Mode', sub: [['Always', 0], ['Never (Mute)', 2], ['Bypass', 4]].map(([l, m]) => ({ label: l, on: n.mode === m, act: () => { snapshot(); [...S.sel].forEach(s => { nodeById(s).mode = m; }); changed(); } })) }, { label: 'Bypass', key: 'Ctrl B', act: () => setMode(4) }, { label: n.collapsed ? 'Expand' : 'Collapse', key: 'Alt C', act: () => { snapshot(); n.collapsed = !n.collapsed; changed(); } }, { label: 'Colors', sub: Object.keys(COLORS).map(c => ({ label: c, act: () => { snapshot(); [...S.sel].forEach(s => { nodeById(s).color = c; }); changed(); } })) }, { sep: true }, { label: 'Clone', key: 'Alt drag', act: () => { snapshot(); const c = { ...clone(n), id: `${n.type}-${uid++}`, x: n.x + 30, y: n.y + 30 }; S.graph.nodes.push(c); S.sel = new Set([c.id]); changed(); } }, { label: 'Node info', act: () => showInfo(id, true) }, { label: 'Remove', key: 'Del', act: () => removeNodes([...S.sel]) }]);
 }
 function colorMenu(x, y) { showPop(x, y, [{ label: 'No color', act: () => { snapshot(); [...S.sel].forEach(s => { nodeById(s).color = null; }); changed(); } }, ...Object.keys(COLORS).map(c => ({ label: c, act: () => { snapshot(); [...S.sel].forEach(s => { nodeById(s).color = c; }); changed(); } }))]); }
-function linkMenu(x, y, i) { const l = S.graph.links[i]; showPop(x, y, [{ label: 'Add Node', act: () => openSearch(x, y, { from: { id: l.from, dir: 'out', key: l.out, type: NODES[nodeById(l.from).type].outputs[l.out].type } }) }, { label: 'Delete', act: () => { snapshot(); S.graph.links.splice(i, 1); changed(); } }]); }
+function linkMenu(x, y, i) { const l = S.graph.links[i]; showPop(x, y, [{ label: 'Add Node', act: () => openSearch(x, y, { from: { id: l.from, dir: 'out', key: l.out, type: outType(S.graph, l.from, l.out) } }) }, { label: 'Add Reroute', act: () => addReroute(i, x, y) }, { label: 'Delete', act: () => { snapshot(); S.graph.links.splice(i, 1); changed(); } }]); }
 function headerMenu(name, x, y) {
   const items = {
     workflow: [{ label: 'New', act: () => { snapshot(); S.graph = { nodes: [], links: [], groups: [] }; changed(); } }, { label: 'Open', key: 'Ctrl O', act: () => openPanel('workflows') }, { label: 'Save', key: 'Ctrl S', act: saveWorkflow }, { label: 'Export', act: exportJson }, { sep: true }, { label: 'Load Default', key: 'Ctrl D', act: () => { snapshot(); S.graph = defaultGraph(); changed(); fitView(); } }],
@@ -461,7 +549,8 @@ function openSearch(x, y, ctx) {
 }
 function searchList(q) {
   const f = searchCtx?.from; q = q.trim().toLowerCase();
-  const fits = ([, d]) => !f || (f.dir === 'out' ? (d.inputs || []).some(i => i.type === f.type) : (d.outputs || []).some(o => o.type === f.type));
+  const ok = t => t === f.type || t === '*' || f.type === '*';
+  const fits = ([, d]) => !d.subgraph && (!f || (f.dir === 'out' ? (d.inputs || []).some(i => ok(i.type)) : (d.outputs || []).some(o => ok(o.type))));
   const items = Object.entries(NODES).filter(fits).map(([t, d]) => ({ t, d, score: !q ? 1 : d.title.toLowerCase().startsWith(q) ? 3 : d.title.toLowerCase().includes(q) ? 2 : t.toLowerCase().includes(q) || d.cat.join(' ').includes(q) ? 1 : 0 })).filter(x => x.score).sort((a, b) => b.score - a.score);
   $('#sb-list').innerHTML = items.map((x, i) => `<button type="button" class="${i ? '' : 'on'}" data-add="${x.t}"><span class="sb-t">${esc(x.d.title)}</span><span class="sb-c">${esc(x.d.cat.join(' / '))}</span><span class="sb-d">${esc(T(DOCS[x.t]?.short))}</span></button>`).join('') || '<p class="sb-none">—</p>';
   $('#sb-list').onclick = e => { const b = e.target.closest('[data-add]'); if (b) chooseSearch(b.dataset.add); };
@@ -469,7 +558,7 @@ function searchList(q) {
 function chooseSearch(type) {
   const ctx = searchCtx; closeSearch(); snapshot();
   const n = addNode(type, ctx.at.x - (ctx.from?.dir === 'in' ? NODES[type].w : 0), ctx.at.y - 14);
-  if (ctx.from) { const def = NODES[type]; if (ctx.from.dir === 'out') { const inp = def.inputs.find(i => i.type === ctx.from.type); connect(S.graph, makeLink(ctx.from.id, ctx.from.key, n.id, inp.name)); } else { const k = def.outputs.findIndex(o => o.type === ctx.from.type); connect(S.graph, makeLink(n.id, k, ctx.from.id, ctx.from.key)); } }
+  if (ctx.from) { const def = NODES[type], ok = t => t === ctx.from.type || t === '*' || ctx.from.type === '*'; if (ctx.from.dir === 'out') { const inp = def.inputs.find(i => ok(i.type)); connect(S.graph, makeLink(ctx.from.id, ctx.from.key, n.id, inp.name)); } else { const k = def.outputs.findIndex(o => ok(o.type)); connect(S.graph, makeLink(n.id, k, ctx.from.id, ctx.from.key)); } }
   changed();
 }
 const closeSearch = () => { $('#search').hidden = true; searchCtx = null; };
@@ -500,7 +589,7 @@ function renderPanel() {
     const items = [...S.history].reverse();
     p.innerHTML = `<header>QUEUE <span>${S.running ? U('running') : ''}</span></header>${S.running ? `<div class="q-run"><div class="q-bar"><i id="q-bar"></i></div><span id="q-status">…</span></div>` : ''}<div class="q-grid">${items.map(h => `<button type="button" class="q-item" data-hist="${h.id}"><img src="${h.thumb}" alt=""><span>${h.secs}s</span></button>`).join('') || `<p class="p-empty">${esc(U('queueEmpty'))}</p>`}</div>${items.length ? `<button type="button" class="p-clear" data-clear>${esc(U('clearHistory'))}</button>` : ''}`;
   }
-  if (S.panel === 'nodes') p.innerHTML = `<header>NODE LIBRARY</header><div class="p-tree">${CATEGORIES.map(c => `<details open><summary>${c}</summary>${Object.entries(NODES).filter(([, d]) => d.cat[0] === c).map(([t, d]) => `<button type="button" data-lib="${t}" title="${esc(T(DOCS[t]?.short))}">${esc(d.title)}</button>`).join('')}</details>`).join('')}</div>`;
+  if (S.panel === 'nodes') p.innerHTML = `<header>NODE LIBRARY</header><div class="p-tree">${CATEGORIES.map(c => `<details open><summary>${c}</summary>${Object.entries(NODES).filter(([, d]) => d.cat[0] === c && !d.subgraph).map(([t, d]) => `<button type="button" data-lib="${t}" title="${esc(T(DOCS[t]?.short))}">${esc(d.title)}</button>`).join('')}</details>`).join('')}</div>`;
   if (S.panel === 'models') p.innerHTML = `<header>MODEL LIBRARY</header><div class="p-tree"><details open><summary>checkpoints</summary>${Object.entries(CHECKPOINTS).map(([f, c]) => `<button type="button" data-model="ckpt|${f}">${f}<small>${c.arch}</small></button>`).join('')}</details><details open><summary>loras</summary>${Object.entries(LORAS).map(([f, c]) => `<button type="button" data-model="lora|${f}">${f}<small>${c.arch}${c.trigger ? ` · trigger: ${c.trigger}` : ''}</small></button>`).join('')}</details><details open><summary>controlnet</summary>${Object.entries(CONTROLNETS).map(([f, c]) => `<button type="button" data-model="cn|${f}">${f}<small>${c.arch} · ${c.kind}</small></button>`).join('')}</details><details><summary>input (images)</summary>${IMAGES.map(f => `<button type="button" data-model="img|${f}">${f}</button>`).join('')}</details></div><p class="p-note">${esc(U('modelsNote'))}</p>`;
   if (S.panel === 'workflows') { const list = store.get('workflows', []); p.innerHTML = `<header>WORKFLOWS</header><div class="p-list">${list.map((w, i) => `<button type="button" data-wf="${i}"><b>${esc(w.name)}.json</b><small>${new Date(w.time).toLocaleString()}</small></button>`).join('') || `<p class="p-empty">${esc(U('noWorkflows'))}</p>`}</div>`; }
   if (S.panel === 'templates') p.innerHTML = `<header>TEMPLATES</header><div class="p-list">${TEMPLATES.map(t => `<button type="button" data-tpl="${t.id}"><b>${esc(T(t.name))}</b></button>`).join('')}</div><p class="p-note">${esc(U('templatesNote'))}</p>`;
@@ -541,10 +630,11 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 function nodeEl(id) { return $(`.cn[data-node="${CSS.escape(id)}"]`); }
 async function runOnce() {
   $$('.cn.err').forEach(e => e.classList.remove('err'));
-  const g = S.graph, v = validate(g);
+  const g = S.root, v = validate(g);
   if (!v.ok) {
     flag('errorSeen');
-    const lines = v.errors.map(er => er.msg === 'noOutputs' ? `<li>${esc(U('noOutputs'))}</li>` : er.msg === 'multiple8' ? `<li><b>${esc(NODES[nodeById(er.node).type].title)}</b>: ${esc(U('mult8'))}</li>` : `<li><b>${esc(nodeById(er.node).title || NODES[nodeById(er.node).type].title)}</b>: Required input is missing: <code>${esc(er.input)}</code></li>`);
+    const title = id => { const n = nodeById(id) || g.nodes.find(x => x.id === id); return n ? n.title || NODES[n.type]?.title || n.type : id; };
+    const lines = v.errors.map(er => er.msg === 'missingNode' ? `<li><b>${esc(er.type)}</b>: ${esc(U('missingNodeErr', { p: er.pack }))}</li>` : er.msg === 'noOutputs' ? `<li>${esc(U('noOutputs'))}</li>` : er.msg === 'multiple8' ? `<li><b>${esc(title(er.inner || er.node))}</b>: ${esc(U('mult8'))}</li>` : er.msg === 'notInList' ? `<li><b>${esc(title(er.inner || er.node))}</b>: Value not in list: <code>${esc(er.input)}: '${esc(er.value)}' not in [${esc(er.options.slice(0, 4).map(o => `'${o}'`).join(', '))}${er.options.length > 4 ? ', …' : ''}]</code></li>` : `<li><b>${esc(title(er.inner || er.node))}</b>: Required input is missing: <code>${esc(er.input)}</code></li>`);
     v.errors.forEach(er => er.node && nodeEl(er.node)?.classList.add('err'));
     const d = $('#dialog'); d.hidden = false; d.innerHTML = `<div class="dlg error"><header><b>Prompt outputs failed validation</b><button type="button" data-close>×</button></header><ul>${lines.join('')}</ul><p class="dlg-hint">${esc(U('validationHint'))}</p><footer><button type="button" class="primary" data-close>OK</button></footer></div>`;
     d.onclick = e => { if (e.target.closest('[data-close]') || e.target === d) closeDialog(); };
@@ -552,14 +642,22 @@ async function runOnce() {
   }
   S.running = true; $('#run').classList.add('busy'); $('#stop').disabled = false; $('#qcount').textContent = '1';
   // Freeze the values used by this run; "control after generate" changes the seed right after queueing.
-  const graph = clone(g), keys = cacheKeys(graph, v.order);
-  for (const n of g.nodes.filter(x => x.type === 'KSampler' && x.mode === 0)) { const c = n.widgets.control_after_generate; if (c === 'randomize') n.widgets.seed = Math.floor(Math.random() * 1e15); else if (c === 'increment') n.widgets.seed++; else if (c === 'decrement') n.widgets.seed = Math.max(0, n.widgets.seed - 1); }
+  const graph = clone(g);
+  // Dynamic prompts, like the ComfyUI frontend: {red|blue|green} picks one option every time the prompt is queued.
+  for (const n of graph.nodes) for (const [k, val] of Object.entries(n.widgets)) if (typeof val === 'string' && /\{[^{}]*\|[^{}]*\}/.test(val)) { n.dyn = n.dyn || {}; n.dyn[k] = val; n.widgets[k] = val.replace(/\{([^{}]*)\}/g, (m, body) => { const opts = body.split('|'); return opts[Math.floor(Math.random() * opts.length)]; }); }
+  const keys = cacheKeys(graph, v.order);
+  // "control after generate" acts on the widget just above it (seed, noise_seed, value…), in any node.
+  for (const n of [...g.nodes, ...Object.values(g.subgraphs || {}).flatMap(x => x.nodes)].filter(x => x.mode === 0 && x.widgets.control_after_generate)) {
+    const defs = NODES[n.type]?.widgets || [], k = defs[defs.findIndex(x => x.name === 'control_after_generate') - 1]?.name, c = n.widgets.control_after_generate; if (!k || typeof n.widgets[k] !== 'number') continue;
+    if (c === 'randomize') n.widgets[k] = Math.floor(Math.random() * 1e15); else if (c === 'increment') n.widgets[k]++; else if (c === 'decrement') n.widgets[k] = Math.max(0, n.widgets[k] - 1);
+  }
   renderGraph(); if (S.panel === 'queue') renderPanel();
   const res = execute(graph), t0 = performance.now();
   for (const w of res.warnings) { if (w.text) { log(w.text, w.level || 'warn'); continue; } log(`<b>[LoRA]</b> lora key not loaded: ${esc(w.lora)} <i>(${esc(U('loraArch', { a: w.arch }))})</i>`, 'warn'); S.flags.loraWarn = true; }
+  const flat = res.graph || graph;
   for (const id of v.order) {
     if (S.cancel) break;
-    const n = graph.nodes.find(x => x.id === id), el = nodeEl(id), cached = S.lastKeys[id] === keys[id] && !NODES[n.type].output;
+    const n = flat.nodes.find(x => x.id === id), el = nodeEl(id.split('/')[0]), cached = S.lastKeys[id] === keys[id] && !NODES[n.type].output;
     if (cached) { el?.classList.add('cached'); await sleep(40); el?.classList.remove('cached'); continue; }
     el?.classList.add('running');
     if (n.type === 'KSampler') {
@@ -591,15 +689,16 @@ async function runOnce() {
     if (!img) continue;
     const cv = renderValue(img);
     S.images[id] = toUrl(cv, 300);
-    const n = graph.nodes.find(x => x.id === id);
+    const n = flat.nodes.find(x => x.id === id);
     if (img.kind === 'canny') flag('cannySeen');
-    if (n.type === 'SaveImage' || (n.type === 'PreviewImage' && !Object.keys(res.outputs).some(k => graph.nodes.find(x => x.id === k)?.type === 'SaveImage'))) {
+    if (n.type === 'SaveImage' || NODES[n.type].savesToHistory || (n.type === 'PreviewImage' && !Object.keys(res.outputs).some(k => { const t = flat.nodes.find(x => x.id === k)?.type; return t === 'SaveImage' || NODES[t]?.savesToHistory; }))) {
       if (img.recipe || img.kind === 'generated' || CFG.findRecipe?.(img)) { const rec = img.recipe || CFG.findRecipe?.(img) || nodeRecipe; const h = historyEntry(rec, cv, graph, secs, n.widgets.filename_prefix); if (CFG.outputExtra) Object.assign(h, CFG.outputExtra(img, graph)); S.history.push(h); }
       else if (!nodeRecipe) S.history.push({ id: Date.now(), thumb: toUrl(cv, 110, 'image/jpeg'), full: toUrl(cv, 300), file: `${n.widgets.filename_prefix || 'ComfyUI_temp'}_${String(S.history.length + 1).padStart(5, '0')}_.png`, graph, secs, seed: '—', steps: '—', cfg: '—', sampler: '—', scheduler: '', denoise: '—', w: img.w, h: img.h, ckpt: '—', loras: [], pos: { subjects: [], settings: [], styles: [], colors: [], weights: {}, triggers: [], text: '' }, neg: { subjects: [], settings: [], colors: [] }, posText: '', negText: '', key: 'img', kind: img.kind });
     }
   }
-  if (graph.nodes.some(x => x.mode === 4 && x.type === 'LoraLoader')) flag('ranBypass');
-  if (graph.nodes.some(x => x.mode === 2)) flag('ranMute');
+  if (flat.nodes.some(x => x.mode === 4 && x.type === 'LoraLoader')) flag('ranBypass');
+  if (flat.nodes.some(x => x.mode === 2)) flag('ranMute');
+  if (CFG.afterRun) CFG.afterRun({ graph, flat, res, flag });
   if (S.history.length > 24) S.history = S.history.slice(-24);
   save(); renderGraph(); if (S.panel === 'queue') renderPanel(); checkGoals();
   return true;
@@ -612,7 +711,7 @@ function historyEntry(recipe, cv, graph, secs, prefix) {
 }
 
 /* ── Steps ── */
-function goStep(si, st) { save(); S.stage = si; S.step = st; loadStep(); save(); renderStages(); renderGuide(); renderCard(); renderGraph(); requestAnimationFrame(() => fitView()); checkGoals(); if (S.panel) renderPanel(); $('#wf-name').textContent = 'Unsaved Workflow'; }
+function goStep(si, st) { save(); S.stage = si; S.step = st; loadStep(); save(); renderStages(); renderGuide(); renderCard(); renderGraph(); requestAnimationFrame(() => fitView()); checkGoals(); if (S.panel) renderPanel(); $('#wf-name').textContent = 'Unsaved Workflow'; missingDialog(); }
 function setupLesson() {
   $('#stages').addEventListener('click', e => { const b = e.target.closest('[data-stage]'); if (b) goStep(Number(b.dataset.stage), Math.min(STAGES[b.dataset.stage].steps.length - 1, store.get(`step:${STAGES[b.dataset.stage].id}`, 0))); });
   $('#guide').addEventListener('click', e => { const b = e.target.closest('[data-step]'); if (b) goStep(S.stage, Number(b.dataset.step)); });
@@ -621,19 +720,19 @@ function setupLesson() {
     if (a === 'next') goStep(S.stage, S.step + 1);
     if (a === 'next-stage') goStep(S.stage + 1, 0);
     if (a === 'solution') { snapshot(); S.graph = step().solution(); S.graph.groups ||= []; changed(); fitView(); toast(U('solutionShown')); }
-    if (a === 'reset') { snapshot(); S.graph = step().starter(); S.graph.groups ||= []; S.flags = {}; S.history = []; S.lastKeys = {}; S.images = {}; changed(); fitView(); if (S.panel) renderPanel(); }
+    if (a === 'reset') { snapshot(); S.graph = step().starter(); S.graph.groups ||= []; S.flags = {}; syncEnv(); S.history = []; S.lastKeys = {}; S.images = {}; changed(); fitView(); if (S.panel) renderPanel(); }
   });
   $('#run').addEventListener('click', () => queue());
   $('.run-more').addEventListener('click', e => showPop(e.clientX - 140, e.clientY + 14, [{ label: 'Run', key: 'Ctrl Enter', act: queue }, { label: 'Run (front)', key: 'Ctrl Shift Enter', act: queue }, { label: 'Interrupt', key: 'Ctrl Alt Enter', act: interrupt }]));
   $('#stop').addEventListener('click', interrupt);
-  $('.cy-menu').addEventListener('click', e => { const m = e.target.closest('[data-menu]'); if (m) { const r = m.getBoundingClientRect(); headerMenu(m.dataset.menu, r.left, r.bottom + 4); } });
+  $('.cy-menu').addEventListener('click', e => { if (e.target.closest('[data-manager]')) { openManager(ENV.missingPacks.size && [...ENV.missingPacks].some(packUsed) ? 'missing' : 'nodes'); return; } const m = e.target.closest('[data-menu]'); if (m) { const r = m.getBoundingClientRect(); headerMenu(m.dataset.menu, r.left, r.bottom + 4); } });
 }
 
 /* ── Start ── */
 shell(); loadStep();
 renderStages(); renderGuide(); renderCard(); renderConcepts(); setupCanvas(); setupPanels(); setupLesson();
-renderGraph(); requestAnimationFrame(() => { fitView(); checkGoals(); });
+renderGraph(); requestAnimationFrame(() => { fitView(); checkGoals(); missingDialog(); });
 $('#wf-dirty').hidden = true;
-await import('../../lab-brief.js?v=3');
+await import('../../lab-brief.js?v=4');
 initI18n({ mount: '.site-header', append: true });
 onLangChange(() => location.reload());

@@ -3,7 +3,7 @@
 // execution order and caching) but never runs an AI model: the KSampler produces a "recipe" that
 // render.js draws procedurally. Same graph + same seed = same picture, as in ComfyUI.
 
-export const TYPE_COLOR = { MODEL: '#b39ddb', CLIP: '#ffd500', VAE: '#ff6e6e', CONDITIONING: '#ffa931', LATENT: '#ff9cf9', IMAGE: '#64b5f6', MASK: '#81c784', CONTROL_NET: '#6ee7b7' };
+export const TYPE_COLOR = { '*': '#c8c8c8', MODEL: '#b39ddb', CLIP: '#ffd500', VAE: '#ff6e6e', CONDITIONING: '#ffa931', LATENT: '#ff9cf9', IMAGE: '#64b5f6', MASK: '#81c784', CONTROL_NET: '#6ee7b7' };
 export const CHECKPOINTS = {
   'dreamshaper_8.safetensors': { arch: 'SD1.5', native: 512, look: 'painterly' },
   'anything_v5.safetensors': { arch: 'SD1.5', native: 512, look: 'anime' },
@@ -43,11 +43,14 @@ export const NODES = {
   SaveImage: { title: 'Save Image', cat: ['image'], w: 315, inputs: [I('images', 'IMAGE')], widgets: [W('filename_prefix', 'string', 'ComfyUI')], output: true, preview: true },
   PreviewImage: { title: 'Preview Image', cat: ['image'], w: 260, inputs: [I('images', 'IMAGE')], output: true, preview: true },
 };
-export const CATEGORIES = ['loaders', 'conditioning', 'latent', 'sampling', 'image', 'mask'];
+// Reroute: a dot that carries any type, to tidy long links.
+NODES.Reroute = { title: 'Reroute', cat: ['utils'], w: 60, reroute: true, inputs: [I('input', '*')], outputs: [O('output', '*')] };
+export const CATEGORIES = ['loaders', 'conditioning', 'latent', 'sampling', 'image', 'mask', 'utils'];
 // Other labs add their own nodes: a definition in NODES and an execute handler here.
 export const HANDLERS = {};
 // Checks a lab can add before a node runs (for example, running out of GPU memory). Return { msg, detail, … } to stop the run.
 export const PRECHECKS = [];
+HANDLERS.Reroute = ({ n, get }) => [get(n.id, 'input')];
 export function registerNodes(defs) { for (const [type, d] of Object.entries(defs)) { NODES[type] = d.def; if (d.run) HANDLERS[type] = d.run; } }
 export function addOptions(type, widget, values) { const w = NODES[type].widgets.find(x => x.name === widget); for (const v of values) if (!w.options.includes(v)) w.options.push(v); }
 
@@ -58,12 +61,24 @@ export function makeNode(type, x, y, values = {}, id) {
   return { id: id ?? `${type}-${uid++}`, type, x, y, mode: 0, widgets: { ...widgets, ...values }, title: null, collapsed: false };
 }
 export const makeLink = (from, out, to, input) => ({ from, out, to, input });
-export const outType = (g, id, out) => { const n = g.nodes.find(x => x.id === id); return n && NODES[n.type].outputs?.[out]?.type; };
-export const inSpec = (g, id, name) => { const n = g.nodes.find(x => x.id === id); return n && NODES[n.type].inputs?.find(i => i.name === name); };
+// What the environment has installed. A lab can leave custom node packs or model files out, as on a new computer.
+export const ENV = { missingPacks: new Set(), missingFiles: new Set() };
+export const isMissing = n => !!(n && NODES[n.type]?.custom && ENV.missingPacks.has(NODES[n.type].custom));
+// The type of an output. A wildcard output (a Reroute) takes the type of whatever feeds it.
+export function outType(g, id, out, guard = 0) {
+  const n = g.nodes.find(x => x.id === id); if (!n || !NODES[n.type]) return undefined;
+  const t = NODES[n.type].outputs?.[out]?.type; if (t !== '*' || guard > 30) return t;
+  const inp = (NODES[n.type].inputs || [])[0], l = inp && g.links.find(x => x.to === id && x.input === inp.name);
+  return l ? outType(g, l.from, l.out, guard + 1) : '*';
+}
+// Widgets can take a link too (an Int node driving a seed): their socket type comes from the widget kind.
+export const WIDGET_TYPE = { int: 'INT', float: 'FLOAT', string: 'STRING', text: 'STRING', combo: 'COMBO' };
+export const widgetSpec = (def, name) => { if (def?.inputs?.some(i => i.name === name)) return null; const w = def?.widgets?.find(x => x.name === name && WIDGET_TYPE[x.kind]); return w ? { name, type: WIDGET_TYPE[w.kind], optional: true, widget: true } : null; };
+export const inSpec = (g, id, name) => { const n = g.nodes.find(x => x.id === id); return n && NODES[n.type] && (NODES[n.type].inputs?.find(i => i.name === name) || widgetSpec(NODES[n.type], name)); };
 export function canConnect(g, l) {
   if (l.from === l.to) return false;
   const a = outType(g, l.from, l.out), b = inSpec(g, l.to, l.input)?.type;
-  if (!a || !b || a !== b) return false;
+  if (!a || !b || (a !== b && a !== '*' && b !== '*')) return false;
   const seen = new Set(), st = [l.to];
   while (st.length) { const id = st.pop(); if (id === l.from) return false; if (seen.has(id)) continue; seen.add(id); g.links.filter(x => x.from === id).forEach(x => st.push(x.to)); }
   return true;
@@ -107,6 +122,52 @@ export function parsePrompt(text) {
   return { text: src, subjects: find(VOCAB.subjects), settings: find(VOCAB.settings), colors: find(VOCAB.colors), styles: find(VOCAB.styles), quality: find(VOCAB.quality).length, blurry: /blur/.test(clean), triggers, weights: Object.fromEntries(weights) };
 }
 
+/* ── Subgraphs: a node that holds a graph. They run as if their nodes were in the main graph. ── */
+// g.subgraphs[id] = { name, nodes, links, groups, inputs: [{ name, type, targets: [{ id, input }] }], outputs: [{ name, type, from: { id, out } }] }
+export const SUBGRAPH = 'subgraph:';
+export function registerSubgraphs(g) {
+  for (const [id, sg] of Object.entries(g?.subgraphs || {})) NODES[SUBGRAPH + id] = { title: sg.name, cat: ['subgraph'], w: 280, subgraph: id, inputs: sg.inputs.map(i => ({ name: i.name, type: i.type })), outputs: sg.outputs.map(o => ({ name: o.name, type: o.type })), widgets: [] };
+}
+// Convert to Subgraph: the nodes go inside; links that cross the edge become its inputs and outputs. Returns the new node's id.
+export function makeSubgraph(g, ids, { sid = `sg${uid++}`, nid = `Subgraph-${uid++}`, name = 'New Subgraph' } = {}) {
+  const set = new Set(ids), inner = g.nodes.filter(n => set.has(n.id)); if (!inner.length) return null;
+  const inputs = [], outputs = [], innerLinks = [], outerLinks = [], inMap = new Map(), outMap = new Map();
+  const uniq = (list, base) => { let nm = base, k = 2; while (list.some(x => x.name === nm)) nm = `${base}_${k++}`; return nm; };
+  for (const l of g.links) {
+    const a = set.has(l.from), b = set.has(l.to);
+    if (a && b) innerLinks.push({ ...l });
+    else if (!a && b) { const key = `${l.from}#${l.out}`; let i = inMap.get(key); if (!i) { i = { name: uniq(inputs, l.input), type: outType(g, l.from, l.out), targets: [] }; inputs.push(i); inMap.set(key, i); outerLinks.push(makeLink(l.from, l.out, nid, i.name)); } i.targets.push({ id: l.to, input: l.input }); }
+    else if (a && !b) { const key = `${l.from}#${l.out}`; let k = outMap.get(key); if (k === undefined) { k = outputs.length; outputs.push({ name: uniq(outputs, NODES[g.nodes.find(n => n.id === l.from).type].outputs[l.out].name), type: outType(g, l.from, l.out), from: { id: l.from, out: l.out } }); outMap.set(key, k); } outerLinks.push(makeLink(nid, k, l.to, l.input)); }
+  }
+  const xs = inner.map(n => n.x), ys = inner.map(n => n.y), x1 = Math.max(...inner.map(n => n.x + (NODES[n.type].w || 300)));
+  g.subgraphs ||= {}; g.subgraphs[sid] = { name, nodes: inner, links: innerLinks, groups: [], inputs, outputs, io: { inX: Math.min(...xs) - 300, outX: x1 + 80, y: Math.min(...ys) } };
+  g.nodes = g.nodes.filter(n => !set.has(n.id)); g.links = g.links.filter(l => !set.has(l.from) && !set.has(l.to)).concat(outerLinks);
+  g.nodes.push({ id: nid, type: SUBGRAPH + sid, x: Math.round(xs.reduce((a, b) => a + b, 0) / xs.length), y: Math.min(...ys), mode: 0, widgets: {}, title: null, collapsed: false });
+  registerSubgraphs(g); return nid;
+}
+export const isSubgraphNode = n => n?.type?.startsWith(SUBGRAPH);
+export function flatten(g) {
+  if (!g.nodes.some(isSubgraphNode)) return g;
+  registerSubgraphs(g);
+  const nodes = [], links = [], outerOf = {};
+  for (const n of g.nodes) {
+    if (!isSubgraphNode(n)) { nodes.push(n); continue; }
+    const sg = g.subgraphs[n.type.slice(SUBGRAPH.length)];
+    for (const m of sg.nodes) { const id = `${n.id}/${m.id}`; outerOf[id] = n.id; nodes.push({ ...m, id, mode: n.mode === 0 ? m.mode : n.mode }); }
+    for (const l of sg.links) links.push({ ...l, from: `${n.id}/${l.from}`, to: `${n.id}/${l.to}` });
+  }
+  const sgOf = id => { const n = g.nodes.find(x => x.id === id); return isSubgraphNode(n) ? g.subgraphs[n.type.slice(SUBGRAPH.length)] : null; };
+  for (const l of g.links) {
+    const src = sgOf(l.from), dst = sgOf(l.to);
+    let from = l.from, out = l.out;
+    if (src) { const o = src.outputs[l.out]; if (!o) continue; from = `${l.from}/${o.from.id}`; out = o.from.out; }
+    if (dst) { const i = dst.inputs.find(x => x.name === l.input); if (!i) continue; for (const t of i.targets) links.push({ from, out, to: `${l.to}/${t.id}`, input: t.input }); }
+    else links.push({ ...l, from, out });
+  }
+  return { ...g, nodes, links, outerOf };
+}
+const outer = (g, id) => (id && g.outerOf?.[id]) || id;
+
 /* ── Validation and execution ── */
 const active = (g, id) => { const n = g.nodes.find(x => x.id === id); return n && n.mode !== 2; };
 export function inputLink(g, id, name) { return g.links.find(l => l.to === id && l.input === name); }
@@ -123,7 +184,8 @@ function resolve(g, link) {
   return null;
 }
 // What ComfyUI would execute when the prompt is queued: output nodes and everything they need.
-export function validate(g) {
+export function validate(g0) {
+  const g = flatten(g0);
   const outputs = g.nodes.filter(n => NODES[n.type].output && n.mode === 0);
   const errors = [], needed = new Set(), order = [];
   if (!outputs.length) return { ok: false, errors: [{ node: null, msg: 'noOutputs' }], order: [] };
@@ -135,26 +197,35 @@ export function validate(g) {
       if (!l) { if (!inp.optional) errors.push({ node: id, msg: 'missing', input: inp.name }); continue; }
       visit(l.from, chain);
     }
+    // Widgets driven by a link (an Int, a String…) need their source too.
+    for (const wl of g.links.filter(x => x.to === id && widgetSpec(NODES[n.type], x.input))) { const l = resolve(g, wl); if (l) visit(l.from, chain); }
     needed.add(id); order.push(id);
   };
   outputs.forEach(n => visit(n.id));
+  // A combo value that is not among the options (a model file that is not installed, a workflow from another computer).
+  const linkedW = id => new Set(g.links.filter(x => x.to === id).map(x => x.input));
+  for (const n of g.nodes.filter(x => needed.has(x.id))) for (const wd of NODES[n.type].widgets || []) if (wd.kind === 'combo' && Array.isArray(wd.options) && n.widgets[wd.name] !== undefined && !linkedW(n.id).has(wd.name) && (!wd.options.includes(n.widgets[wd.name]) || ENV.missingFiles.has(n.widgets[wd.name]))) errors.push({ node: n.id, msg: 'notInList', input: wd.name, value: n.widgets[wd.name], options: wd.options });
   for (const n of g.nodes.filter(x => needed.has(x.id) && x.type === 'EmptyLatentImage')) if (n.widgets.width % 8 || n.widgets.height % 8) errors.push({ node: n.id, msg: 'multiple8' });
-  return { ok: !errors.length, errors, order };
+  // Nodes of a custom node pack that is not installed: ComfyUI cannot even build the prompt.
+  for (const n of g.nodes) if (n.mode === 0 && isMissing(n)) errors.unshift({ node: n.id, msg: 'missingNode', type: n.type, pack: NODES[n.type].custom });
+  for (const e of errors) if (e.node && g.outerOf?.[e.node]) { e.inner = e.node; e.node = g.outerOf[e.node]; }
+  return { ok: !errors.length, errors, order, graph: g };
 }
 // Cache keys: a node only runs again when it, or something it depends on, has changed.
-export function cacheKeys(g, order) {
-  const keys = {};
-  for (const id of order) { const n = g.nodes.find(x => x.id === id); const ins = (NODES[n.type].inputs || []).map(i => { const l = resolve(g, inputLink(g, id, i.name)); return l ? `${keys[l.from]}#${l.out}` : '-'; }); keys[id] = JSON.stringify([n.type, n.widgets, ins]); }
+export function cacheKeys(g0, order) {
+  const keys = {}, g = flatten(g0);
+  for (const id of order) { const n = g.nodes.find(x => x.id === id); const ins = [...(NODES[n.type].inputs || []).map(i => i.name), ...g.links.filter(x => x.to === id && widgetSpec(NODES[n.type], x.input)).map(x => x.input)].map(name => { const l = resolve(g, inputLink(g, id, name)); return l ? `${keys[l.from]}#${l.out}` : '-'; }); keys[id] = JSON.stringify([n.type, n.widgets, ins]); }
   return keys;
 }
 // Run the graph: the value of every output socket, warnings, runtime errors and the images of the output nodes.
-export function execute(g, { images = {} } = {}) {
-  const v = validate(g); if (!v.ok) return { ...v, values: {}, warnings: [], outputs: {} };
+export function execute(g0, { images = {} } = {}) {
+  const v = validate(g0), g = v.graph; if (!v.ok) return { ...v, values: {}, warnings: [], outputs: {} };
   const values = {}, warnings = [];
   const get = (id, name) => { const l = resolve(g, inputLink(g, id, name)); return l ? values[l.from]?.[l.out] : undefined; };
   let runtime = null;
   for (const id of v.order) {
-    const n = g.nodes.find(x => x.id === id), w = n.widgets;
+    const n = g.nodes.find(x => x.id === id), w = { ...n.widgets };
+    for (const l of g.links) if (l.to === id && widgetSpec(NODES[n.type], l.input)) { const v2 = get(id, l.input); if (v2 !== undefined) w[l.input] = v2; }
     for (const chk of PRECHECKS) { const rt = chk({ n, w, get: name => get(id, name), warnings }); if (rt) { runtime = { node: id, ...rt }; break; } }
     if (runtime) break;
     switch (n.type) {
@@ -194,7 +265,8 @@ export function execute(g, { images = {} } = {}) {
     if (runtime) break;
   }
   const outputs = {};
-  if (!runtime) for (const id of v.order) { const n = g.nodes.find(x => x.id === id); if (NODES[n.type].output) outputs[id] = get(id, 'images'); }
+  if (!runtime) for (const id of v.order) { const n = g.nodes.find(x => x.id === id); if (NODES[n.type].output) outputs[id] = NODES[n.type].outputImage ? values[id]?.[0] : get(id, 'images'); }
+  if (runtime && g.outerOf?.[runtime.node]) { runtime.inner = runtime.node; runtime.node = g.outerOf[runtime.node]; }
   return { ...v, values, warnings, outputs, runtime };
 }
 // What the student sees in the image: every parameter that decides the picture, in one object.
