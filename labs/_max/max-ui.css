@@ -56,7 +56,7 @@
 .mx-ribbon .mx-ribbon-opt { padding: 0 10px; color: #ddd; }
 
 /* Body: Scene Explorer | viewport | Command Panel */
-.mx-body { display: grid; grid-template-columns: auto minmax(0, 1fr) 290px; height: var(--mx-body-h, 520px); background: var(--mx-panel); }
+.mx-body { display: grid; grid-template-columns: var(--mx-explorer-w, 340px) minmax(0, 1fr) 290px; height: var(--mx-body-h, 520px); background: var(--mx-panel); }
 .mx-maximized .mx-body { grid-template-columns: 0 minmax(0, 1fr) 0; }
 .mx-maximized .mx-explorer, .mx-maximized .mx-cmd { visibility: hidden; }
 .mx-explorer-menu { display: flex; gap: 12px; padding: 4px 8px; color: #cfcfcf; }
@@ -238,7 +238,9 @@
 .mx-vp-host[data-nav="pan"]{cursor:move}.mx-vp-host[data-nav="orbit"]{cursor:grab}.mx-vp-host[data-nav="zoom"]{cursor:ns-resize}
 
 /* ── Scene Explorer (2027): display toolbar on the left, type icons, eye and Frozen columns ── */
-.mx-explorer { width: 300px; display: flex; border-right: 1px solid var(--mx-line); background: var(--mx-panel); min-height: 0; }
+.mx-explorer { width: var(--mx-explorer-w, 340px); min-width: 260px; max-width: 600px; position: relative; display: flex; border-right: 1px solid var(--mx-line); background: var(--mx-panel); min-height: 0; }
+.mx-explorer-resize { position: absolute; z-index: 5; top: 0; right: -4px; width: 8px; height: 100%; cursor: col-resize; background: transparent; }
+.mx-explorer-resize:hover, .mx-explorer-resize:active { background: #79a7dc66; }
 .mx-se-side { width: 30px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; background: #3d3d3d; border-right: 1px solid #333; overflow: hidden; }
 .mx-se-f { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 2px; background: #3d3d3d; }
 .mx-se-f .mx-ico { width: 17px; height: 17px; color: #bdbdbd; }
@@ -274,7 +276,7 @@
 .mx-node.is-hidden .mx-eye .mx-ico { color: #8a8a8a; }
 .mx-kind { display: inline-grid; place-items: center; width: 18px; height: 18px; flex: none; }
 .mx-kind .mx-ico { width: 16px; height: 16px; color: #e0e0e0; }
-.mx-name { overflow: hidden; text-overflow: ellipsis; padding-left: 3px; color: #e2e2e2; }
+.mx-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; padding-left: 3px; color: #e2e2e2; }
 .mx-node.is-hidden .mx-name, .mx-node.is-hidden .mx-kind .mx-ico { color: #8e8e8e; }
 .mx-node.is-frozen .mx-name { font-style: italic; }
 .mx-frz { height: 22px; display: grid !important; place-items: center; border-left: 1px solid #3a3a3a !important; }

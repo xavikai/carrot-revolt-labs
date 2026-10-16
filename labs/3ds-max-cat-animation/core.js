@@ -1,0 +1,6 @@
+export const CHANNELS=['hips','arm','foot'];
+export const zeroPose=()=>({hips:0,arm:0,foot:0});
+export function sampleKeys(keys,frame){if(!keys.length)return zeroPose();const sorted=[...keys].sort((a,b)=>a.frame-b.frame);if(frame<=sorted[0].frame)return {...sorted[0].pose};if(frame>=sorted.at(-1).frame)return {...sorted.at(-1).pose};const hi=sorted.findIndex(k=>k.frame>=frame),a=sorted[hi-1],b=sorted[hi],t=(frame-a.frame)/(b.frame-a.frame);return Object.fromEntries(CHANNELS.map(c=>[c,a.pose[c]+(b.pose[c]-a.pose[c])*t]));}
+export function blendPose(base,adjust,weight){const w=Math.max(0,Math.min(1,weight));return Object.fromEntries(CHANNELS.map(c=>[c,base[c]+(adjust[c]||0)*w]));}
+export function walkPose(frame,{stride=28,lift=14,cycle=40}={}){const phase=2*Math.PI*frame/cycle;return {hips:-Math.abs(Math.sin(phase))*lift*.34,arm:Math.sin(phase)*stride*.65,foot:Math.sin(phase)*stride};}
+export function composedPose(keys,frame,{adjust=zeroPose(),adjustWeight=0,motion=false,motionWeight=0,stride=28,lift=14}={}){let pose=sampleKeys(keys,frame);if(motion){const cycle=walkPose(frame,{stride,lift});pose=Object.fromEntries(CHANNELS.map(c=>[c,pose[c]*(1-motionWeight)+cycle[c]*motionWeight]));}return blendPose(pose,adjust,adjustWeight);}

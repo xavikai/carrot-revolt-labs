@@ -173,6 +173,7 @@ export function createMaxShell(root, opts = {}) {
         <div class="mx-tree" id="mx-tree" role="tree"></div>
         <div class="mx-se-foot"><span class="mx-drop" style="width:auto;flex:1">Default<i></i></span>${icon('seLayer')}${icon('seLayerTool')}</div>
       </div>
+      <span class="mx-explorer-resize" role="separator" aria-label="Resize Scene Explorer" title="Resize Scene Explorer"></span>
     </aside>
     <div class="mx-viewport-area">
       <div class="mx-viewport" id="mx-viewport">
@@ -257,6 +258,13 @@ export function createMaxShell(root, opts = {}) {
     if (A.treeClick) { if (state.lock) { api.prompt('Selection Lock is on (Space): press Space to unlock it'); return; } A.treeClick(b.dataset.object, e); } else api.select(b.dataset.object, true);
   });
   on($('#mx-tree'), 'pointerdown', e => { if (!e.target.closest('[data-object]') && e.button === 0 && !state.lock) { if (A.treeClick) A.treeClick(null, e); else api.select(null, true); } });
+  on($('.mx-explorer-resize'), 'pointerdown', e => {
+    e.preventDefault();
+    const explorer=$('.mx-explorer'),startX=e.clientX,startWidth=explorer.getBoundingClientRect().width;
+    const move=event=>{const width=Math.max(260,Math.min(600,startWidth+event.clientX-startX));root.style.setProperty('--mx-explorer-w',`${width}px`);};
+    const stop=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',stop);};
+    window.addEventListener('pointermove',move);window.addEventListener('pointerup',stop,{once:true});
+  });
   on($('.mx-se-side'), 'click', e => {
     const b = e.target.closest('[data-se-filter]'); if (!b) return;
     const k = b.dataset.seFilter;
