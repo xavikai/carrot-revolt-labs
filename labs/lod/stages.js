@@ -1,21 +1,24 @@
 // LOD & Mipmaps Lab: stages, steps and checks. Pure JS (tested with node).
-import { LODS, DEFAULT_T, idealPct, thresholdReport, freqForRatio, rockTris, lodError, errorPx, minFreqAt, DECIMATE_D, TRI_TARGETS, ROCK, field, fieldStats } from './lod.js?v=1';
+import { LODS, DEFAULT_T, DEFAULT_TEX, TEX_SIZES, texReport, idealTex, texMemory, idealPct, thresholdReport, levelForRatio, ratioOf, lodTris, lodError, errorPx, minLevelAt, DECIMATE_D, TRI_TARGETS, LEVELS, field, fieldStats } from './lod.js?v=2';
 
 export function defaultState() {
-  return { scene: 'rock', dist: 4, t: [...DEFAULT_T], fade: 'none', fadeW: 0, colors: false, ratios: [1, 1, 1], sel: 1,
-    mips: true, filter: 'trilinear', aniso: 1, mipView: false, lods: true, bias: 1, cull: 0, flags: {}, quiz: 0 };
+  return { scene: 'model', dist: 4, t: [...DEFAULT_T], fade: 'none', fadeW: 0, colors: false, ratios: [1, 1, 1], sel: 1,
+    mips: true, filter: 'trilinear', aniso: 1, mipView: false, lods: true, bias: 1, cull: 0, texRes: [...DEFAULT_TEX], flags: {}, quiz: 0 };
 }
 const clone = o => JSON.parse(JSON.stringify(o));
 export function startState(step) { return Object.assign(defaultState(), clone(step.start || {}), { flags: {} }); }
 
-// Frequencies of LOD0…LOD3 from the Decimate ratios of LOD1…LOD3.
-export const slotFreqs = st => [ROCK.n0, ...st.ratios.map(r => freqForRatio(r))];
-export const slotTris = st => slotFreqs(st).map(rockTris);
+// Levels of LOD0…LOD3 from the Decimate ratios of LOD1…LOD3.
+export const slotLevels = st => [LEVELS, ...st.ratios.map(r => levelForRatio(r))];
+export const slotTris = st => slotLevels(st).map(lodTris);
 export const idealT = () => [1, 2, 3].map(i => idealPct(LODS[i]));
 const FIELD = field();
 export const fieldOf = () => FIELD;
-export const BUDGET = 1100000;
+export const BUDGET = 290000;
 export const budgetStats = st => fieldStats(FIELD, { lods: st.lods, bias: st.bias, cull: st.cull });
+export const texOk = st => texReport(st.texRes, st.t).every(r => !r.blurry && !r.wasted);
+// A Decimate copy is right when its error stays under 1 px at its distance and it is close to the smallest that does.
+export const decimateOk = (k, d) => errorPx(lodError(k), d) <= 1.0001 && k <= minLevelAt(d) + Math.max(2, Math.ceil(minLevelAt(d) * 0.15));
 export function budgetOk(st) { const s = budgetStats(st); return s.tris <= BUDGET && s.worst <= 1.0001 && s.lostBig === 0; }
 
 // Answer the current quiz question; returns { ok, item }.
@@ -45,10 +48,10 @@ export const MEMORY_QUIZ = [
 ];
 export const MEMORY_OPTS = ['Mipmaps on', 'Mipmaps off'];
 export const BUDGET_QUIZ = [
-  { q: 'A strategy game: the camera is never closer than 30 m. Does the rock need its LOD0?', opts: ['Yes, always', 'No: ship only the lighter LODs'], a: 1, why: 'At 30 m the rock fills about 4 % of the screen height: nobody will ever see LOD0, so it only takes memory.' },
-  { q: 'Rocks disappear in the distance while the player walks.', opts: ['Raise the Culled threshold', 'Lower the Culled threshold, or add a lighter last LOD'], a: 1, why: 'Culling removes objects below the threshold. If they are still big enough to see, they must stay, with a very light mesh.' },
+  { q: 'A strategy game: the camera is never closer than 30 m. Does the statue need its LOD0?', opts: ['Yes, always', 'No: ship only the lighter LODs'], a: 1, why: 'At 30 m the statue fills about 4 % of the screen height: nobody will ever see LOD0, so it only takes memory.' },
+  { q: 'Statues disappear in the distance while the player walks.', opts: ['Raise the Culled threshold', 'Lower the Culled threshold, or add a lighter last LOD'], a: 1, why: 'Culling removes objects below the threshold. If they are still big enough to see, they must stay, with a very light mesh.' },
   { q: 'The game is slow on low-end machines.', opts: ['Lower the LOD Bias in the low quality settings', 'Delete LOD0 from every model'], a: 0, why: 'A LOD Bias below 1 switches every object to lighter LODs earlier, without touching the assets.' },
-  { q: 'A hero statue in the middle of the main square.', opts: ['The same thresholds as the rocks', 'Its own thresholds: LOD0 for longer'], a: 1, why: 'Thresholds are set per object: the player looks at the statue, so it can keep its detail longer.' },
+  { q: 'A hero statue in the middle of the main square.', opts: ['The same thresholds as the small statues', 'Its own thresholds: LOD0 for longer'], a: 1, why: 'Thresholds are set per object: the player looks at the statue, so it can keep its detail longer.' },
 ];
 
 export const STAGES = [
@@ -56,29 +59,38 @@ export const STAGES = [
     id: 'lod', name: 'What a LOD is', sub: 'LOD Group · screen height · popping',
     steps: [
       {
-        id: 'l1', title: 'Far away, fewer triangles',
-        text: 'This rock has four versions: LOD0 with 32,000 triangles, and LOD1, LOD2 and LOD3 with about half, a quarter and an eighth. A LOD Group shows one of them depending on how big the rock is on screen: its screen relative height, the % of the screen height it fills. Move the camera away and watch the version change. Look at the two squares in the corner: they show the rock at the real pixels of a 1080p screen, LOD0 next to the LOD in use.',
-        how: ['Drag the <b>Distance</b> slider in the 3D header, or use the mouse wheel over the view.', 'Turn on <b>LOD colours</b>: each LOD gets a colour, as in the debug view of Unity.', 'See all four LODs: LOD0, LOD1, LOD2 and LOD3.'],
-        why: 'A far rock covers a few pixels: 32,000 triangles there would be thousands of triangles per pixel. The GPU would work for nothing.',
-        start: { scene: 'rock', dist: 3, colors: false },
+        id: 'l1', title: 'Far away, fewer triangles and a smaller texture',
+        text: 'This stone statue of the Stanford Bunny has four versions. LOD0 has 32,000 triangles and a 2048 px texture; LOD1, LOD2 and LOD3 keep about a quarter of the triangles of the one before (8,000, 2,000 and 479) and use smaller textures. A LOD Group shows one of them depending on how big the bunny is on screen: its screen relative height, the % of the screen height it fills. Move the camera away and watch the close-up in the corner: it always shows the version in use from near, with its triangles and its texture, so you can see what the engine swapped.',
+        how: ['Drag the <b>Distance</b> slider in the 3D header, or use the mouse wheel over the view.', 'Watch the <b>LOD in use</b> close-up: the wireframe gets coarser and the texture softer at every switch.', 'Turn on <b>LOD colours</b> (as in the debug view of Unity) and see all four LODs: LOD0, LOD1, LOD2 and LOD3.'],
+        why: 'A far bunny covers a few pixels: 32,000 triangles and a 2048 px texture there would be thousands of triangles and texels per pixel. The GPU would work, and the memory fill up, for nothing.',
+        start: { scene: 'model', dist: 2.2, colors: false },
         check: s => [0, 1, 2, 3].every(i => s.flags['seen' + i]),
         solve: s => { for (const i of [0, 1, 2, 3]) s.flags['seen' + i] = true; s.dist = 40; s.colors = true; },
       },
       {
         id: 'l2', title: 'When to switch',
-        text: 'These thresholds switch far too early: LOD1 already takes over at 60 % of the screen height, and you can see the rock change. Each LOD has an error: how far its surface is from LOD0. On screen that error is measured in pixels, and it shrinks as the rock gets smaller. A LOD should appear when its error is about one pixel: less than 1 px so nobody sees it, and not much less, or you keep heavy meshes for nothing. Set the three thresholds.',
+        text: 'These thresholds switch far too early: LOD1 already takes over at 60 % of the screen height, and you can see the bunny change. Each LOD has an error: how far its surface is from LOD0. On screen that error is measured in pixels, and it shrinks as the bunny gets smaller. A LOD should appear when its error is about one pixel: less than 1 px so nobody sees it, and not much less, or you keep heavy meshes for nothing. Set the three thresholds.',
         how: ['In the <b>LOD Group</b> panel, drag the dividers of the bar or type the %.', 'Each row shows the <b>error on screen</b> at the moment that LOD switches in. Aim for 0.5–1 px (green).', 'Move the camera and compare the two squares at game resolution: at the switch they should look the same.'],
-        why: 'The threshold is in % of the screen height, not in metres, so the same LOD Group works for a small or a big rock and on any screen resolution.',
-        start: { scene: 'rock', dist: 6, t: [60, 40, 20, 1], colors: true },
+        why: 'The threshold is in % of the screen height, not in metres, so the same LOD Group works for a small or a big statue and on any screen resolution.',
+        start: { scene: 'model', dist: 3, t: [60, 40, 20, 1], colors: true },
         check: s => thresholdReport(s.t).every(r => !r.early && !r.late),
         solve: s => { s.t = [...idealT().map(p => Math.round(p * 0.85 * 10) / 10), 1]; },
+      },
+      {
+        id: 'lt', title: 'A texture for each LOD',
+        text: 'The artist gave all four LODs the same 2048 px texture: 85 MB of memory for one statue. But a far LOD is small on screen, so it can only show a few texels. The rule is the same as for triangles: each LOD needs at least one texel per screen pixel at the nearest distance where it is used, and not much more. One metre of statue on screen gives the pixels; the texture gives the texels per metre (one copy covers 2 m). Choose the smallest texture for each LOD that is still sharp.',
+        how: ['In the <b>LOD textures</b> panel, look at <b>1 m on screen</b>: the pixels that one metre of statue covers where that LOD starts.', 'Choose a <b>texture size</b> for each LOD. <b>Texels per pixel</b> must be 1 or more (sharp) and under 2 (no waste).', 'Move the camera to each switch and look at the close-up and at <b>Mip colours</b>: far away the GPU never reads the big copies.'],
+        why: 'The GPU already reads a small mip when the statue is far, so the picture does not change: what you save is memory and loading time. In Unity a LOD can have its own material and texture, or one texture with Mipmap Streaming, which loads only the mips the camera needs; Unreal streams mips too.',
+        start: { scene: 'model', dist: 3.5, t: [41, 12.5, 2.8, 1], colors: true, texRes: [2048, 2048, 2048, 2048] },
+        check: s => texOk(s),
+        solve: s => { s.texRes = [0, 1, 2, 3].map(i => idealTex(i, s.t)); },
       },
       {
         id: 'l3', title: 'Hide the pop',
         text: 'Even with good thresholds, the swap happens in one frame: the pop. Players notice it when the camera moves slowly. Unity\'s LOD Group has a Fade Mode: with Cross Fade the two LODs are mixed during a short range (Fade Transition Width), so one melts into the other. Turn it on and play the camera move.',
         how: ['In the <b>LOD Group</b> panel, set <b>Fade Mode</b> to <b>Cross Fade</b>.', 'Give it a <b>Fade Transition Width</b> of 0.1 or more.', 'Press <b>▶ Play</b> (or <kbd>Space</kbd>): the camera moves away slowly. Watch the LOD colours blend instead of jumping.'],
         why: 'Cross Fade costs a little (both LODs are drawn during the fade), so it is worth it on objects the player watches. LOD Bias in the quality settings moves every threshold at once.',
-        start: { scene: 'rock', dist: 4, t: [23, 9.3, 3.6, 1], colors: true, fade: 'none', fadeW: 0 },
+        start: { scene: 'model', dist: 2.2, t: [41, 12.5, 2.8, 1], colors: true, fade: 'none', fadeW: 0 },
         check: s => s.fade === 'cross' && s.fadeW >= 0.1 && !!s.flags.playedCross,
         solve: s => { s.fade = 'cross'; s.fadeW = 0.25; s.flags.playedCross = true; },
       },
@@ -92,18 +104,18 @@ export const STAGES = [
         text: 'In Blender, each LOD is a copy of the model with a Decimate modifier. Collapse mode keeps a Ratio of the triangles: 0.5 keeps half. A common starting rule is to halve the triangles at every LOD: LOD1 50 %, LOD2 25 %, LOD3 12.5 % of LOD0. Set the Ratio of the three copies and check the Face Count.',
         how: ['Choose a copy in the tabs: <b>LOD1</b>, <b>LOD2</b> or <b>LOD3</b>.', 'In the <b>Decimate</b> modifier, drag the <b>Ratio</b>. The <b>Face Count</b> below shows the triangles left.', 'Get each copy within 10 % of its target. Turn on <b>Wireframe</b> to see the triangles disappear.'],
         why: 'Halving is a starting point, not a law: the right amount depends on the distance where each LOD will be seen. That is the next step.',
-        start: { scene: 'decimate', dist: 3, ratios: [1, 1, 1], sel: 1 },
-        check: s => slotTris(s).slice(1).every((n, i) => Math.abs(n / rockTris(ROCK.n0) - TRI_TARGETS[i]) <= TRI_TARGETS[i] * 0.1),
+        start: { scene: 'decimate', dist: 2.2, ratios: [1, 1, 1], sel: 1 },
+        check: s => slotTris(s).slice(1).every((n, i) => Math.abs(n / lodTris(LEVELS) - TRI_TARGETS[i]) <= TRI_TARGETS[i] * 0.1),
         solve: s => { s.ratios = [...TRI_TARGETS]; },
       },
       {
         id: 'd2', title: 'Only as many as the distance needs',
-        text: 'The LOD Group of this level switches at fixed distances: LOD1 from 8 m, LOD2 from 20 m, LOD3 from 50 m. Each copy only needs enough triangles to keep its error under one pixel at the distance where it starts. Find the smallest Ratio for each copy: the view jumps to the distance of the selected copy.',
-        how: ['Choose <b>LOD1</b>, <b>LOD2</b> or <b>LOD3</b>: the camera moves to 8, 20 or 50 m.', 'Lower the <b>Ratio</b> until the <b>error on screen</b> is just under 1 px.', 'Compare the squares at game resolution: LOD0 and your copy should look the same.'],
-        why: 'The far LODs can lose much more than half: at 50 m the rock is a few dozen pixels high. Every triangle you remove there is saved for every rock in the level.',
+        text: 'The LOD Group of this level switches at fixed distances: LOD1 from 4 m, LOD2 from 10 m, LOD3 from 25 m. Each copy only needs enough triangles to keep its error under one pixel at the distance where it starts. Find the smallest Ratio for each copy: the view jumps to the distance of the selected copy.',
+        how: ['Choose <b>LOD1</b>, <b>LOD2</b> or <b>LOD3</b>: the camera moves to 4, 10 or 25 m.', 'Lower the <b>Ratio</b> until the <b>error on screen</b> is just under 1 px.', 'Compare the squares at game resolution: LOD0 and your copy should look the same.'],
+        why: 'The far LODs can lose much more than half: at 25 m the bunny is about 50 pixels high and a few hundred triangles are enough. Every triangle you remove there is saved for every copy in the level.',
         start: { scene: 'decimate', ratios: [0.5, 0.25, 0.125], sel: 1, fixedD: true },
-        check: s => slotFreqs(s).slice(1).every((n, i) => errorPx(lodError(n), DECIMATE_D[i]) <= 1.0001 && n <= minFreqAt(DECIMATE_D[i]) + 1),
-        solve: s => { s.ratios = DECIMATE_D.map(d => +((minFreqAt(d) / ROCK.n0) ** 2).toFixed(3)); },
+        check: s => slotLevels(s).slice(1).every((k, i) => decimateOk(k, DECIMATE_D[i])),
+        solve: s => { s.ratios = DECIMATE_D.map(d => ratioOf(minLevelAt(d))); },
       },
       {
         id: 'd3', title: 'Collapse, Un-Subdivide or Planar?',
@@ -161,9 +173,9 @@ export const STAGES = [
     id: 'budget', name: 'Scene budget', sub: 'Triangles · culling · LOD Bias',
     steps: [
       {
-        id: 'b1', title: 'A field of rocks',
-        text: 'A level with 160 rocks, from 6 m to 300 m away. Without LODs the GPU draws 5 million triangles, most of them in rocks a few pixels high. The budget for this view is 1.1 million. Use the LOD Group, the LOD Bias and the Culled threshold (objects smaller than that % of the screen height are not drawn) to fit the budget without a visible error and without making visible rocks vanish.',
-        how: ['Turn on <b>LOD Group</b> and read the triangles.', 'Try <b>LOD Bias</b> 0.5 and 2: see the triangles and the <b>worst error</b> change.', 'Set <b>Culled</b> so the far specks are not drawn, but no rock bigger than 1 % of the screen height disappears.'],
+        id: 'b1', title: 'A park of statues',
+        text: 'A park with 160 bunny statues, from 6 m to 300 m away. Without LODs the GPU draws 5 million triangles, most of them in statues a few pixels high. The budget for this view is 290,000. Use the LOD Group, the LOD Bias and the Culled threshold (objects smaller than that % of the screen height are not drawn) to fit the budget without a visible error and without making visible statues vanish.',
+        how: ['Turn on <b>LOD Group</b> and read the triangles.', 'Try <b>LOD Bias</b> 0.5 and 2: see the triangles and the <b>worst error</b> change.', 'Set <b>Culled</b> so the far specks are not drawn, but no statue bigger than 1 % of the screen height disappears.'],
         why: 'LODs and culling do most of the work for free: the player sees the same picture. LOD Bias is the global knob for weaker machines.',
         start: { scene: 'field', lods: false, bias: 1, cull: 0, colors: false },
         check: s => budgetOk(s),
@@ -181,4 +193,4 @@ export const STAGES = [
     ],
   },
 ];
-export { LODS, DECIMATE_D, TRI_TARGETS, idealPct, thresholdReport };
+export { TEX_SIZES, texMemory, LODS, DECIMATE_D, TRI_TARGETS, idealPct, thresholdReport };

@@ -6,7 +6,7 @@
   <meta name="description" content="Understand LODs and mipmaps: why a far object needs fewer triangles and smaller textures, when a LOD Group switches, how to make LODs with Decimate, why textures shimmer without mipmaps, and how to fit a whole scene in a budget.">
   <title>LOD &amp; Mipmaps Lab · Carrot Revolt Labs</title>
   <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./style.css?v=2">
+  <link rel="stylesheet" href="./style.css?v=4">
   <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
   <link rel="stylesheet" href="../../lab-brief.css?v=8">
   <script type="module" src="../../lab-brief.js?v=7"></script>
@@ -18,7 +18,7 @@
     <section class="lab-top">
       <div class="lab-lead">
         <h1>Far away, <span>less is enough.</span></h1>
-        <p>A <strong>LOD</strong> (level of detail) is a lighter copy of a model that the engine shows when the model is small on screen. <strong>Mipmaps</strong> do the same for textures. Watch a <strong>LOD Group</strong> switch, set its thresholds, make the LODs with <strong>Decimate</strong>, stop a floor from shimmering, and fit a whole scene in a budget.</p>
+        <p>A <strong>LOD</strong> (level of detail) is a lighter copy of a model, with fewer triangles and a smaller texture, that the engine shows when the model is small on screen. <strong>Mipmaps</strong> do the same inside every texture. Watch a <strong>LOD Group</strong> switch, set its thresholds, make the LODs with <strong>Decimate</strong>, stop a floor from shimmering, and fit a whole scene in a budget.</p>
       </div>
       <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
         <span class="control-label">STAGE</span>
@@ -35,11 +35,18 @@
             <label class="hdr-field" id="dist-field"><span>Distance</span><input type="range" id="dist" min="0" max="1000" step="1"><output id="dist-out" data-no-i18n></output></label>
             <button type="button" class="ruler-btn wire-btn" id="wire-btn" aria-pressed="false" data-no-i18n>Wireframe</button>
             <button type="button" class="ruler-btn wire-btn" id="colors-btn" aria-pressed="false">LOD colours</button>
+            <button type="button" class="ruler-btn wire-btn" id="mipcol-btn" aria-pressed="false">Mip colours</button>
             <button type="button" class="ruler-btn play-btn" id="play-btn" aria-pressed="false">▶ Play</button>
           </div>
           <div class="view-host lod-view" id="view-host">
             <canvas id="view" aria-label="3D view"></canvas>
             <div class="vp-text" id="vp-text" data-no-i18n></div>
+            <div class="closeup" id="closeup" hidden>
+              <span class="inset-title">LOD in use, seen up close</span>
+              <canvas id="closeup-c"></canvas>
+              <span class="closeup-cap" id="closeup-cap" data-no-i18n></span>
+            </div>
+            <div class="mip-legend" id="mip-legend" hidden><span>Texture the GPU reads</span><div data-no-i18n><i style="background:#e04a3f">2048</i><i style="background:#f0a030">1024</i><i style="background:#e8e040">512</i><i style="background:#6cc04a">256</i><i style="background:#40b8c8">128</i><i style="background:#4a70e0">64</i><i style="background:#a050d8">32</i><i style="background:#e050a0">16</i></div></div>
             <div class="insets" id="insets" hidden>
               <span class="inset-title">At game resolution (1080p)</span>
               <div class="inset-row"><figure><canvas id="inset-a" width="150" height="150"></canvas><figcaption data-no-i18n>LOD0</figcaption></figure><figure><canvas id="inset-b" width="150" height="150"></canvas><figcaption id="inset-b-cap" data-no-i18n>LOD1</figcaption></figure></div>
@@ -74,8 +81,8 @@
 
     <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER AND THE ENGINE</span><h2>LODs in practice</h2><p>Blender makes the meshes; the game engine switches them. Mipmaps are made by the engine when it imports a texture.</p></div><ol><li>Duplicate the model (<kbd>Shift</kbd> <kbd>D</kbd>) and name the copies <strong>_LOD0</strong>, <strong>_LOD1</strong>, <strong>_LOD2</strong>… Unity and Unreal read these suffixes on import.</li><li>Add a <strong>Decimate</strong> modifier to each copy. <strong>Collapse</strong> with a <strong>Ratio</strong> (often about half the triangles for each LOD); watch the <strong>Face Count</strong>. <strong>Un-Subdivide</strong> for grids, <strong>Planar</strong> for flat hard-surface parts.</li><li>Check the silhouette from the distance where each LOD will start, and keep UV seams and hard edges (Planar › Delimit).</li><li>Export all the LODs in one FBX. In Unity the <strong>LOD Group</strong> sets the thresholds in % of screen height and the Fade Mode; in Unreal the <strong>LOD Settings</strong> use Screen Size.</li><li>Textures: keep <strong>Generate Mip Maps</strong> on for 3D textures, use <strong>Trilinear</strong> and <strong>Aniso Level</strong> for floors; turn mips off for UI drawn pixel for pixel.</li><li>Use <strong>LOD Bias</strong> in the quality settings to trade detail for speed on weaker machines.</li></ol></aside>
   </main>
-  <footer><span>Carrot Revolt Labs · LOD &amp; Mipmaps Lab</span><a href="https://docs.blender.org/manual/en/latest/modeling/modifiers/generate/decimate.html" target="_blank" rel="noopener">Blender: Decimate ↗</a><span>Teaching model · the Unity LOD Group as reference.</span><a href="../../">All labs ↑</a></footer>
-  <script type="module" src="./app.js?v=2"></script>
+  <footer><span>Carrot Revolt Labs · LOD &amp; Mipmaps Lab</span><a href="https://docs.blender.org/manual/en/latest/modeling/modifiers/generate/decimate.html" target="_blank" rel="noopener">Blender: Decimate ↗</a><a href="https://graphics.stanford.edu/data/3Dscanrep/" target="_blank" rel="noopener">Stanford Bunny: Stanford Computer Graphics Laboratory ↗</a><span>Teaching model · the Unity LOD Group as reference.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=4"></script>
   <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
 </body>
 </html>

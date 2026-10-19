@@ -327,4 +327,9 @@ export default {
   'IMAGE &amp; VIDEO · 2 LABS': { ca: 'IMATGE I VÍDEO · 2 LABS', es: 'IMAGEN Y VÍDEO · 2 LABS' },
   'IMAGE & VIDEO · 2 LABS': { ca: 'IMATGE I VÍDEO · 2 LABS', es: 'IMAGEN Y VÍDEO · 2 LABS' },
   'VISUAL DESIGN · 2 LABS': { ca: 'DISSENY VISUAL · 2 LABS', es: 'DISEÑO VISUAL · 2 LABS' },
+  // NLA Lab
+  "Learn Blender's NLA Editor with a walking mannequin: push actions down into strips, sequence them, layer a wave over a walk, fix an action in Tweak Mode, use Extrapolation, Blending and Influence, repeat and scale cycles, and bake the mix for Unity.": { ca: "Aprèn el NLA Editor de Blender amb un maniquí que camina: converteix accions en strips amb Push Down, posa-les en seqüència, afegeix una salutació sobre el caminar, corregeix una acció en Tweak Mode, fes servir Extrapolation, Blending i Influence, repeteix i escala cicles i fes el bake de la mescla per a Unity.", es: "Aprende el NLA Editor de Blender con un maniquí que camina: convierte acciones en strips con Push Down, ponlas en secuencia, añade un saludo sobre el caminar, corrige una acción en Tweak Mode, usa Extrapolation, Blending e Influence, repite y escala ciclos y haz el bake de la mezcla para Unity." },
+  'Actions · strips · tracks · blending': { ca: 'Accions · strips · tracks · blending', es: 'Acciones · strips · tracks · blending' },
+  '3D SOFTWARE · 20 LABS': { ca: 'PROGRAMARI 3D · 20 LABS', es: 'SOFTWARE 3D · 20 LABS' },
+  '20 labs available': { ca: '20 labs disponibles', es: '20 labs disponibles' },
 };

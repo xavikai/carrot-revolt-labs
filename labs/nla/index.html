@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Learn Blender's NLA Editor step by step: actions, Push Down, strips, Tweak Mode, tracks, extrapolation, blending, influence, repeat, scale, meta strips and Bake Action, with a walking mannequin.">
+  <title>NLA Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../../blender-ui.css?v=3">
+  <script type="module">import { blenderize } from '../../blender-ui.js?v=2'; blenderize();</script>
+  <link rel="stylesheet" href="./style.css?v=2">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+  <link rel="stylesheet" href="../../lab-brief.css?v=8">
+  <script type="module" src="../../lab-brief.js?v=8"></script>
+  <link rel="stylesheet" href="../../brand.css?v=1">
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 27</span><strong>NLA Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>Actions become strips. <span>Strips become a performance.</span></h1>
+        <p>The <strong>NLA Editor</strong> (Nonlinear Animation) places whole actions in time and mixes them, like layers in a video editor. Push actions down into <strong>strips</strong>, sequence them, layer a wave over a walk, fade with <strong>Influence</strong>, repeat and scale cycles, and bake the result into one clip.</p>
+        <p class="fund-link"><a href="#fundamentals">New to the NLA? Read the fundamentals first ↓</a></p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="Blender-style Animation workspace with the NLA Editor">
+      <div class="b-topbar"><div class="menubar"><button type="button" class="menu-button" data-menu="file" aria-haspopup="menu" data-help="file">File</button></div><span class="ws-tabs" aria-hidden="true" data-no-i18n><span>Layout</span><span>Modeling</span><span class="on">Animation</span><span>Rendering</span></span></div>
+      <div class="nla-top">
+        <section class="editor" id="ed-view" data-editor="view" aria-label="3D Viewport">
+          <div class="editor-header">
+            <span class="editor-type">3D Viewport</span><span class="mode-pill" title="The mannequin is an armature in Pose Mode">Pose Mode</span>
+            <div class="view-toggles">
+              <label class="live-toggle" title="Lab view: what every track gives at the current frame, from the bottom up"><input type="checkbox" id="t-stack" checked><span class="switch" aria-hidden="true"></span>Stack</label>
+              <label class="live-toggle" title="In Blender: Viewport Overlays › Bones"><input type="checkbox" id="t-bones"><span class="switch" aria-hidden="true"></span>Bones</label>
+            </div>
+          </div>
+          <div class="view-host" id="view-host"><canvas id="view" aria-label="The mannequin in 3D"></canvas><div class="view-overlay" id="view-overlay"></div><div class="stack-view" id="stack-view"></div><span class="graph-hint">MMB orbit · Shift MMB pan · Wheel zoom · Home</span></div>
+        </section>
+
+        <section class="editor" id="ed-action" data-editor="action" aria-label="Dope Sheet › Action Editor">
+          <div class="editor-header ae-header" id="ae-header"></div>
+          <div class="ae-host" id="ae-host"><canvas id="ae" aria-label="Keyframes of the action"></canvas><div class="ae-empty" id="ae-empty" hidden></div><div class="op-readout" id="ae-readout" hidden></div></div>
+        </section>
+      </div>
+
+      <section class="editor nla-editor" id="ed-nla" data-editor="nla" aria-label="Nonlinear Animation editor">
+        <div class="editor-header">
+          <span class="editor-type">Nonlinear Animation</span>
+          <div class="menubar">
+            <button type="button" class="menu-button" data-menu="view" aria-haspopup="menu">View</button>
+            <button type="button" class="menu-button" data-menu="select" aria-haspopup="menu">Select</button>
+            <button type="button" class="menu-button" data-menu="add" aria-haspopup="menu">Add</button>
+            <button type="button" class="menu-button" data-menu="track" aria-haspopup="menu">Track</button>
+            <button type="button" class="menu-button" data-menu="strip" aria-haspopup="menu">Strip</button>
+          </div>
+          <span class="tweak-badge" id="tweak-badge" hidden>TWEAK MODE</span>
+          <button type="button" class="mini-button sb-toggle" id="sb-toggle" title="Sidebar (N)" aria-pressed="true">Sidebar</button>
+        </div>
+        <div class="nla-body" id="nla-body">
+          <div class="nla-scroll" id="nla-scroll">
+            <div class="nla-channels" id="nla-channels" aria-label="Tracks"></div>
+            <div class="nla-host" id="nla-host"><canvas id="nla" aria-label="NLA strips"></canvas></div>
+          </div>
+          <aside class="sidebar nla-sidebar" id="nla-sidebar" aria-label="Sidebar (N)"></aside>
+          <div class="op-readout" id="nla-readout" hidden></div>
+        </div>
+      </section>
+
+      <section class="editor timeline" id="ed-time" data-editor="time" aria-label="Timeline">
+        <div class="editor-header">
+          <span class="editor-type">Timeline</span>
+          <div class="play-controls">
+            <button type="button" id="b-start" title="Jump to start (Shift ←)">⏮</button>
+            <button type="button" id="b-prev" title="Previous frame (←)">◂</button>
+            <button type="button" id="b-play" title="Play (Space)" aria-pressed="false">▶</button>
+            <button type="button" id="b-next" title="Next frame (→)">▸</button>
+            <button type="button" id="b-end" title="Jump to end (Shift →)">⏭</button>
+          </div>
+          <label class="frame-field">Frame <input type="number" id="f-cur" class="current" min="0" max="400" value="1"></label>
+          <label class="frame-field">Start <input type="number" id="f-start" min="0" max="399" value="1"></label>
+          <label class="frame-field">End <input type="number" id="f-end" min="2" max="400" value="120"></label>
+          <span class="fps">24 fps · <span id="time-sec">0.00 s</span></span>
+        </div>
+      </section>
+
+      <div class="statusbar">
+        <span class="status-keys" id="status-keys"></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+      <div id="menu" class="context-menu" role="menu" hidden></div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="fundamentals" id="fundamentals" aria-labelledby="fund-title">
+      <div class="fund-head"><span class="eyebrow">FUNDAMENTALS</span><h2 id="fund-title">The NLA Editor, piece by piece</h2><p>Read a tab before a stage, or come back when something is not clear. The examples on the Extrapolation and Blending tabs react to what you change.</p></div>
+      <div class="fund-tabs" role="tablist" id="fund-tabs">
+        <button type="button" role="tab" data-tab="vocab" aria-selected="true">Vocabulary</button>
+        <button type="button" role="tab" data-tab="save" aria-selected="false">Saving actions</button>
+        <button type="button" role="tab" data-tab="order" aria-selected="false">Evaluation order</button>
+        <button type="button" role="tab" data-tab="extrap" aria-selected="false">Extrapolation</button>
+        <button type="button" role="tab" data-tab="blend" aria-selected="false">Blending</button>
+        <button type="button" role="tab" data-tab="controls" aria-selected="false">Every control</button>
+      </div>
+
+      <div class="fund-panel" data-panel="vocab" role="tabpanel">
+        <dl class="vocab">
+          <div><dt>Action</dt><dd>A data-block that stores the keyframes (F-curves) of an object or an armature: Walk, Jump… Its keys have their own frame numbers, independent of where it plays in the scene.</dd></div>
+          <div><dt>Active action</dt><dd>The one action an object plays directly, the one you edit in the Action Editor. In the NLA it is the orange row at the top, the <b>action line</b>.</dd></div>
+          <div><dt>Strip</dt><dd>A block in an NLA track that plays an action, or part of it, at a place in the timeline of the scene, with its own speed, repeats and mixing. It references the action: it does not copy the keys.</dd></div>
+          <div><dt>Track</dt><dd>A row of strips that never overlap. Tracks are layers: the ones above are mixed on top of the ones below.</dd></div>
+          <div><dt>Stack</dt><dd>All the tracks plus the action line. Blender evaluates it from the bottom up, at every frame.</dd></div>
+          <div><dt>Push Down</dt><dd>Turns the active action into a strip in a new track at the top of the stack. The action line is left empty.</dd></div>
+          <div><dt>Stash</dt><dd>Keeps the active action in a muted track called [Action Stash]: it is saved with the file but does not play.</dd></div>
+          <div><dt>Tweak Mode</dt><dd>Tab on a strip: its action opens in the Action Editor and you edit the keys themselves. Every strip that plays that action changes. Tab again to leave.</dd></div>
+          <div><dt>Users · Fake User</dt><dd>How many things use a data-block. An action with 0 users is not saved. The Fake User (F) is a user that never goes away.</dd></div>
+          <div><dt>Slot</dt><dd>Since Blender 4.4, the part of an action that belongs to one object. One action can animate several objects, one slot each.</dd></div>
+        </dl>
+      </div>
+
+      <div class="fund-panel" data-panel="save" role="tabpanel" hidden>
+        <div class="save-grid">
+          <div>
+            <h3>Why an action disappears</h3>
+            <p>A .blend file only keeps the data that something uses. Every action counts its users, and when you save, close and reopen the file, the actions with 0 users are gone. Animators lose work this way more than any other: an action made in the Action Editor, replaced by another one, and never pushed down, stashed or given a Fake User.</p>
+            <div class="users-diagram" aria-label="What counts as a user of an action">
+              <div class="ud-sources"><span>Strip in a track <i>+1</i></span><span>Action line (active) <i>+1</i></span><span>Stashed strip <i>+1</i></span><span>Fake User F <i>+1</i></span></div>
+              <div class="ud-arrow" aria-hidden="true">→</div>
+              <div class="ud-results"><span class="ok">1 or more users: saved with the file</span><span class="bad">0 users: lost when you save and reopen</span></div>
+            </div>
+          </div>
+          <div>
+            <h3>Good habits</h3>
+            <ol>
+              <li>Turn on the <b>F</b> of every action of a character as soon as you create it.</li>
+              <li>Before you switch to another action in the Action Editor, <b>Stash</b> or <b>Push Down</b> the current one. <b>New</b> stashes it for you if nothing else uses it.</li>
+              <li>Read the <b>Browse Action</b> list: an action with 0 and no F will disappear (the lab marks it with ⚠).</li>
+              <li>Deleting a strip (<kbd>X</kbd>) or unlinking an action (✕) takes away a user, not the action. The action goes at the next save if nothing else uses it.</li>
+              <li>In Blender's Outliner, <b>Display Mode › Blender File</b> lists every action and <b>Orphan Data</b> lists the ones with 0 users. <b>File › Clean Up › Purge Unused Data</b> deletes the orphans.</li>
+            </ol>
+            <p class="fund-note">Try it in stage 2, with <b>File › Save &amp; Reopen</b> at the top left of the workspace.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="fund-panel" data-panel="order" role="tabpanel" hidden>
+        <div class="order-grid">
+          <p>At every frame Blender starts from the rest pose and goes up the stack, track by track. Each strip that plays at that frame (or holds its pose) is mixed onto the result below it with its Blending and its Influence. The active action, the orange row, is mixed last, on top. Muted tracks are skipped; with Solo, only the soloed tracks count.</p>
+          <ol class="stack-diagram" aria-label="Evaluation order">
+            <li class="sd-line"><b>Action line</b><span>the active action · evaluated last</span></li>
+            <li><b>NlaTrack.001</b><span>Wave · Replace · Influence 0.6</span></li>
+            <li><b>NlaTrack</b><span>Walk · Replace · Influence 1</span></li>
+            <li class="sd-rest"><b>Rest pose</b><span>channels nothing animates · evaluated first</span></li>
+          </ol>
+          <p>A strip only mixes the channels its action has keys for. That is why a Wave that only keys the right arm can sit on top of a Walk: the legs come from the track below. The <b>Stack</b> switch in the 3D Viewport shows this list for the current frame.</p>
+        </div>
+      </div>
+
+      <div class="fund-panel" data-panel="extrap" role="tabpanel" hidden>
+        <p class="fund-intro">One track with two strips, A and B. The graph is one channel (a rotation) over time. Change the Extrapolation of each strip and read what happens in each region.</p>
+        <div class="demo-controls" id="ex-controls">
+          <label>Strip A <select id="ex-a" data-no-i18n><option value="HOLD">Hold</option><option value="HOLD_FORWARD">Hold Forward</option><option value="NOTHING" selected>Nothing</option></select></label>
+          <label>Strip B <select id="ex-b" data-no-i18n><option value="HOLD" disabled>Hold</option><option value="HOLD_FORWARD">Hold Forward</option><option value="NOTHING" selected>Nothing</option></select></label>
+          <label class="demo-check"><input type="checkbox" id="ex-below"> A track below (a constant pose)</label>
+        </div>
+        <div class="demo-svg" id="ex-svg"></div>
+        <ul class="demo-legend" id="ex-legend"></ul>
+        <p class="fund-note">B cannot use Hold: only the first strip of a track can. Blender changes it to Hold Forward.</p>
+      </div>
+
+      <div class="fund-panel" data-panel="blend" role="tabpanel" hidden>
+        <p class="fund-intro">One channel, two values: the result of the tracks below and the value of the strip. Move the sliders and compare the five Blending modes.</p>
+        <div class="demo-controls">
+          <label>Channel <select id="bl-kind"><option value="rot">Rotation (degrees)</option><option value="scale">Scale</option></select></label>
+          <label>Result below <input type="range" id="bl-below"><output id="bl-below-o"></output></label>
+          <label>Strip value <input type="range" id="bl-strip"><output id="bl-strip-o"></output></label>
+          <label>Influence <input type="range" id="bl-inf" min="0" max="1" step="0.05" value="1"><output id="bl-inf-o"></output></label>
+        </div>
+        <table class="blend-demo" id="bl-table"><thead><tr><th>Blending</th><th>Formula</th><th>Result</th></tr></thead><tbody></tbody></table>
+        <p class="fund-note" id="bl-note"></p>
+      </div>
+
+      <div class="fund-panel" data-panel="controls" role="tabpanel" hidden>
+        <p class="fund-intro">Every control of the lab, grouped as in Blender. In the workspace, rest the mouse on a control to read the same explanation.</p>
+        <div class="controls-map" id="controls-map"></div>
+      </div>
+    </section>
+
+    <section class="shortcuts" aria-label="Blender shortcuts used in this lab">
+      <div><span class="eyebrow">SAME KEYS AS BLENDER</span><h2>Shortcuts you can use here</h2><p>Keys go to the editor under the mouse, as in Blender: the same G moves strips in the NLA and keys in the Action Editor.</p></div>
+      <dl>
+        <div><dt><kbd>LMB</kbd> · <kbd>Shift</kbd><kbd>LMB</kbd></dt><dd>Select a strip (or a key) · add to the selection. Drag a strip to move it in time or to another track. Drag on empty space to box-select. Click a track name to make it the active track.</dd></div>
+        <div><dt><kbd>G</kbd> · <kbd>S</kbd></dt><dd>Move · scale the selected strips (type a number for an exact value; Enter or click confirms, Esc cancels)</dd></div>
+        <div><dt><kbd>Tab</kbd></dt><dd>Start / stop tweaking the action of the selected strip (Full Stack)</dd></div>
+        <div><dt><kbd>Shift</kbd><kbd>A</kbd> · <kbd>Shift</kbd><kbd>T</kbd></dt><dd>Add an action strip at the current frame · add a transition between two selected strips</dd></div>
+        <div><dt><kbd>Shift</kbd><kbd>D</kbd> · <kbd>Alt</kbd><kbd>D</kbd></dt><dd>Duplicate (with a copy of the action) · Linked Duplicate (same action)</dd></div>
+        <div><dt><kbd>Y</kbd> · <kbd>X</kbd> · <kbd>H</kbd></dt><dd>Split at the current frame · delete · toggle muting</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>A</kbd> · <kbd>Alt</kbd><kbd>S</kbd> · <kbd>U</kbd></dt><dd>Apply Scale · Clear Scale · Make Single User</dd></div>
+        <div><dt><kbd>Alt</kbd><kbd>F</kbd> · <kbd>PageUp</kbd> <kbd>PageDown</kbd></dt><dd>Swap two strips · move strips to the track above / below</dd></div>
+        <div><dt><kbd>I</kbd></dt><dd>Over the Influence field (Animated Influence on): insert a key of the influence</dd></div>
+        <div><dt><kbd>A</kbd> · <kbd>Alt</kbd><kbd>A</kbd> · <kbd>Home</kbd> · <kbd>N</kbd></dt><dd>Select all / none · frame all · show or hide the Sidebar</dd></div>
+        <div><dt><kbd>Space</kbd> · <kbd>←</kbd> <kbd>→</kbd></dt><dd>Play / pause · previous / next frame (<kbd>Shift</kbd> jumps to the start / end)</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>Z</kbd></dt><dd>Undo · <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Z</kbd> redo</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">BACK IN BLENDER</span><h2>The NLA in a real project</h2><p>This lab is a simplified Blender: one armature, six actions and the main NLA tools. Push Down, tracks, extrapolation, blending, influence and the Action Clip settings behave like Blender's.</p></div><ol><li>Open the <strong>Animation</strong> workspace and change one editor to <strong>Nonlinear Animation</strong>. Keep a <strong>Dope Sheet › Action Editor</strong> next to it.</li><li>Animate each motion as its own action (<strong>New</strong> in the Action Editor) and give it a <strong>Fake User</strong> (shield icon) or <strong>Push Down</strong> / <strong>Stash</strong> it, so it is not lost when nothing uses it.</li><li>Since Blender 4.4 an action has <strong>slots</strong>: one action can hold the animation of several objects. The <strong>Slot</strong> field next to the action (Action Editor header, Action Clip panel) says which part a strip plays. With one character, the slot has the object's name.</li><li>Keep loops clean: key the first pose again at the end, then set the strip's <strong>Frame End</strong> one frame earlier. For walks that travel, animate them in place and move the character's root separately, because a repeated strip does not accumulate location.</li><li>Layer corrections with <strong>Combine</strong>, fade with <strong>Blend In/Out</strong> or an <strong>Animated Influence</strong>, and check layers with <strong>Solo</strong> and the track checkboxes.</li><li>For Unity, export each action as a clip (FBX › Animation › <strong>NLA Strips</strong> or <strong>All Actions</strong>), or <strong>Bake Action</strong> a mix into one action first. The Export Lab covers the FBX options.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · NLA Lab</span><a href="https://docs.blender.org/manual/en/latest/editors/nla/index.html" target="_blank" rel="noopener">Blender: Nonlinear Animation ↗</a><span>Teaching model · simplified NLA Editor.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=2"></script>
+  <script type="module" src="./fundamentals.js?v=1"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>
