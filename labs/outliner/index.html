@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Blender's Outliner in depth, on a small game level: collections (new, nested, linked, instanced), the restriction toggles (exclude, hide, disable in renders, selectable, isolate), filters and search, and the Blender File and Unused Data display modes to remap and purge data-blocks.">
+  <title>Outliner Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=2">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+  <link rel="stylesheet" href="../../lab-brief.css?v=8">
+  <script type="module" src="../../lab-brief.js?v=7"></script>
+  <link rel="stylesheet" href="../../brand.css?v=1">
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 24</span><strong>Outliner Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>The Outliner, <span>in depth.</span></h1>
+        <p>A small game level, made in a hurry. Put it in order with the <strong>Outliner</strong>: collections inside collections, objects linked to two collections, collection instances, what is hidden, excluded or kept out of the render, what can be clicked, filters and search, and the <strong>Blender File</strong> and <strong>Unused Data</strong> views to clean the data inside the file.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="Blender: 3D Viewport, Outliner and Properties">
+      <div class="ol-body">
+        <section class="ol-area ol-viewarea" aria-label="3D Viewport">
+          <div class="ol-hdr" data-no-i18n>
+            <span class="ol-edtype" title="3D Viewport"><svg viewBox="0 0 16 16"><path d="M8 1.5 14 5v6l-6 3.5L2 11V5z" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M2 5l6 3.5L14 5M8 8.5V14.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg></span>
+            <span class="ol-pill">Object Mode</span>
+            <nav class="xp-menus" id="v-menus"><button type="button" data-vmenu="view">View</button><button type="button" data-vmenu="select">Select</button><button type="button" data-vmenu="add">Add</button><button type="button" data-vmenu="object">Object</button></nav>
+            <label class="ol-toggle"><input type="checkbox" id="render-toggle" checked> Camera · Rendered</label>
+          </div>
+          <div class="view-host ol-view" id="v-host">
+            <canvas id="v-view" aria-label="3D Viewport"></canvas>
+            <div class="xp-overlay ol-overlay" id="v-overlay" data-no-i18n></div>
+            <figure class="ol-render" id="r-box"><figcaption data-no-i18n>Camera · Rendered (F12)</figcaption><canvas id="r-view" aria-label="Render preview from the Camera"></canvas></figure>
+            <span class="graph-hint" data-no-i18n>LMB select · drag orbit · Wheel zoom</span>
+          </div>
+        </section>
+        <div class="ol-side">
+          <section class="ol-area ol-outliner" id="outliner" aria-label="Outliner">
+            <div class="ol-hdr" data-no-i18n>
+              <span class="ol-edtype" title="Outliner"><svg viewBox="0 0 16 16"><path d="M2 3h12M5 7h9M5 11h9M2 3v8h3M2 7h3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></span>
+              <select id="ol-mode" aria-label="Display Mode" title="Display Mode">
+                <option disabled>Scenes</option><option>View Layer</option><option disabled>Video Sequencer</option><option>Blender File</option><option disabled>Data API</option><option disabled>Library Overrides</option><option>Unused Data</option>
+              </select>
+              <span class="ol-search"><svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="m10 10 4 4" stroke="currentColor" stroke-width="1.6"/></svg><input id="ol-search-input" type="text" placeholder="Search" aria-label="Search (Ctrl F)" autocomplete="off" spellcheck="false"><button type="button" id="ol-search-clear" aria-label="Clear search (Alt F)" hidden>✕</button></span>
+              <button type="button" class="ol-hbtn" id="ol-filter" aria-expanded="false" aria-label="Filter" title="Filter"><svg viewBox="0 0 16 16"><path d="M2 3h12L9.5 8.5V13l-3 1.5v-6z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></button>
+              <button type="button" class="ol-hbtn" id="ol-newcoll" aria-label="New Collection" title="New Collection (inside the active one)"><svg viewBox="0 0 16 16"><rect x="1.8" y="3.5" width="9.5" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M13 1.5v5M10.5 4h5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+              <button type="button" class="ol-hbtn wide" id="ol-purge" hidden>Purge</button>
+            </div>
+            <div class="ol-tree" id="ol-tree" role="tree" aria-label="Outliner rows" data-no-i18n></div>
+            <div class="ol-pop" id="ol-filterpop" hidden data-no-i18n></div>
+          </section>
+          <section class="ol-area ol-props" id="props" aria-label="Properties">
+            <div class="ol-ptabs" id="p-tabs" data-no-i18n></div>
+            <div class="ol-pbody" id="p-body" data-no-i18n></div>
+          </section>
+        </div>
+      </div>
+      <div class="xp-menu ol-menu" id="menu" hidden data-no-i18n></div>
+      <div class="statusbar">
+        <span class="status-keys" data-no-i18n><span><kbd>LMB</kbd>Select</span><span><kbd>Ctrl</kbd>Extend</span><span><kbd>Shift</kbd>Range</span><span><kbd>RMB</kbd>Menu</span><span><kbd>M</kbd>Move</span><span><kbd>Shift</kbd><kbd>M</kbd>Link</span><span><kbd>F2</kbd>Rename</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Key ideas">
+      <div><span class="eyebrow">KEY IDEAS</span><h2>What the Outliner shows</h2><p>The Outliner is a list of everything in the file, seen in different ways. View Layer shows the scene as collections and objects; Blender File shows every data-block by type; Unused Data shows what nothing uses any more. Each row can be selected, renamed, dragged, hidden or right-clicked.</p></div>
+      <dl>
+        <div><dt>Collection</dt><dd>A group of objects (and of other collections). An object can be in several collections at once: moving (M) takes it out of the others, linking (Shift M) adds one more.</dd></div>
+        <div><dt>Checkbox</dt><dd>Exclude from View Layer: the collection is not drawn, not rendered and not even evaluated.</dd></div>
+        <div><dt>Eye / Monitor</dt><dd>Hide in Viewport (this view layer, temporary) and Disable in Viewports (everywhere). Neither affects the render.</dd></div>
+        <div><dt>Camera</dt><dd>Disable in Renders: visible while you work, never in F12.</dd></div>
+        <div><dt>Arrow</dt><dd>Selectable: off, clicks in the viewport go through the object.</dd></div>
+        <div><dt>Instance</dt><dd>An Empty that draws a whole collection at its place. Edit the collection and every instance follows.</dd></div>
+        <div><dt>Users</dt><dd>How many things use a data-block. At 0 it is Unused Data; a Fake User (shield) keeps it anyway.</dd></div>
+        <div><dt>Filter</dt><dd>The funnel: which toggles to show, which object types and states to list, and whether to list the data inside objects.</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">IN BLENDER</span><h2>Outliner shortcuts</h2><p>With the mouse over the Outliner. The names are the ones of Blender 4.x.</p></div><ol><li><strong>Click</strong> selects, <strong>Ctrl click</strong> adds, <strong>Shift click</strong> selects a range, <strong>double click</strong> or <strong>F2</strong> renames, <strong>A</strong> / <strong>Alt A</strong> select and deselect all.</li><li><strong>M</strong> Move to Collection, <strong>Shift M</strong> Link to Collection; <strong>drag</strong> moves, <strong>Ctrl drag</strong> links. Right-click › <strong>New Collection</strong> makes one inside the active collection.</li><li><strong>Ctrl click</strong> on an eye isolates that collection; <strong>Shift click</strong> acts on the collection and everything inside it. <strong>H</strong> hides the selection, <strong>Alt H</strong> shows everything.</li><li><strong>Ctrl F</strong> search, <strong>Alt F</strong> clear the search. The funnel opens the filters and the <strong>Restriction Toggles</strong> (Selectable, Disable in Viewports, Holdout…).</li><li><strong>Add › Collection Instance</strong> or right-click a collection › <strong>Instance to Scene</strong>: at the 3D cursor.</li><li>Display Mode <strong>Blender File</strong>: right-click › <strong>Remap Users</strong>. <strong>Unused Data</strong> › <strong>Purge</strong> (File › Clean Up › Purge Unused Data does the same).</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Outliner Lab</span><a href="https://docs.blender.org/manual/en/latest/editors/outliner/index.html" target="_blank" rel="noopener">Blender Manual: Outliner ↗</a><span>Teaching model · the rules follow Blender 4.x's Outliner.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=1"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

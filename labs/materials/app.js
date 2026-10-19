@@ -1,5 +1,6 @@
 // Material Lab: a Blender-style Shader Editor with a live preview, organised in stages and steps.
 import * as THREE from 'three';
+import { isEmbeddedLab } from '../../lab-embed-core.js';
 import { OrbitControls } from '../../vendor/OrbitControls.js';
 import { RoomEnvironment } from '../../vendor/RoomEnvironment.js';
 import { OUTPUTS, TEXTURES, canConnect, connect, resolveGraph, sourceFor } from './graph.js?v=5';
@@ -643,7 +644,7 @@ async function startRenderer() {
   const bc = document.createElement('canvas'); bc.width = 512; bc.height = 256; const bg2 = bc.getContext('2d');
   ['#e8453c', '#f2c12e', '#3aa35b', '#2f7bd9', '#8e44c9', '#f2f2f2', '#1e1e1e', '#e8863c'].forEach((c, i) => { bg2.fillStyle = c; bg2.fillRect(i * 64, 0, 64, 256); });
   bg2.fillStyle = '#ffffff'; for (let y = 0; y < 256; y += 32) bg2.fillRect(0, y, 512, 5);
-  bg2.fillStyle = '#111'; bg2.font = 'bold 72px Inter, Arial, sans-serif'; bg2.fillText('Carrot Revolt', 150, 150);
+  bg2.fillStyle = '#111'; bg2.font = 'bold 72px Inter, Arial, sans-serif'; bg2.fillText(isEmbeddedLab(location.href, window.self !== window.top) ? 'LAB' : 'Carrot Revolt', 150, 150);
   const btex = new THREE.CanvasTexture(bc); btex.colorSpace = THREE.SRGBColorSpace;
   backdrop = new THREE.Mesh(new THREE.PlaneGeometry(6, 3), new THREE.MeshStandardMaterial({ map: btex, roughness: .8 }));
   backdrop.position.set(0, .3, -3.1); backdrop.visible = false; scene.add(backdrop);

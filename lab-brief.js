@@ -1,6 +1,7 @@
 // Carrot Revolt Labs · the step explanation goes above the workspace: read first, then try it below.
 // It can be folded to a single line (remembered in this browser) once you know what to do.
 import { getLang, onLangChange } from './i18n.js';
+import { setupEmbed } from './lab-embed.js';
 
 const TXT = {
   hide: { en: 'Fold the explanation', ca: "Plega l'explicació", es: 'Pliega la explicación' },
@@ -11,7 +12,7 @@ TXT.sure = { en: 'Sure? Click again: all progress is erased', ca: 'Segur? Torna 
 TXT.resetTitle = { en: 'Erase the steps done and the work saved in this browser, and start the lab from the beginning', ca: 'Esborra els passos fets i la feina guardada en aquest navegador i torna a començar el lab', es: 'Borra los pasos hechos y el trabajo guardado en este navegador y vuelve a empezar el lab' };
 const say = k => TXT[k][getLang()] || TXT[k].en;
 // Where each lab keeps its progress in this browser.
-const PREFIX = { animation: 'carrot-revolt-anim:', '3ds-max-animation': 'carrot-revolt-max-anim:', '3ds-max-viewport': 'carrot-revolt-max-vp:', baking: 'carrot-revolt-bake:', 'color-type': 'carrot-revolt-colortype:', comfyui: 'carrot-revolt-comfy:', 'comfyui-inpaint': 'carrot-revolt-comfy-inpaint:', 'comfyui-upscale': 'carrot-revolt-comfy-upscale:', 'comfyui-flux': 'carrot-revolt-comfy-flux:', 'comfyui-control': 'carrot-revolt-comfy-control:', 'comfyui-sampling': 'carrot-revolt-comfy-sampling:', 'comfyui-lora': 'carrot-revolt-comfy-lora:', 'comfyui-video': 'carrot-revolt-comfy-video:', 'comfyui-workflow': 'carrot-revolt-comfy-workflow:', csharp: 'carrot-revolt-csharp:', 'csharp-objects': 'carrot-revolt-csharp:objects:', editmode: 'carrot-revolt-editmode:', grading: 'carrot-revolt-grade:', 'gn-flow': 'carrot-revolt-gn:1:', 'gn-fields': 'carrot-revolt-gn:2:', 'gn-scatter': 'carrot-revolt-gn:3:', 'gn-curves': 'carrot-revolt-gn:4:', lighting: 'carrot-revolt-light:', lightmaps: 'carrot-revolt-lm:', lod: 'carrot-revolt-lod:', materials: 'carrot-revolt-mat:', photo: 'carrot-revolt-photo:', rig: 'carrot-revolt-rig:', 'skin-weights': 'carrot-revolt-skin:', 'stage-lighting': 'carrot-revolt-stagelx:', stage: 'carrot-revolt-stage:', 'texel-density': 'carrot-revolt-td:', tileable: 'carrot-revolt-tile:', topology: 'carrot-revolt-topo:', 'trim-sheet': 'carrot-revolt-trim:', 'uv-unwrapping': 'carrot-revolt-uv2:', viewport: 'carrot-revolt-viewport:' };
+const PREFIX = { animation: 'carrot-revolt-anim:', '3ds-max-animation': 'carrot-revolt-max-anim:', '3ds-max-viewport': 'carrot-revolt-max-vp:', baking: 'carrot-revolt-bake:', 'color-type': 'carrot-revolt-colortype:', comfyui: 'carrot-revolt-comfy:', 'comfyui-inpaint': 'carrot-revolt-comfy-inpaint:', 'comfyui-upscale': 'carrot-revolt-comfy-upscale:', 'comfyui-flux': 'carrot-revolt-comfy-flux:', 'comfyui-control': 'carrot-revolt-comfy-control:', 'comfyui-sampling': 'carrot-revolt-comfy-sampling:', 'comfyui-lora': 'carrot-revolt-comfy-lora:', 'comfyui-video': 'carrot-revolt-comfy-video:', 'comfyui-workflow': 'carrot-revolt-comfy-workflow:', csharp: 'carrot-revolt-csharp:', 'csharp-objects': 'carrot-revolt-csharp:objects:', editmode: 'carrot-revolt-editmode:', export: 'carrot-revolt-export:', grading: 'carrot-revolt-grade:', 'gn-flow': 'carrot-revolt-gn:1:', 'gn-fields': 'carrot-revolt-gn:2:', 'gn-scatter': 'carrot-revolt-gn:3:', 'gn-curves': 'carrot-revolt-gn:4:', lighting: 'carrot-revolt-light:', lightmaps: 'carrot-revolt-lm:', lod: 'carrot-revolt-lod:', materials: 'carrot-revolt-mat:', outliner: 'carrot-revolt-outliner:', photo: 'carrot-revolt-photo:', photoshop: 'carrot-revolt-ps:', rig: 'carrot-revolt-rig:', 'runway-live': 'carrot-revolt-runway:', 'skin-weights': 'carrot-revolt-skin:', 'stage-lighting': 'carrot-revolt-stagelx:', stage: 'carrot-revolt-stage:', 'texel-density': 'carrot-revolt-td:', tileable: 'carrot-revolt-tile:', topology: 'carrot-revolt-topo:', 'trim-sheet': 'carrot-revolt-trim:', 'uv-unwrapping': 'carrot-revolt-uv2:', viewport: 'carrot-revolt-viewport:' };
 const labId = (location.pathname.match(/labs\/([^/]+)/) || [])[1];
 export function resetLab(id = labId) {
   const p = PREFIX[id]; if (!p) return 0;
@@ -74,3 +75,4 @@ function setupChallengeFold() {
 setupBrief();
 setupReset();
 setupChallengeFold();
+setupEmbed();

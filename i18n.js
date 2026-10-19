@@ -152,8 +152,8 @@ const CSS = `.lang-switch{display:inline-flex;border:1px solid #4a5058;border-ra
 .lang-switch button{background:none;border:0;border-radius:0;color:#aeb5bf;font:700 .68rem/1 Inter,'Segoe UI',Arial,sans-serif;letter-spacing:.8px;padding:7px 8px;cursor:pointer}
 .lang-switch button+button{border-left:1px solid #4a5058}
 .lang-switch button:hover{background:#2c3036;color:#fff}
-.lang-switch button[aria-pressed="true"]{background:#ffbf00;color:#17191c}
-.lang-switch button:focus-visible{outline:2px solid #ffbf00;outline-offset:-2px}`;
+.lang-switch button[aria-pressed="true"]{background:var(--lab-accent,#ffbf00);color:var(--lab-accent-ink,#17191c)}
+.lang-switch button:focus-visible{outline:2px solid var(--lab-accent,#ffbf00);outline-offset:-2px}`;
 
 // Call once per page, after the page has rendered.
 export function initI18n({ dictionaries = [], mount, append = false } = {}) {

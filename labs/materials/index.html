@@ -7,11 +7,11 @@
   <meta name="description" content="Build PBR materials with Blender-style nodes and the full Principled BSDF: roughness, metal, colour spaces, masks, bump and displacement, emission and Glare, glass in EEVEE and Cycles, coat, sheen, subsurface, thin film and anisotropy.">
   <title>Material Lab · Carrot Revolt Labs</title>
   <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./style.css?v=5">
-  <link rel="stylesheet" href="../../lab-brief.css?v=3">
-  <script type="module" src="../../lab-brief.js?v=3"></script>
-  <link rel="stylesheet" href="../../brand.css?v=1">
+  <link rel="stylesheet" href="./style.css?v=7">
   <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+  <link rel="stylesheet" href="../../lab-brief.css?v=8">
+  <script type="module" src="../../lab-brief.js?v=7"></script>
+  <link rel="stylesheet" href="../../brand.css?v=1">
 </head>
 <body>
   <header class="app-header">
@@ -90,8 +90,7 @@
   <dialog id="help-dialog"><button class="dialog-close" aria-label="Close help">×</button><span class="eyebrow">MATERIAL LAB</span><h2>Follow the connections.</h2><p>A texture supplies data. The shader uses that data to calculate how the surface reacts to light.</p><ol><li><strong>Connect:</strong> drag from an output socket (right side of a node) to an input (left side). Inputs that can accept the link light up. Clicking the output and then the input also works.</li><li><strong>Disconnect or move a link:</strong> drag a connected input away, as in Blender. Drop it on empty space to remove it, or on another input to move it. <strong>Ctrl + right-drag</strong> across wires cuts them.</li><li><strong>Explore:</strong> move a node by its header. Drag the background or the middle mouse button to pan, scroll to zoom, press <strong>Home</strong> to see every node.</li><li><strong>Change values:</strong> drag along a value bar, as in Blender's sliders.</li><li><strong>Learn a parameter:</strong> rest the pointer on any value (or its panel header, or a setting in Properties): a card explains what it does, typical values of real materials and the usual mistake.</li><li><strong>Use your images:</strong> choose Open in an Image Texture node. Images stay in your browser and are never uploaded.</li></ol><p>Roughness and Base Color values are replaced by a connected texture, as in Blender. Disconnect the input to use its slider or color picker.</p><p><strong>Stages and steps:</strong> each step loads a material and checks your change. <strong>Show a solution</strong> and <strong>Ctrl Z</strong> are always there. Your work in each step is kept in this browser.</p><p><strong>Coordinates:</strong> start with UV → Mapping → Image Texture. Mapping changes Location, Rotation and Scale in XYZ. Images use Flat projection and Repeat: with UV input, Z translation or scaling alone does not change the image. Object coordinates use the preview mesh.</p><p class="muted">This lab implements a focused subset of Blender node concepts with a browser renderer. It does not run Blender or open .blend files.</p><button class="primary dialog-close-action">Back to the lab</button></dialog>
   <dialog id="credits-dialog"><button class="dialog-close" aria-label="Close credits">×</button><h2>Sources & credits</h2><p><a href="https://docs.blender.org/manual/en/latest/render/shader_nodes/shader/principled.html" target="_blank" rel="noopener">Blender manual · Principled BSDF</a><br>Node names, sockets and material concepts.</p><p><a href="https://polyhaven.com/a/brick_wall_001" target="_blank" rel="noopener">Brick Wall 001 · Poly Haven</a><br>Color, roughness and OpenGL normal maps. CC0.</p><p>Painted steel, tiles and leaf textures are drawn by the lab in your browser. The HDRIs are the procedural ones of the Lighting Lab.</p><p><a href="https://threejs.org/" target="_blank" rel="noopener">Three.js</a> · MIT license. Browser rendering and orbit controls.</p><button class="primary dialog-close-action">Back to the lab</button></dialog>
   <noscript><p class="no-script">Enable JavaScript to use the interactive material editor.</p></noscript>
-  <script type="module" src="./app.js?v=6"></script>
+  <script type="module" src="./app.js?v=7"></script>
   <script type="module">import { initI18n } from '../../i18n.js'; import dict from './i18n.js?v=6'; initI18n({ dictionaries: [dict], mount: '.header-actions' });</script>
 </body>
 </html>
-

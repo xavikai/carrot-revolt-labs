@@ -1,9 +1,10 @@
 // Stages of the Lighting Lab. Every step loads its own lights; checks read the light meter (measure).
-import { measure, apparentSize, lightPos } from './light.js';
+import { measure, apparentSize, lightPos, linkOk, shadowOk, wallGap } from './light.js?v=4';
 
 export const LIGHT_IDS = ['key', 'fill', 'rim', 'bg'];
 export const LIGHT_NAMES = { key: 'Key_Light', fill: 'Fill_Light', rim: 'Rim_Light', bg: 'BG_Light', card: 'Bounce_Card' };
-const light = o => ({ on: true, type: 'AREA', power: 12, strength: 1, colorMode: 'rgb', color: [1, 1, 1], kelvin: 5500, radius: 0.1, angle: 1, spotSize: 45, blend: 0.15, shape: 'SQUARE', size: 0.6, sizeY: 0.6, az: -45, el: 30, dist: 1.5, target: 'head', shadow: true, ...o });
+const light = o => ({ on: true, type: 'AREA', power: 12, strength: 1, colorMode: 'rgb', color: [1, 1, 1], kelvin: 5500, radius: 0.1, angle: 1, spotSize: 45, blend: 0.15, shape: 'SQUARE', size: 0.6, sizeY: 0.6, az: -45, el: 30, dist: 1.5, target: 'head', shadow: true,
+  spread: 180, gobo: 'none', goboScale: 1, goboRot: 0, ies: 'none', falloff: 'QUADRATIC', softFalloff: true, customDist: false, customDistance: 3, volume: 1, link: {}, shadowLink: {}, ...o });
 export function defaultState() {
   return {
     lights: {
@@ -14,12 +15,13 @@ export function defaultState() {
     },
     card: { on: false, color: 'white', size: 1, az: 60, el: -20, dist: 0.7 },
     world: { mode: 'color', color: [0.05, 0.05, 0.05], strength: 1, hdri: 'studio', rot: 0 },
+    fog: { on: false, shader: 'SCATTER', density: 0.1, anisotropy: 0, color: [1, 1, 1], absorption: [0, 0, 0] },
     view: { exposure: 0, transform: 'AgX' },
     backdrop: 'grey',
     sel: 'key',
   };
 }
-const merge = (a, b) => { for (const [k, v] of Object.entries(b)) { if (v && typeof v === 'object' && !Array.isArray(v) && a[k] && typeof a[k] === 'object') merge(a[k], v); else a[k] = JSON.parse(JSON.stringify(v)); } return a; };
+export const merge = (a, b) => { for (const [k, v] of Object.entries(b)) { if (v && typeof v === 'object' && !Array.isArray(v) && a[k] && typeof a[k] === 'object') merge(a[k], v); else a[k] = JSON.parse(JSON.stringify(v)); } return a; };
 
 // Find the value of a setting that brings a measurement to a target (bisection; the measurement must grow with the value).
 function tune(s, set, get, target, lo, hi) {
@@ -229,8 +231,120 @@ export const STAGES = [
       },
     ],
   },
+  {
+    id: 'shape', name: 'Shaping the light', sub: 'Spread · Gobo · IES · Linking',
+    steps: [
+      {
+        id: 's1', title: 'A grid on the softbox',
+        text: 'An Area light sends light to everything in front of it, so a big softbox close to the face also spills onto the backdrop. Photographers put a grid (a honeycomb or egg crate) on the softbox: the light keeps its soft size but only goes forwards. In Blender this is Spread (Cycles). Keep this soft key on the face and take its spill off the backdrop.',
+        how: ['Select <b>Key_Light</b>. In <b>Beam Shape</b>, lower <b>Spread</b> from 180° to about 60°. Watch the backdrop behind the bust darken.', 'The grid absorbs light: raise the <b>Power</b> to bring the face back to +1 stop.', 'Keep the softbox big and close: its apparent size must stay at 20° or more, so the shadows stay soft.'],
+        why: 'Grids, flags and barn doors decide where the light goes without changing how soft it is. A low Spread is also what makes a light panel look directional in a render.',
+        start: { world: { color: [0.01, 0.01, 0.01] }, lights: { key: { type: 'AREA', shape: 'SQUARE', size: 1, sizeY: 1, az: -50, el: 15, dist: 1.2, power: 8 }, ...onlyKey } },
+        check: (s, m) => { const k = s.lights.key; return k.type === 'AREA' && k.spread < 180 && apparentSize(k) >= 20 && m.backVsFace <= -3.3 && faceOk(m, 0.3); },
+        solve: s => { Object.assign(s.lights.key, { spread: 60 }); facePlus1(s, 'key'); s.lights.key.power = round(s.lights.key.power); },
+      },
+      {
+        id: 'g1', title: 'A gobo',
+        text: 'A gobo (or cookie) is a stencil in front of a spotlight: the light projects its shape, like the blinds of a film noir office or leaves on a wall. In Blender (Cycles), a Spot light projects an image through its node tree: Texture Coordinate (Normal) → Mapping → Image Texture → the Strength of the Emission. Throw diagonal blinds across the face and the backdrop, with sharp edges.',
+        how: ['<b>Key_Light</b> is a Spot. In <b>Nodes</b>, set the <b>Gobo</b> image to <b>Blinds</b>.', 'Turn the <b>Mapping</b> node: a <b>Rotation</b> of 20° to 45° gives a diagonal, more dramatic than flat stripes.', 'The edges of the slats are blurred: the shadow of a gobo follows the same rule as any shadow. Lower the <b>Radius</b> of the light to 0.02 m or less.'],
+        why: 'A gobo tells a story (a window, a forest, a prison) on a plain wall without building anything. In EEVEE, the same effect needs a real plane with the cut-out shape in front of the light.',
+        start: { lights: { key: { type: 'SPOT', spotSize: 32, blend: 0.1, radius: 0.15, az: 55, el: 25, dist: 2.5, power: 500 }, fill: { on: true, az: -60, el: 10, power: 1.5 }, rim: { on: false }, bg: { on: false } } },
+        check: s => { const k = s.lights.key, r = ((k.goboRot % 180) + 180) % 180; return k.type === 'SPOT' && k.gobo === 'blinds' && ((r >= 20 && r <= 45) || (r >= 135 && r <= 160)) && k.radius <= 0.02; },
+        solve: s => { Object.assign(s.lights.key, { gobo: 'blinds', goboRot: 30, radius: 0.01 }); },
+      },
+      {
+        id: 'i1', title: 'Photometric light (IES)',
+        text: 'A real fixture does not shine the same in every direction: its reflector and lens shape the beam. Manufacturers measure it in a photometric lab and publish it as an IES file. In Blender (Cycles), an IES Texture node in the light\'s node tree gives a Point or Spot light the beam of that fixture, with its typical scallops on the walls. BG_Light is a plain Point light. Rebuild the reference: a downlight grazing the backdrop.',
+        how: ['Select <b>BG_Light</b>. In <b>Nodes</b>, try the <b>IES</b> profiles and compare the shape on the backdrop with the reference.', 'A downlight hangs close to the wall: raise its <b>Elevation</b> to 65° or more and bring it closer (<b>Distance</b> 0.8 m or less), so it grazes the backdrop.', 'Adjust the <b>Power</b> if the scallop burns out.'],
+        why: 'Architects and lighting designers choose real fixtures. With their IES files, the render shows the light that will really be installed, not an idealised lamp.',
+        reference: { lights: { key: { type: 'AREA', az: 45, el: 30 }, fill: { on: false }, rim: { on: false }, bg: { on: true, type: 'POINT', target: 'wallL', radius: 0.03, ies: 'scallop', az: 0, el: 70, dist: 0.5, power: 25 } }, backdrop: 'grey' },
+        start: { lights: { key: { az: 45, el: 30, power: 12 }, fill: { on: false }, rim: { on: false }, bg: { on: true, type: 'POINT', target: 'wallL', radius: 0.03, ies: 'none', az: 20, el: 35, dist: 1.4, power: 25 } }, backdrop: 'grey' },
+        check: s => { const b = s.lights.bg; return b.on && b.type !== 'SUN' && b.ies === 'scallop' && b.el >= 65 && b.dist <= 0.8; },
+        solve: s => { Object.assign(s.lights.bg, { ies: 'scallop', az: 0, el: 70, dist: 0.5 }); },
+      },
+      {
+        id: 'l1', title: 'Light Linking',
+        text: 'Rim_Light draws a bright edge on the head, but it is a Point light between the bust and the backdrop, so it also burns a hot spot on the backdrop. On a film set you would flag it. In CG you can simply tell the light which objects it may touch: Light Linking. In Blender: select the light, Object Properties › Shading › Light Linking, create a Receiver Collection and set its objects to Include or Exclude.',
+        how: ['Select <b>Rim_Light</b> and open its <b>Light Linking</b> panel.', 'Set the <b>Backdrop</b> to <b>Exclude</b>, or set the <b>Bust</b> to <b>Include</b> (then only the bust receives it).', 'The edge on the head stays exactly the same; the hot spot on the backdrop disappears.'],
+        why: 'Light Linking works in Cycles and EEVEE. It is a cheat that does not exist in reality, so use it with care: light that touches the head but not the wall right behind it can look wrong.',
+        start: { lights: { key: { az: -45, el: 30, power: 12 }, fill: { on: false }, bg: { on: false }, rim: { on: true, type: 'POINT', radius: 0.05, az: 150, el: 35, dist: 1.3, power: 60 } } },
+        check: (s, m) => { const r = s.lights.rim, E = m.E; return r.on && linkOk(r, 'bust') && !linkOk(r, 'backdrop') && m.rim >= 0.7 * m.face && E.backC.per.rim === 0; },
+        solve: s => { s.lights.rim.link = { backdrop: 'exclude' }; },
+      },
+      {
+        id: 'l2', title: 'Shadow Linking',
+        text: 'The key light comes from low on the camera left, and the bust throws a big dark shadow on the backdrop, right next to the face. On a set you would move the backdrop away or light it. In CG you can also choose which objects cast a light\'s shadows: Shadow Linking. In Blender it sits under Light Linking: a Blocker Collection whose objects cast shadows (Include) or do not (Exclude). Take the bust\'s shadow off the backdrop without changing the light on the face.',
+        how: ['Select <b>Key_Light</b> and open its <b>Light &amp; Shadow Linking</b> panel.', 'In <b>Shadow Linking</b>, set the <b>Bust</b> to <b>Exclude</b>. The shadow on the backdrop disappears; the face stays exactly as lit.', 'Look at the nose and the neck: the bust no longer shadows itself either, because it is out of the blockers of this light.'],
+        why: 'Shadow Linking works in Cycles and, since Blender 4.3, in EEVEE. Like Light Linking it is a cheat: a light without shadows from an object can look flat, so keep it for problems you cannot solve by moving lights or objects.',
+        start: { world: { color: [0.02, 0.02, 0.02] }, lights: { key: { type: 'POINT', radius: 0.01, az: -30, el: 5, dist: 1.2, power: 24 }, fill: { on: true, type: 'AREA', az: 50, el: 10, size: 1, sizeY: 1, power: 2 }, rim: { on: false }, bg: { on: false } } },
+        check: (s, m) => { const k = s.lights.key; return k.on && !shadowOk(k, 'bust') && linkOk(k, 'bust') && m.E.backS.per.key > 0 && faceOk(m, 0.5); },
+        solve: s => { s.lights.key.shadowLink = { bust: 'exclude' }; facePlus1(s, 'key'); s.lights.key.power = round(s.lights.key.power); },
+      },
+    ],
+  },
+  {
+    id: 'atmos', name: 'Falloff and atmosphere', sub: 'Decay · Distance · Volume',
+    steps: [
+      {
+        id: 'f1', title: 'Light Falloff',
+        text: 'Real light always falls off with the square of the distance: this key is 0.8 m from the face and about 2 m from the white backdrop, so the backdrop is almost 2 stops darker. Cycles lets you cheat with the Light Falloff node: its Linear output falls as 1/d and its Constant output does not fall at all. Without moving the light, bring the backdrop within 1.2 stops of the face.',
+        how: ['Select <b>Key_Light</b>. In <b>Nodes</b>, change <b>Light Falloff</b> from <b>Quadratic</b> to <b>Linear</b> (the output plugged into the Strength of the Emission).', 'The face gets darker too: raise the <b>Power</b> to bring it back to +1 stop.', 'Try <b>Constant</b>: a lamp that lights near and far the same, as nothing in reality does.'],
+        why: 'Linear and Constant are cheats: they add too much light to the bounces (Blender warns about it) and look fake. The honest way is the one of the first stage: move the light farther away. Real cameras and Blender both follow the inverse square law.',
+        start: { backdrop: 'white', lights: { key: { type: 'POINT', radius: 0.05, az: -40, el: 20, dist: 0.8, power: 10.5 }, ...onlyKey } },
+        check: (s, m) => { const k = s.lights.key; return k.type !== 'SUN' && k.falloff !== 'QUADRATIC' && k.dist <= 0.9 && m.backVsFace >= -1.2 && faceOk(m, 0.3); },
+        solve: s => { s.lights.key.falloff = 'LINEAR'; facePlus1(s, 'key'); s.lights.key.power = round(s.lights.key.power); },
+      },
+      {
+        id: 'f2', title: 'Soft Falloff',
+        text: 'Since Blender 4.0, a Point or Spot light with a Radius is a real glowing sphere. BG_Light is a practical lamp of 30 cm radius right against the backdrop, and its sphere goes into the wall: the wall is cut by a hard edge where it enters the lamp. The Soft Falloff option (since Blender 4.1, on by default in new lights) uses the older, softer light instead. Remove the hard edge and keep the lamp big.',
+        how: ['Look at the backdrop on the left of the bust: a dark disc with a hard edge, inside the lamp.', 'In the Light panel of <b>BG_Light</b>, tick <b>Soft Falloff</b>. Or move the lamp away from the wall until its sphere no longer touches it (the distance to the wall must be more than the Radius).', 'Keep the <b>Radius</b> at 0.2 m or more.'],
+        why: 'Wall lamps, sconces and candles on a table are close to surfaces. Soft Falloff is what makes them glow smoothly, the way artists expected lights to behave before 4.0.',
+        start: { world: { color: [0.01, 0.01, 0.01] }, backdrop: 'white', lights: { key: { az: -45, el: 30, power: 3 }, fill: { on: false }, rim: { on: false }, bg: { on: true, type: 'POINT', target: 'wallL', radius: 0.3, softFalloff: false, az: 20, el: 0, dist: 0.15, power: 15, colorMode: 'kelvin', kelvin: 2700 } } },
+        check: s => { const b = s.lights.bg; return b.on && (b.type === 'POINT' || b.type === 'SPOT') && b.radius >= 0.2 && (b.softFalloff !== false || wallGap(b) > b.radius); },
+        solve: s => { s.lights.bg.softFalloff = true; },
+      },
+      {
+        id: 'c1', title: 'Custom Distance',
+        text: 'A candle under the face lights it from below, but its light also reaches the backdrop. EEVEE can stop a light at a given distance: Custom Distance. It is not physical (Cycles ignores it), but it keeps small practical lights from lighting the whole set and makes EEVEE faster. Make the candle\'s light end before the backdrop, and keep the face lit.',
+        how: ['Select <b>Key_Light</b>. In <b>Custom Distance</b> (EEVEE), tick the box.', 'Lower the <b>Distance</b> until the candle no longer reaches the backdrop (it is 1.6 m away). The light fades smoothly to nothing at that distance.', 'Too short and the face goes dark too: the face must stay at +1 stop (adjust the Power).'],
+        why: 'In a big EEVEE scene with many lamps, every light that reaches everything costs time. Custom Distance is also an artistic flag. In Cycles, use Light Linking instead.',
+        start: { lights: { key: { type: 'POINT', radius: 0.02, az: -30, el: -5, dist: 0.5, power: 3.1, colorMode: 'kelvin', kelvin: 1900 }, ...onlyKey } },
+        check: (s, m) => { const k = s.lights.key, E = m.E, onFace = Math.max(E.camL.per.key, E.camR.per.key), onBack = Math.max(E.backL.per.key, E.backR.per.key, E.backC.per.key); return k.customDist && onBack <= 0.01 * onFace && faceOk(m, 0.4); },
+        solve: s => { Object.assign(s.lights.key, { customDist: true, customDistance: 1.2 }); facePlus1(s, 'key'); s.lights.key.power = round(s.lights.key.power); },
+      },
+      {
+        id: 'v1', title: 'Light you can see',
+        text: 'Light itself is invisible: you only see it when it hits something. Smoke, fog or dust in the air scatter a little of it towards the camera and the beam appears. In Blender you put a cube around the set with a volume shader (here Fog_Volume, with a Volume Scatter shader). Make the beam of Rim_Light visible, glowing towards the camera, without drowning the bust in fog.',
+        how: ['In the Outliner, turn on <b>Fog_Volume</b> (the eye) and select it.', 'Raise <b>Density</b> until the beam appears (0.03 to 0.5). Too much and the whole image turns milky and the bust fades away.', 'Raise <b>Anisotropy</b> to 0.3 or more: positive values scatter light forwards, so a beam that comes towards the camera glows more.'],
+        why: 'Haze shows where the light comes from and gives depth. Concerts and theatres use hazers for the same reason. In EEVEE, Render Properties › Volumes (Resolution, Steps) sets the quality of the fog; Cycles traces it exactly.',
+        start: { backdrop: 'black', world: { color: [0.005, 0.005, 0.005] }, lights: { key: { az: -45, el: 30, power: 4 }, fill: { on: false }, bg: { on: false }, rim: { on: true, type: 'SPOT', az: 150, el: 45, dist: 2.2, spotSize: 20, blend: 0.3, radius: 0.03, power: 600 } }, fog: { on: false, density: 0.1, anisotropy: 0 } },
+        check: s => { const f = s.fog; return f.on && f.density >= 0.03 && f.density <= 0.5 && f.anisotropy >= 0.3 && s.lights.rim.on; },
+        solve: s => { Object.assign(s.fog, { on: true, density: 0.1, anisotropy: 0.6 }); },
+      },
+      {
+        id: 'v2', title: 'Shafts through the blinds',
+        text: 'Put the gobo and the fog together and you get shafts of light, as through the blinds of a dusty room. They show best when the light comes from behind the subject, towards the camera. The fill, a small lamp in front of the bust, also lights the fog all around it and turns the whole image milky. In EEVEE each light has a Volume Scatter influence, so the fill can light the bust without lighting the air.',
+        how: ['Move <b>Key_Light</b> (a Spot with the Blinds gobo) behind the bust: an <b>Azimuth</b> of 110° or more (either side).', 'Select <b>Fill_Light</b> and set its <b>Volume Scatter</b> influence to 0 (in Cycles, Object Properties › Visibility › Ray Visibility › Volume Scatter).', 'Compare the shafts with the fill scattering and without.'],
+        why: 'Light that comes towards the camera through haze is the most dramatic backlight there is: churches, forests, dusty rooms, stages.',
+        start: { backdrop: 'black', world: { color: [0.005, 0.005, 0.005] }, lights: { key: { type: 'SPOT', gobo: 'blinds', goboRot: 25, spotSize: 34, blend: 0.1, radius: 0.01, az: 60, el: 25, dist: 2.5, power: 700 }, fill: { on: true, type: 'POINT', radius: 0.05, az: -35, el: 10, dist: 1, power: 15 }, rim: { on: false }, bg: { on: false } }, fog: { on: true, density: 0.12, anisotropy: 0.5 } },
+        check: s => { const k = s.lights.key, f = s.lights.fill; return s.fog.on && k.on && k.type === 'SPOT' && k.gobo !== 'none' && Math.abs(k.az) >= 110 && (!f.on || f.volume <= 0.05); },
+        solve: s => { Object.assign(s.lights.key, { az: 140, el: 30 }); s.lights.fill.volume = 0; },
+      },
+      {
+        id: 'v3', title: 'Coloured fog',
+        text: 'Volume Scatter only scatters light: its fog is as white as the lights. The Principled Volume shader (the one Blender adds by default) separates two things. Color is the colour of the light the fog scatters towards you. Whatever it does not scatter is absorbed, unless Absorption Color lets it through: black absorbs it all (dark smoke), white absorbs nothing. Turn this white haze into a blue night mist that swallows the backdrop but still lets the face read.',
+        how: ['Select <b>Fog_Volume</b> and switch its shader to <b>Principled Volume</b> (in Blender: Material Output › Volume).', 'Give it a blue <b>Color</b> (more blue than red) and raise <b>Density</b> to 0.15–1: the beam turns blue and the backdrop sinks into the mist.', 'Try <b>Absorption Color</b>: black makes a dark, heavy smoke; white a bright, milky fog. Keep the face at −0.5 stops or brighter on the meter.'],
+        why: 'The colour of the air is part of the mood: blue mist for night, warm dust for a desert, grey smoke for a fire. In Cycles the Principled Volume can also glow (Emission, Blackbody) for fire and explosions.',
+        start: { backdrop: 'grey', world: { color: [0.005, 0.005, 0.008] }, lights: { key: { az: -45, el: 30, power: 12, colorMode: 'kelvin', kelvin: 7000 }, fill: { on: false }, bg: { on: false }, rim: { on: true, type: 'SPOT', az: 150, el: 45, dist: 2.2, spotSize: 20, blend: 0.3, radius: 0.03, power: 600, colorMode: 'kelvin', kelvin: 9000 } }, fog: { on: true, shader: 'SCATTER', density: 0.1, anisotropy: 0.5, color: [1, 1, 1] } },
+        check: (s, m) => { const f = s.fog, c = f.color || [1, 1, 1]; return f.on && f.shader === 'PRINCIPLED' && c[2] >= 0.3 && c[2] >= 1.3 * c[0] && f.density >= 0.15 && f.density <= 1 && m.faceStops >= -0.5; },
+        solve: s => { Object.assign(s.fog, { shader: 'PRINCIPLED', color: [0.25, 0.45, 0.9], absorption: [0.2, 0.3, 0.6], density: 0.3 }); },
+      },
+    ],
+  },
 ];
 
+// Work saved by an older version of the lab gets the new settings with their default values.
+export function upgradeState(saved) { return merge(defaultState(), saved); }
 export function startState(step) {
   const s = defaultState();
   merge(s, step.start || {});

@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#191b1e">
-  <meta name="description" content="A hands-on C# lab for Carrot Revolt. Program a drone that builds voxel sculptures and watch variables, loops and conditions run step by step.">
+  <meta name="description" content="A hands-on C# lab for Carrot Revolt Labs. Program a drone that builds voxel sculptures and watch variables, loops and conditions run step by step.">
   <title>Code Lab · C# · Carrot Revolt Labs</title>
   <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./style.css?v=12">
-  <link rel="stylesheet" href="../../lab-brief.css?v=3">
-  <script type="module" src="../../lab-brief.js?v=3"></script>
+  <link rel="stylesheet" href="./style.css?v=15">
+  <link rel="stylesheet" href="../../lab-brief.css?v=8">
+  <script type="module" src="../../lab-brief.js?v=7"></script>
   <link rel="stylesheet" href="../../brand.css?v=1">
 </head>
 <body>
@@ -105,13 +105,15 @@
         </section>
       </div>
     </section>
+    <!-- Graded tests (quiz challenges) take the place of the editor and the scene -->
+    <section class="quiz" id="quiz" aria-label="Test" hidden></section>
   </main>
 
   <footer class="app-footer"><span>Carrot Revolt Labs · Programming fundamentals</span><span>A teaching subset of C#. The same code runs in Unity or .NET, except for the lab's drone.</span></footer>
 
   <dialog id="help-dialog"><button class="dialog-close" aria-label="Close help">×</button><span class="eyebrow">CODE LAB · C#</span><h2>Write it. Run it. Watch it.</h2><p>You program a drone that builds with blocks. Every challenge has a ghost shape to build.</p><ol><li><strong>Run (F5)</strong> first <em>compiles</em> the program: the compiler checks the whole code. If there is an error, nothing runs and the Console tells you the line and what is wrong.</li><li><strong>Step (F10)</strong> runs one line at a time. The yellow line is the next one to run. Conditions show how they are evaluated: <code>i &lt; 7 → 3 &lt; 7 → true</code>.</li><li><strong>Step Into (F11)</strong> follows the program inside a method you wrote; Step runs the whole call at once. Each call gets its own frame in Memory: the <em>call stack</em>.</li><li><strong>Memory</strong> shows each variable as a box with a type, a name and a value. Variables live inside a <em>scope</em> (the <code>{ }</code> where they were created) and disappear when it ends.</li><li>The <strong>×</strong> numbers next to the line numbers count how many times each line ran. Grey text at the end of a line shows what it did the last time.</li><li>Click a line number to add a <strong>breakpoint</strong>: Run pauses there.</li></ol><p><strong>Coordinates:</strong> the drone moves on an 8 × 8 grid. X goes Right, Z goes Forward and Y is up, as in Unity.</p><p class="muted">This lab runs a focused subset of C# in the browser (variables, if, loops, methods, Console, Math). The drone API only exists here. Progress and code are saved in this browser.</p><button class="primary dialog-close-action">Back to the lab</button></dialog>
   <noscript><p class="no-script">Enable JavaScript to use the Code Lab.</p></noscript>
-  <script type="module" src="./app.js?v=10"></script>
+  <script type="module" src="./app.js?v=11"></script>
   <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.header-actions' });</script>
 </body>
 </html>

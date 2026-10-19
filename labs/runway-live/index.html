@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Plan and direct a five-camera live fashion runway: a T route, presenter coverage, preview and program, cuts and a feet-to-head camera tilt.">
+  <title>Runway Live Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../../lab-brief.css?v=8">
+  <link rel="stylesheet" href="./style.css?v=4">
+  <link rel="stylesheet" href="./step-card.css?v=1">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+  <script type="module" src="../../lab-brief.js?v=7"></script>
+  <link rel="stylesheet" href="../../brand.css?v=1">
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 26</span><strong>Runway Live Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top"><div class="lab-lead"><h1>Five cameras. <span>One clear story.</span></h1><p>Direct a live fashion show. First assign a job to each camera. Then follow the model through a T-shaped runway, prepare the next shot in preview and cut it to program. Keep the presenter camera ready throughout.</p></div><div class="stage-switch" id="stage-switch" role="group" aria-label="Part"></div></section>
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+    <section class="below"><div class="step-card" id="step-card"></div></section>
+    <section class="work" id="workspace" aria-label="Live production simulator">
+      <div class="desk-bar"><div><b class="desk-live">● LIVE CONTROL</b><span id="cue-location">Camera plan</span></div><div class="desk-progress" id="desk-progress">1 / 10</div></div>
+      <div class="desk-grid">
+        <div class="stage-panel"><div class="panel-heading"><h2>Runway stage</h2><div class="view-switch" role="group" aria-label="Stage view"><button type="button" id="view-3d" data-view="3d" aria-pressed="true">3D view</button><button type="button" id="view-map" data-view="map" aria-pressed="false">Top view</button></div></div><div class="stage-figure">
+          <canvas id="stage-3d" aria-label="Interactive 3D view of the T-shaped runway, presenter, model and five cameras"></canvas>
+          <svg id="stage-map" viewBox="0 0 400 330" role="img" aria-label="T-shaped runway with the model route and five camera positions" hidden>
+            <defs><marker id="route-arrow" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0 0L7 3.5 0 7" fill="#ffbf00"/></marker></defs>
+            <path class="stage-runway" d="M48 52H352V112H224V282H176V112H48Z"/>
+            <path class="stage-center" d="M200 72V260"/>
+            <path class="stage-route" d="M55 83H200V260M200 260V83H55" marker-end="url(#route-arrow)"/>
+            <text class="stage-label" x="50" y="42">STAGE LEFT / ENTRANCE</text><text class="stage-label" x="290" y="42">STAGE RIGHT</text><text class="stage-label" x="161" y="307">AUDIENCE</text>
+            <g class="map-camera" transform="translate(30 184)"><circle r="15"/><text y="4">1</text></g><g class="map-camera" transform="translate(200 318)"><circle r="15"/><text y="4">2</text></g><g class="map-camera" transform="translate(200 286)"><circle r="15"/><text y="4">3</text></g><g class="map-camera" transform="translate(38 132)"><circle r="15"/><text y="4">4</text></g><g class="map-camera" transform="translate(302 238)"><circle r="15"/><text y="4">5</text></g>
+            <g id="model-marker" class="model-marker" transform="translate(0 0)" hidden><circle r="11"/><text y="4">M</text></g>
+            <g class="presenter-marker" transform="translate(53 201)"><circle r="8"/><text x="13" y="4">PRESENTER</text></g>
+          </svg>
+        </div><div class="view-help" id="view-help">Drag to rotate · Wheel to zoom · C1–C5 mark the cameras.</div><div class="route-note"><b>Route:</b> left → center → runway end → turn → center → left. <b>C1</b> stays on the presenter.</div></div>
+        <div class="control-panel">
+          <div id="plan-panel" class="plan-panel"><div class="panel-heading"><h2>Assign the cameras</h2><span>ONE ROLE EACH</span></div><p class="panel-intro">The numbered cameras show the proposed positions. Choose a job for each one.</p><div id="role-list" class="role-list"></div><button type="button" class="action primary" id="check-plan">Check camera plan</button><p id="plan-feedback" class="feedback" role="status" aria-live="polite"></p></div>
+          <div id="live-panel" class="live-panel" hidden><div class="monitors"><div class="monitor"><div class="monitor-label program-label">● PROGRAM <small>ON AIR</small></div><div class="monitor-screen" id="program-screen"></div><div class="monitor-foot" id="program-name"></div></div><div class="monitor"><div class="monitor-label preview-label">● PREVIEW <small>NEXT SHOT</small></div><div class="monitor-screen" id="preview-screen"></div><div class="monitor-foot" id="preview-name"></div></div></div><div class="switch-actions"><button type="button" class="action cut" id="cut-button">CUT → PROGRAM</button><span class="switch-hint">Select a camera below, inspect preview, then cut.</span></div><div id="camera-bank" class="camera-bank" aria-label="Camera feeds"></div><div class="tilt-control" id="tilt-control" hidden><div><b>C3 · vertical tilt</b><span>At the runway end: feet → head</span></div><button type="button" class="action" id="tilt-button">Start feet-to-head tilt</button><div class="tilt-track"><div id="tilt-progress"></div></div></div><div class="take-row"><button type="button" class="action primary" id="take-cue">Check this moment</button><button type="button" class="action" id="next-cue" hidden>Next moment →</button></div><p id="live-feedback" class="feedback" role="status" aria-live="polite"></p></div>
+        </div>
+      </div>
+      <div class="desk-status"><span>PREVIEW → CUT → PROGRAM</span><span>Simulation · no live video or time limit</span></div>
+    </section>
+    <aside class="bridge"><div><span class="eyebrow">FROM THE LAB TO THE LIVE DESK</span><h2>What carries over</h2><p>In a real production, the director calls shots and the technical director switches them. The preview monitor lets them inspect the next camera before it goes on air. This exercise pauses each moment so you can practise that decision.</p></div><ol><li><strong>Before the show:</strong> agree on the route, camera positions, shot sizes and cues with the camera operators.</li><li><strong>During the walk:</strong> keep a wide safety shot ready. Use entrance and side cameras to vary the view without losing the model.</li><li><strong>At the end:</strong> C3 performs a vertical tilt from feet to head while the model holds position. After the turn, return to a safe view.</li><li><strong>Presenter:</strong> C1 remains framed on the presenter for introductions and handoffs; it does not need to be on air continuously.</li></ol><p class="bridge-assumption">Teaching setup: the presenter stands beside the runway on stage left. C2–C5 positions are a practical proposal for this exercise; a real venue needs a site visit and camera rehearsal.</p></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Runway Live Lab</span><a href="https://www.blackmagicdesign.com/ca/products/atemtelevisionstudio/software" target="_blank" rel="noopener">ATEM preview/program ↗</a><a href="https://support.cyanview.com/docs/Workflows/FashionShow" target="_blank" rel="noopener">Fashion show workflow ↗</a><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=6"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 # Geometry Nodes Labs · teaching notes
 
 Four labs, topic 05 (Geometry Nodes) of the Blender area. About 60–75 minutes each. After the Viewport and Edit Mode labs.
-First version made for CIFOG Lab; rebuilt for Carrot Revolt Labs with a Blender-style workspace, a real mesh interpreter and live checklists.
+First version made for CIFOG Lab, then rebuilt with a Blender-style workspace, a real mesh interpreter and live checklists.
 
 ## The workspace
 

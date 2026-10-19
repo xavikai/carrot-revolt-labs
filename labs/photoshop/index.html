@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="Practise Photoshop selection tools and non-destructive layer masks in a guided, interactive workspace.">
+  <title>Photoshop Selection &amp; Mask Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../../blender-ui.css?v=3">
+  <link rel="stylesheet" href="../../lab-brief.css?v=8">
+  <link rel="stylesheet" href="./style.css?v=7">
+  <script type="module" src="../../lab-brief.js?v=7"></script>
+  <link rel="stylesheet" href="../../brand.css?v=1">
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 25</span><strong>Photoshop Selection &amp; Mask Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead"><h1>Select first. <span>Change it safely.</span></h1><p>Practise the selection tools, then turn a selection into a layer mask. Work on one image and see exactly what the white and black parts of a mask do.</p></div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage"><span class="control-label">STAGE</span></div>
+    </section>
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+    <section class="below"><div class="step-card" id="step-card"></div></section>
+    <section class="blender ps-work" id="workspace" aria-label="Photoshop-style workspace">
+      <svg class="ps-icon-defs" width="0" height="0" aria-hidden="true"><filter id="ps-icon-alpha" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  2 2 2 0 -2.4"/></filter></svg>
+      <div class="ps-menubar" data-no-i18n><span class="ps-logo">Ps</span><span>Archivo</span><span>Edición</span><span>Imagen</span><span>Capa</span><span>Texto</span><span>Selección</span><span>Filtro</span><span>Vista</span><span>Plugins</span><span>Ventana</span><span>Ayuda</span><span class="ps-sim">SIMULACIÓN DIDÁCTICA</span></div>
+      <div class="ps-options" data-no-i18n>
+        <span class="ps-home" aria-hidden="true">⌂</span><span class="ps-workspace-pill">✦&nbsp; Asistido por IA</span><span class="ps-workspace-pill active">▣&nbsp; Editor profesional</span>
+        <span class="ps-divider"></span><button type="button" id="tool-options-button" class="ps-tool-options" title="Ver herramientas del grupo" aria-label="Ver herramientas del grupo"><span id="current-tool-icon"></span><span class="ps-chevron">⌄</span></button>
+        <span class="ps-divider"></span><div class="ps-modes" id="selection-modes" role="group" aria-label="Modo de selección"></div>
+        <label class="ps-feather" id="feather-field">Desv.: <input type="text" value="0 px" readonly aria-label="Desvanecer, cero píxeles"></label><span class="ps-muted" id="smooth-field">□ Suavizar</span>
+        <span class="ps-field" id="style-field">Estilo: <b>Normal&nbsp;⌄</b></span>
+        <label class="brush-size" id="brush-size-field" hidden><span>Tamaño</span><input id="brush-size" type="range" min="8" max="50" value="22"><output id="brush-size-value">22 px</output></label>
+        <span class="ps-select-mask">Seleccionar y aplicar máscara...</span><span class="sr-only" id="tool-name"></span><span class="sr-only" id="tool-note"></span>
+      </div>
+      <div class="ps-body">
+        <div class="ps-toolbar" id="toolbar" role="toolbar" aria-label="Photoshop tools" data-no-i18n></div>
+        <div class="ps-document"><div class="ps-tab" data-no-i18n>estudi-seleccio.psd <span>100 % (RGB/8)</span></div><div class="ps-canvas-host"><canvas id="canvas" width="640" height="400" aria-label="Practice image: card, plate, pennant and orange mug"></canvas></div><div class="ps-docbar"><span>640 × 400 px</span><span id="doc-hint"></span><button type="button" id="undo-button" title="Deshacer" aria-label="Deshacer">↶</button><button type="button" id="deselect-button" title="Deseleccionar" aria-label="Deseleccionar">Deseleccionar</button></div></div>
+        <aside class="ps-panels">
+          <div class="ps-panel ps-properties"><h2>Propiedades</h2><p id="properties-text"></p><div class="ps-colors"><span>Fondo</span><button type="button" id="background-button" class="background-button"><i></i><span id="background-label">Peach</span></button></div><button type="button" id="view-mask-button" class="ps-view-mask" title="Ver máscara" aria-label="Ver máscara">Ver máscara</button></div>
+          <div class="ps-panel layers-panel" data-no-i18n>
+            <div class="ps-panel-tabs"><strong>Capas</strong><span>Canales</span><span>Trazados</span><span class="ps-panel-menu">≡</span></div>
+            <div class="ps-layer-filter"><span>⌕&nbsp; Tipo&nbsp;⌄</span><span class="ps-layer-filter-icons">▧ &nbsp;◐ &nbsp;T &nbsp;▣ &nbsp;▤</span></div>
+            <div class="ps-layer-blend"><span>Normal&nbsp;⌄</span><span>Opacidad: <b>100%</b></span></div>
+            <div class="ps-layer-lock"><span>Bloq.: &nbsp;▦ &nbsp;◩ &nbsp;✥ &nbsp;▣ &nbsp;♟</span><span>Relleno: 100%</span></div>
+            <div class="ps-layer-list"><div class="layer-row active"><span class="layer-eye" data-panel-icon="eye" aria-hidden="true"></span><button type="button" class="layer-thumb photo-thumb" id="image-thumb" title="Seleccionar miniatura de foto" aria-label="Miniatura de foto" aria-pressed="true"></button><button type="button" class="layer-thumb mask-thumb" id="mask-thumb" title="Alt+clic para ver la máscara" aria-label="Miniatura de máscara" aria-pressed="false" hidden></button><span class="layer-name">Foto</span></div><div class="layer-row"><span class="layer-eye" data-panel-icon="eye" aria-hidden="true"></span><span class="layer-thumb bg-thumb" aria-hidden="true"></span><span class="layer-name">Color de fondo</span><span class="layer-lock-icon" data-panel-icon="lock" aria-hidden="true"></span></div></div>
+            <div class="ps-panel-actions"><span title="Vincular capas" data-panel-icon="link"></span><span title="Estilo de capa" class="ps-fx">ƒx</span><button type="button" id="add-mask-button" title="Añadir máscara de capa" aria-label="Añadir máscara de capa"><span class="mask-icon"></span></button><span title="Nueva capa de ajuste" data-panel-icon="adjust"></span><span title="Nuevo grupo" data-panel-icon="folder"></span><span title="Nueva capa" data-panel-icon="layer"></span><span title="Eliminar capa" data-panel-icon="trash"></span></div>
+          </div>
+        </aside>
+      </div>
+      <div class="ps-status"><span id="status-keys"></span><span id="status-msg" role="status" aria-live="polite"></span></div>
+    </section>
+    <section class="shortcuts" aria-label="Shortcuts used in this lab"><div><span class="eyebrow">FROM THE LAB TO PHOTOSHOP</span><h2>What to do in the real app</h2><p>The names on the workspace match the Spanish menus in your screenshot. This is a focused practice space; try the same sequence in Photoshop with your own photo.</p></div><dl><div><dt><kbd>M</kbd></dt><dd>Marco rectangular / elíptico</dd></div><div><dt><kbd>L</kbd></dt><dd>Lazo</dd></div><div><dt><kbd>W</kbd></dt><dd>Selección de objetos / Selección rápida</dd></div><div><dt><kbd>B</kbd> · <kbd>X</kbd></dt><dd>Pincel · swap black and white</dd></div><div><dt><kbd>Ctrl</kbd><kbd>D</kbd> · <kbd>Ctrl</kbd><kbd>Z</kbd></dt><dd>Deselect · undo</dd></div><div><dt><kbd>Alt</kbd> + click</dt><dd>Inspect the black and white mask thumbnail</dd></div></dl></section>
+  </main>
+  <footer><span>Carrot Revolt Labs · Photoshop Selection &amp; Mask Lab</span><span>Practice image drawn for this lab.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=10"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

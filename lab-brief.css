@@ -1,18 +1,52 @@
 /* The step explanation above the workspace (lab-brief.js) */
+.lab-embed-button{display:inline-flex;align-items:center;background:none;border:1px solid #5a616b;border-radius:6px;color:#dfe5ec;font:600 .78rem/1 Inter,'Segoe UI',Arial,sans-serif;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.lab-embed-button:hover{border-color:var(--lab-accent,#ffbf00);color:#fff}
+.lab-embed-button:focus-visible,.lab-embed-dialog button:focus-visible{outline:2px solid var(--lab-accent,#ffbf00);outline-offset:3px}
+.lab-embed-dialog{box-sizing:border-box;width:min(680px,calc(100% - 32px));max-height:90vh;overflow:auto;background:#22262c;color:#f1f4f8;border:1px solid #5a616b;border-radius:12px;padding:24px;font:14px/1.5 Inter,'Segoe UI',Arial,sans-serif}
+.lab-embed-dialog::backdrop{background:#000a}
+.lab-embed-dialog h2{font-size:1.1rem;margin:0 0 16px}
+.embed-option{display:flex;gap:8px;align-items:center;margin-bottom:14px}
+.embed-theme-label{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.embed-theme{min-width:160px;background:#14171b;color:#f1f4f8;border:1px solid #5a616b;border-radius:5px;padding:7px;font:inherit}
+.embed-colours{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:12px}
+.embed-colours label{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.embed-colours label>span{flex-basis:100%;font-size:.8rem}
+.embed-colours input[type=color]{width:40px;height:32px;padding:2px;border:1px solid #5a616b;background:#14171b;cursor:pointer}
+.embed-colours input[type=text]{width:90px;padding:6px;border:1px solid #5a616b;border-radius:4px;background:#14171b;color:#f1f4f8;font:13px monospace}
+.embed-colours input[type=text]:invalid{border-color:#f87a7a}
+.embed-sample{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border:1px solid;border-radius:6px}
+.embed-sample b{padding:5px 16px;border-radius:4px}
+.embed-theme-note{color:#c0c8d2;font-size:.8rem;margin:10px 0 16px}
+.lab-embed-dialog textarea{box-sizing:border-box;width:100%;padding:12px;background:#14171b;color:#e4eaf1;border:1px solid #5a616b;border-radius:6px;font:12px/1.5 monospace;resize:vertical}
+.embed-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.lab-embed-dialog button{padding:8px 14px;border:1px solid #5a616b;border-radius:6px;background:#343a43;color:#fff;cursor:pointer}
+.lab-embed-dialog .embed-copy{background:var(--lab-accent,#ffbf00);color:var(--lab-accent-ink,#17191b);border-color:var(--lab-accent,#ffbf00);font-weight:700}
+.lab-embed-dialog [role=status]{min-height:1.5em;margin-bottom:0}
+.lab-embedded footer,.lab-embedded #series,.lab-embedded .lab-embed-button{display:none!important}
+.lab-embedded .brand,.lab-embedded .brand-mark,.lab-embedded .header-rule{display:none!important}
+.lab-embedded .site-header,.lab-embedded .app-header,.lab-embedded .lab-lead,.lab-embedded .lead,.lab-embedded .lab-top{color:var(--lab-background-ink,var(--text))}
+.lab-embedded .lab-lead p,.lab-embedded .lab-lead .eyebrow,.lab-embedded .lead p,.lab-embedded .lead .eyebrow,.lab-embedded .lab-top p,.lab-embedded .lab-top .eyebrow,.lab-embedded .header-label,.lab-embedded .app-title .eyebrow,.lab-embedded .header-actions .reference{color:inherit}
+.lab-embedded .lab-lead strong,.lab-embedded .lab-lead b,.lab-embedded .lead strong,.lab-embedded .lead b,.lab-embedded .lab-top strong{color:inherit}
+.lab-embedded .lab-lead h1 span{color:var(--lab-heading-accent,var(--yellow))}
+:root.lab-embedded .step-card,:root.lab-embedded .experiment{background-color:#22272d}
+.lab-embedded .guide li.current,.lab-embedded .guide button.current,.lab-embedded .model-button.active,.lab-embedded .preset.active{background:color-mix(in srgb,var(--lab-accent,#ffbf00) 7%,#22272d)}
+.lab-embedded .site-header button,.lab-embedded .app-header button{background:#22272d;color:#f3f4f6}
+.lab-embedded .app-title{border-left:0;padding-left:0}
+@media(max-width:640px){.lab-embed-button{font-size:.7rem;padding:6px 8px}.site-header,.header-actions{flex-wrap:wrap}}
 .below.brief{position:relative;padding:0 clamp(16px,3vw,40px) 30px;display:block}
 .below.brief .step-card{padding:14px 18px 12px}
 .below.brief .step-card h3{margin-top:4px}
 .below.brief{padding-bottom:40px}
-.brief-toggle{position:absolute;right:calc(clamp(16px,3vw,40px) + 14px);bottom:6px;display:inline-flex;align-items:center;gap:6px;background:#ffbf00;border:0;border-radius:6px;color:#17191b;font-size:.78rem;font-weight:750;padding:6px 14px;cursor:pointer;z-index:2;box-shadow:0 3px 10px #0006}
+.brief-toggle{position:absolute;right:calc(clamp(16px,3vw,40px) + 14px);bottom:6px;display:inline-flex;align-items:center;gap:6px;background:var(--lab-accent,#ffbf00);border:0;border-radius:6px;color:var(--lab-accent-ink,#17191b);font-size:.78rem;font-weight:750;padding:6px 14px;cursor:pointer;z-index:2;box-shadow:0 3px 10px #0006}
 .brief-toggle span{font-size:.9rem}
-.brief-toggle:hover{background:#ffd255}
+.brief-toggle:hover{background:var(--lab-accent,#ffd255)}
 .brief-toggle:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .below.brief.folded .brief-toggle{animation:brief-nudge 1.6s ease 2}
-@keyframes brief-nudge{50%{box-shadow:0 0 0 6px #ffbf0040}}
+@keyframes brief-nudge{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--lab-accent,#ffbf00) 25.098%,transparent)}}
 /* Restart the lab (header) */
 .lab-reset{margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:none;border:1px solid #5a616b;border-radius:6px;color:#dfe5ec;font:600 .78rem/1 Inter,'Segoe UI',Arial,sans-serif;padding:7px 12px;cursor:pointer;white-space:nowrap}
 .lab-reset span{font-size:1rem}
-.lab-reset:hover{border-color:#ffbf00;color:#fff}
+.lab-reset:hover{border-color:var(--lab-accent,#ffbf00);color:#fff}
 .lab-reset.armed{background:#b3261e;border-color:#b3261e;color:#fff}
 .site-header .lab-reset + .home-link{margin-left:14px}
 @media(max-width:640px){.lab-reset{padding:6px 8px;font-size:.7rem}}
@@ -22,3 +56,4 @@
 .below.brief.folded .step-actions{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-end;min-width:0}
 @media(max-width:900px){.below.brief.folded .step-card{grid-template-columns:1fr}.below.brief.folded .step-actions{justify-content:flex-start}}
 .header-actions .lab-reset{margin-left:0}
+@media(max-width:520px){.site-header{gap:10px}.site-header .home-link,.site-header .header-rule{display:none}.lab-reset{font-size:0;gap:0;padding:6px 9px}.lab-reset span{font-size:1rem}}

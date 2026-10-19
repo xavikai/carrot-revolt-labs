@@ -1,5 +1,5 @@
 /* Carrot Revolt Labs · Geometry Nodes labs. Page chrome in Carrot style; the workspace in Blender's default dark theme. */
-:root{color-scheme:dark;--bg:#191b1e;--panel:#22272d;--line:#3b434b;--text:#f3f5f7;--muted:#b9c5cf;--yellow:#ffbf00;--green:#7fd36b;
+:root{color-scheme:dark;--bg:#191b1e;--panel:#22272d;--line:#3b434b;--text:#f3f5f7;--muted:#b9c5cf;--yellow:var(--lab-accent,#ffbf00);--green:#7fd36b;
   --b-gutter:#161616;--b-area:#303030;--b-head:#303030;--b-region:#282828;--b-text:#e6e6e6;--b-dim:#9a9a9a;--b-num:#545454;--b-menu:#282828;--b-blue:#4772b3;
   --s-geometry:#00d6a3;--s-float:#a1a1a1;--s-int:#598c5c;--s-bool:#cca6d6;--s-vector:#6363c7;--s-rotation:#a663c7;--s-collection:#f5f5f5;
   font-family:Inter,'Segoe UI',Arial,sans-serif}
@@ -143,7 +143,7 @@ main{display:block}
 .sp-panel{background:#303030;border-radius:5px;padding:6px 8px;margin-bottom:6px}.sp-panel h4{margin:0 0 6px;font-size:11.5px;font-weight:600;color:#e6e6e6}
 .sp-panel p{font-size:11.5px;line-height:1.5;color:#d8d8d8}.sp-panel .dim,.dim{color:#9a9a9a}
 .sp-f{display:grid;grid-template-columns:44px 1fr;align-items:center;gap:6px;margin-bottom:4px}.sp-f span{text-align:right;color:#bbb}.sp-f input{background:#1d1d1d;border:1px solid #161616;border-radius:4px;padding:2px 6px;font-size:11.5px}
-.sp-panel.doc{border-left:3px solid #ffbf00}
+.sp-panel.doc{border-left:3px solid var(--yellow)}
 .warnp{display:flex;gap:5px;align-items:flex-start;color:#f1c675!important;margin-top:5px}.warnp .bi{flex:none;width:13px;height:13px;margin-top:2px}
 .sp-socks{list-style:none;margin:0 0 6px;padding:0}.sp-socks li{position:relative;display:flex;align-items:center;gap:7px;padding:2px 0 2px 16px;font-size:11.5px}.sp-socks small{margin-left:auto;color:#8f8f8f}
 .sp-socks .gn-sock,.sp-sock .gn-sock{left:0;right:auto;width:9px;height:9px;margin-top:-4.5px}

@@ -2,12 +2,12 @@
 // Elevation, Distance, always aimed at it), measured with a light meter and rendered progressively.
 import * as THREE from 'three';
 import { OrbitControls } from '../../vendor/OrbitControls.js';
-import { TARGETS, CAMERA, PROBES, HDRIS, FALSE_COLOR, lightPos, lightDir, lightFrame, apparentSize, measure, ratioLabel, stopsOf, luminance, MIDDLE_GREY, rad, deg } from './light.js?v=1';
-import { buildSet, applySet, Rig, World, Progressive } from './scene.js?v=5';
+import { TARGETS, CAMERA, PROBES, HDRIS, FALSE_COLOR, GOBOS, IES, lightPos, lightDir, lightFrame, apparentSize, measure, ratioLabel, stopsOf, luminance, MIDDLE_GREY, rad, deg, wallGap, fogDensity } from './light.js?v=4';
+import { buildSet, applySet, Rig, World, Progressive, FOG, FOG_BOX } from './scene.js?v=8';
 import { parseModel, fitModel } from './models.js?v=2';
-import { STAGES, startState, referenceState, LIGHT_IDS, LIGHT_NAMES } from './stages.js?v=1';
+import { STAGES, startState, referenceState, upgradeState, LIGHT_IDS, LIGHT_NAMES } from './stages.js?v=4';
 import { t, tr, onLangChange, addDictionary } from '../../i18n.js';
-import dictionary from './i18n.js?v=1';
+import dictionary from './i18n.js?v=4';
 addDictionary(dictionary);
 
 const $ = s => document.querySelector(s);
@@ -94,6 +94,11 @@ function updateGizmos() {
   for (const c of [...gizmos.children]) { gizmos.remove(c); c.traverse(o => { o.geometry?.dispose(); o.material?.dispose(); }); }
   for (const id of LIGHT_IDS) gizmos.add(lightGizmo(id, S.st.lights[id], S.st.sel === id));
   const c = S.st.card; if (c.on) gizmos.add(lightGizmo('card', { ...c, card: true, on: true, type: 'AREA', target: 'head' }, S.st.sel === 'card'));
+  // the fog volume: a cube around the set
+  if (S.st.fog.on) {
+    const [a, b] = [FOG_BOX.min, FOG_BOX.max], P = (x, y, z) => [x ? b[0] : a[0], y ? b[1] : a[1], z ? b[2] : a[2]], col = S.st.sel === 'fog' ? 0xffa629 : 0x8fb3d9;
+    for (const [p, q] of [[[0,0,0],[1,0,0]],[[0,1,0],[1,1,0]],[[0,0,1],[1,0,1]],[[0,1,1],[1,1,1]],[[0,0,0],[0,1,0]],[[1,0,0],[1,1,0]],[[0,0,1],[0,1,1]],[[1,0,1],[1,1,1]],[[0,0,0],[0,0,1]],[[1,0,0],[1,0,1]],[[0,1,0],[0,1,1]],[[1,1,0],[1,1,1]]]) gizmos.add(lineObj([P(...p), P(...q)], col, true));
+  }
   // camera
   const cp = CAMERA.pos, ct = CAMERA.target, f = [ct[0] - cp[0], ct[1] - cp[1], ct[2] - cp[2]], fl = Math.hypot(...f), fw = f.map(x => x / fl);
   const r = [fw[2], 0, -fw[0]].map(x => -x), up = [0, 1, 0], h = Math.tan(rad(CAMERA.fov / 2)) * 0.5, wv = h * 1.5;
@@ -127,6 +132,7 @@ function syncScenes() {
   applySet(vSet, s); applySet(rSet, s);
   vRig.sync(s); rRig.sync(s);
   vWorld.sync(s.world, false); rWorld.sync(s.world, true);
+  FOG.value = fogDensity(s);
   vScene.background = new THREE.Color(0x2b2c2f);
   vr.toneMapping = s.view.transform === 'Standard' ? THREE.NoToneMapping : THREE.AgXToneMapping; vr.toneMappingExposure = Math.pow(2, s.view.exposure);
   prog.reset(); vDirty = true;
@@ -135,7 +141,7 @@ function renderLoop() {
   if (vDirty) { vDirty = false; vr.render(vScene, viewCam()); }
   if (prog.n < S.samples) {
     const t0 = performance.now();
-    do { rRig.jitter(prog.n); prog.add(rScene, rCam); } while (prog.n < S.samples && performance.now() - t0 < 12);
+    do { rRig.jitter(prog.n); prog.add(rScene, rCam, rRig, S.st.fog); } while (prog.n < S.samples && performance.now() - t0 < 12);
     prog.show(S.st.view.exposure, S.st.view.transform);
     $('#samples').textContent = `${t('Sample')} ${prog.n} / ${S.samples}`;
   }
@@ -155,7 +161,7 @@ function renderReference() {
   $('#reference').hidden = !ref || !$('#r-ref').checked;
   if (!ref) { S.ref = null; return; }
   const save = S.st; S.st = ref; syncScenes();
-  for (let i = 0; i < 48; i++) { rRig.jitter(i); prog.add(rScene, rCam); }
+  for (let i = 0; i < 48; i++) { rRig.jitter(i); prog.add(rScene, rCam, rRig, ref.fog); }
   prog.show(ref.view.exposure, ref.view.transform);
   $('#reference-img').src = rCanvas.toDataURL('image/jpeg', 0.85);
   S.st = save; syncScenes();
@@ -173,7 +179,7 @@ function pick(e) {
   }
   return best;
 }
-const objOf = id => id === 'card' ? S.st.card : S.st.lights[id];
+const objOf = id => id === 'card' ? S.st.card : id === 'fog' ? S.st.fog : S.st.lights[id];
 let drag = null;
 vCanvas.addEventListener('pointerdown', e => {
   if (e.button !== 0 || e.altKey) return;
@@ -205,7 +211,7 @@ vCanvas.addEventListener('pointermove', e => {
 window.addEventListener('pointerup', () => { if (!drag) return; if (!drag.moved) S.undo.pop(); drag = null; changed(); });
 vCanvas.addEventListener('wheel', e => {
   const o = objOf(S.st.sel);
-  if (!o || !(e.shiftKey || pick(e) === S.st.sel) || (o.type === 'SUN' && S.st.sel !== 'card')) return;
+  if (!o || S.st.sel === 'fog' || !(e.shiftKey || pick(e) === S.st.sel) || (o.type === 'SUN' && S.st.sel !== 'card')) return;
   e.preventDefault(); e.stopImmediatePropagation();
   pushUndo(); o.dist = Math.max(0.3, Math.min(12, Math.round(o.dist * (e.deltaY > 0 ? 1.08 : 1 / 1.08) * 100) / 100)); changed();
 }, { capture: true, passive: false });
@@ -215,7 +221,7 @@ const key = () => `data-${stage().id}-${S.step}`;
 function saveData() { store.set(key(), { st: S.st, flags: S.flags }); }
 function loadData() {
   const saved = store.get(key(), null);
-  if (saved?.st?.lights) { S.st = saved.st; S.flags = saved.flags || {}; } else { S.st = startState(step()); S.flags = {}; }
+  if (saved?.st?.lights) { S.st = upgradeState(saved.st); S.flags = saved.flags || {}; } else { S.st = startState(step()); S.flags = {}; }
   S.undo = []; S.redo = [];
 }
 function pushUndo() { S.undo.push(JSON.stringify(S.st)); if (S.undo.length > 80) S.undo.shift(); S.redo = []; }
@@ -243,7 +249,7 @@ function renderMeters() {
 function drawOverlay() {
   const s = S.st, sel = s.sel, o = objOf(sel);
   const lines = [S.view === 'top' ? t('Top view · drag a light to place it on the floor plan') : t('User Perspective')];
-  if (o) lines.push(`${LIGHT_NAMES[sel]} · Az ${o.az}° · El ${o.el}°${o.type === 'SUN' && sel !== 'card' ? '' : ` · ${o.dist} m`}`);
+  if (o && sel !== 'fog') lines.push(`${LIGHT_NAMES[sel]} · Az ${o.az}° · El ${o.el}°${o.type === 'SUN' && sel !== 'card' ? '' : ` · ${o.dist} m`}`);
   $('#view-overlay').innerHTML = lines.map(l => `<div data-no-i18n>${esc(l)}</div>`).join('');
 }
 
@@ -260,9 +266,11 @@ function renderProps() {
     const o = objOf(id), icon = id === 'card' ? '<rect x="2" y="2" width="8" height="8" fill="none" stroke="currentColor"/>' : '<circle cx="6" cy="5" r="3" fill="none" stroke="currentColor"/><path d="M4.5 8.5h3M5 10.5h2" stroke="currentColor"/>';
     h += `<div class="ol-row${sel === id ? ' active' : ''}${o.on ? '' : ' off'}" data-sel="${id}"><svg viewBox="0 0 12 12" aria-hidden="true">${icon}</svg><span data-no-i18n>${LIGHT_NAMES[id]}</span><small data-no-i18n>${id === 'card' ? '' : o.type[0] + o.type.slice(1).toLowerCase()}</small><button type="button" class="eye" data-eye="${id}" aria-label="On / off" aria-pressed="${o.on}">${eye(o.on)}</button></div>`;
   }
+  { const f = S.st.fog; h += `<div class="ol-row${sel === 'fog' ? ' active' : ''}${f.on ? '' : ' off'}" data-sel="fog"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4-2 4 2v4l-4 2-4-2z M2 4l4 2 4-2 M6 6v4" fill="none" stroke="currentColor"/></svg><span data-no-i18n>Fog_Volume</span><small data-no-i18n>Volume</small><button type="button" class="eye" data-eye="fog" aria-label="On / off" aria-pressed="${f.on}">${eye(f.on)}</button></div>`; }
   h += `<div class="ol-row${sel === 'world' ? ' active' : ''}" data-sel="world"><svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor"/><path d="M1.5 6h9M6 1.5c2 2.5 2 6.5 0 9M6 1.5c-2 2.5-2 6.5 0 9" fill="none" stroke="currentColor"/></svg><span data-no-i18n>World</span><small></small></div></div></div>`;
   if (LIGHT_IDS.includes(sel)) h += lightPanel(sel, s.lights[sel]);
   else if (sel === 'card') h += cardPanel(s.card);
+  else if (sel === 'fog') h += fogPanel(s.fog);
   h += subjectPanel();
   h += worldPanel(s.world);
   h += `<div class="panel bl" data-no-i18n><h4>Backdrop<small>Material</small></h4><label class="bl-row"><span>Base Color</span><select data-g="backdrop">${opt('white', s.backdrop, 'White paper (85%)')}${opt('grey', s.backdrop, 'Grey paper (50%)')}${opt('black', s.backdrop, 'Black velvet (4%)')}</select><em></em></label></div>`;
@@ -313,23 +321,59 @@ $('#props').addEventListener('change', e => { if (e.target.id === 'model-file' &
 
 function lightPanel(id, l) {
   const seg = (f, cur, opts) => `<div class="seg small">${opts.map(([v, lab]) => `<button type="button" data-seg="${f}" data-val="${v}" aria-pressed="${cur === v}">${lab}</button>`).join('')}</div>`;
+  const eng = e => `<small class="eng eng-${e.toLowerCase()}">${e}</small>`;
+  const pointLike = l.type === 'POINT' || l.type === 'SPOT';
   let h = `<div class="panel bl" data-no-i18n><h4>${LIGHT_NAMES[id]}<small>Object Data · Light</small></h4>
     <div class="bl-row stack">${seg('type', l.type, [['POINT', 'Point'], ['SUN', 'Sun'], ['SPOT', 'Spot'], ['AREA', 'Area']])}</div>
     <div class="bl-row"><span>Color</span>${seg('colorMode', l.colorMode, [['rgb', 'RGB'], ['kelvin', 'Blackbody']])}</div>`;
   h += l.colorMode === 'kelvin' ? `<label class="bl-row"><span>Temperature</span>${num('kelvin', l.kelvin, 1000, 20000, 100, 'K')}</label><div class="kelvin-bar"><i style="left:${(l.kelvin - 1000) / 190}%"></i></div>` : `<label class="bl-row"><span>Color</span><input type="color" data-f="color" value="${toHex(l.color)}"><em></em></label>`;
   h += l.type === 'SUN' ? `<label class="bl-row"><span>Strength</span>${num('strength', l.strength, 0, 100, 0.1, 'W/m²')}</label><label class="bl-row"><span>Angle</span>${num('angle', l.angle, 0, 90, 0.5, '°')}</label>`
     : `<label class="bl-row"><span>Power</span>${num('power', l.power, 0, 100000, 1, 'W')}</label>`;
-  if (l.type === 'POINT' || l.type === 'SPOT') h += `<label class="bl-row"><span>Radius</span>${num('radius', l.radius, 0, 2, 0.01, 'm')}</label>`;
-  if (l.type === 'SPOT') h += `<div class="bl-sec">Spot Shape</div><label class="bl-row"><span>Spot Size</span>${num('spotSize', l.spotSize, 1, 180, 1, '°')}</label><label class="bl-row"><span>Blend</span>${num('blend', l.blend, 0, 1, 0.05)}</label>`;
+  if (pointLike) h += `<label class="bl-row"><span>Radius</span>${num('radius', l.radius, 0, 2, 0.01, 'm')}</label><label class="bl-check"><input type="checkbox" data-f="softFalloff"${l.softFalloff !== false ? ' checked' : ''}>Soft Falloff</label>`;
+  if (l.type === 'SPOT') h += `<div class="bl-sec">Beam Shape</div><label class="bl-row"><span>Spot Size</span>${num('spotSize', l.spotSize, 1, 180, 1, '°')}</label><label class="bl-row"><span>Blend</span>${num('blend', l.blend, 0, 1, 0.05)}</label>`;
   if (l.type === 'AREA') h += `<label class="bl-row"><span>Shape</span><select data-f="shape">${opt('SQUARE', l.shape, 'Square')}${opt('RECTANGLE', l.shape, 'Rectangle')}${opt('DISK', l.shape, 'Disk')}</select><em></em></label>
-    <label class="bl-row"><span>${l.shape === 'RECTANGLE' ? 'Size X' : 'Size'}</span>${num('size', l.size, 0.01, 5, 0.05, 'm')}</label>${l.shape === 'RECTANGLE' ? `<label class="bl-row"><span>Size Y</span>${num('sizeY', l.sizeY, 0.01, 5, 0.05, 'm')}</label>` : ''}`;
-  h += `<label class="bl-check"><input type="checkbox" data-f="shadow"${l.shadow !== false ? ' checked' : ''}>Cast Shadow</label>
-    <div class="bl-sec">Placement · Track To ${l.target === 'backdrop' ? 'Backdrop' : 'Bust'}</div>
+    <label class="bl-row"><span>${l.shape === 'RECTANGLE' ? 'Size X' : 'Size'}</span>${num('size', l.size, 0.01, 5, 0.05, 'm')}</label>${l.shape === 'RECTANGLE' ? `<label class="bl-row"><span>Size Y</span>${num('sizeY', l.sizeY, 0.01, 5, 0.05, 'm')}</label>` : ''}
+    <div class="bl-sec">Beam Shape ${eng('Cycles')}</div><label class="bl-row"><span>Spread</span>${num('spread', l.spread ?? 180, 1, 180, 5, '°')}</label>`;
+  h += `<label class="bl-check"><input type="checkbox" data-f="shadow"${l.shadow !== false ? ' checked' : ''}>Cast Shadow</label>`;
+  if (l.type !== 'SUN') {
+    // the light's node tree (Cycles): gobo image, IES profile, Light Falloff
+    const chain = [l.type === 'SPOT' && l.gobo !== 'none' ? 'Image Texture' : '', pointLike && l.ies !== 'none' ? 'IES Texture' : '', l.falloff !== 'QUADRATIC' ? 'Light Falloff' : ''].filter(Boolean);
+    h += `<div class="bl-sec">Nodes ${eng('Cycles')}</div><p class="node-chain">${chain.length ? chain.join(' · ') + ' → ' : ''}Emission → Light Output</p>`;
+    if (l.type === 'SPOT') {
+      h += `<label class="bl-row"><span>Gobo</span><select data-f="gobo">${Object.entries(GOBOS).map(([k, v]) => opt(k, l.gobo, v)).join('')}</select><em></em></label>`;
+      if (l.gobo !== 'none') h += `<label class="bl-row sub"><span>Mapping Scale</span>${num('goboScale', l.goboScale, 0.2, 5, 0.1)}</label><label class="bl-row sub"><span>Mapping Rotation</span>${num('goboRot', l.goboRot, -180, 180, 5, '°')}</label>`;
+    }
+    if (pointLike) h += `<label class="bl-row"><span>IES</span><select data-f="ies">${Object.entries(IES).map(([k, v]) => opt(k, l.ies, v.name)).join('')}</select><em></em></label>`;
+    h += `<label class="bl-row"><span>Light Falloff</span><select data-f="falloff">${opt('QUADRATIC', l.falloff, 'Quadratic')}${opt('LINEAR', l.falloff, 'Linear')}${opt('CONSTANT', l.falloff, 'Constant')}</select><em></em></label>`;
+    h += `<div class="bl-sec">Custom Distance ${eng('EEVEE')}</div><label class="bl-check"><input type="checkbox" data-f="customDist"${l.customDist ? ' checked' : ''}>Custom Distance</label>`;
+    if (l.customDist) h += `<label class="bl-row sub"><span>Distance</span>${num('customDistance', l.customDistance, 0.05, 20, 0.05, 'm')}</label>`;
+  }
+  h += `<div class="bl-sec">Influence ${eng('EEVEE')}</div><label class="bl-row"><span>Volume Scatter</span>${num('volume', l.volume ?? 1, 0, 1, 0.1)}</label>`;
+  const tgt = { head: 'Bust', backdrop: 'Backdrop', wallL: 'Backdrop' }[l.target || 'head'];
+  h += `<div class="bl-sec">Placement · Track To ${tgt}</div>
     <label class="bl-row"><span>Azimuth</span>${num('az', l.az, -180, 180, 1, '°')}</label>
     <label class="bl-row"><span>Elevation</span>${num('el', l.el, -85, 89, 1, '°')}</label>
-    ${l.type === 'SUN' ? '' : `<label class="bl-row"><span>Distance</span>${num('dist', l.dist, 0.3, 12, 0.05, 'm')}</label>`}
-    <p class="bl-note">${esc(`Apparent size ${apparentSize(l).toFixed(1)}°`)}</p></div>`;
+    ${l.type === 'SUN' ? '' : `<label class="bl-row"><span>Distance</span>${num('dist', l.dist, 0.05, 12, 0.05, 'm')}</label>`}
+    <p class="bl-note">${esc(`Apparent size ${apparentSize(l).toFixed(1)}°`)}${pointLike && l.radius > 0 && wallGap(l) < l.radius ? ' · ' + esc('the sphere touches the backdrop') : ''}</p></div>`;
+  // Light Linking (Object Properties › Shading)
+  const link = l.link || {}, rows = [['bust', 'Bust'], ['backdrop', 'Backdrop'], ['balls', 'Balls']];
+  h += `<div class="panel bl" data-no-i18n><h4>Light &amp; Shadow Linking<small>Object · Shading</small></h4>
+    <p class="bl-note">Receiver Collection ${Object.values(link).some(Boolean) ? '· Light_Receivers' : '· none'}</p>
+    ${rows.map(([k, lab]) => `<label class="bl-row"><span>${lab}</span><select data-link="${k}">${opt('', link[k] || '', '—')}${opt('include', link[k] || '', 'Include')}${opt('exclude', link[k] || '', 'Exclude')}</select><em></em></label>`).join('')}
+    <div class="bl-sec">Shadow Linking</div>
+    <p class="bl-note">Blocker Collection ${Object.values(l.shadowLink || {}).some(Boolean) ? '· Shadow_Blockers' : '· none'}</p>
+    ${rows.map(([k, lab]) => `<label class="bl-row"><span>${lab}</span><select data-shadowlink="${k}">${opt('', (l.shadowLink || {})[k] || '', '—')}${opt('include', (l.shadowLink || {})[k] || '', 'Include')}${opt('exclude', (l.shadowLink || {})[k] || '', 'Exclude')}</select><em></em></label>`).join('')}</div>`;
   return h;
+}
+function fogPanel(f) {
+  const pr = f.shader === 'PRINCIPLED';
+  return `<div class="panel bl" data-no-i18n><h4>Fog_Volume<small>Material · Volume</small></h4>
+    <p class="bl-note">Cube around the set · Material Output › Volume</p>
+    <div class="bl-row stack"><div class="seg small"><button type="button" data-seg="shader" data-val="SCATTER" aria-pressed="${!pr}">Volume Scatter</button><button type="button" data-seg="shader" data-val="PRINCIPLED" aria-pressed="${pr}">Principled Volume</button></div></div>
+    <label class="bl-row"><span>Color</span><input type="color" data-f="color" value="${toHex(f.color || [1, 1, 1])}"><em></em></label>
+    <label class="bl-row"><span>Density</span>${num('density', f.density, 0, 3, 0.01)}</label>
+    <label class="bl-row"><span>Anisotropy</span>${num('anisotropy', f.anisotropy, -0.9, 0.9, 0.05)}</label>
+    ${pr ? `<label class="bl-row"><span>Absorption Color</span><input type="color" data-f="absorption" value="${toHex(f.absorption || [0, 0, 0])}"><em></em></label>` : ''}</div>`;
 }
 function cardPanel(c) {
   return `<div class="panel bl" data-no-i18n><h4>Bounce_Card<small>Foam board · reflector</small></h4>
@@ -365,11 +409,13 @@ $('#props').addEventListener('change', e => {
   const d = e.target.dataset, v = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
   if (d.f) {
     const o = objOf(S.st.sel); pushUndo();
-    if (d.f === 'color' && S.st.sel !== 'card') o.color = fromHex(v);
+    if ((d.f === 'color' && S.st.sel !== 'card') || d.f === 'absorption') o[d.f] = fromHex(v);
     else if (e.target.type === 'number') o[d.f] = Math.max(+e.target.min, Math.min(+e.target.max, +v || 0));
     else o[d.f] = v;
     changed(); return;
   }
+  if (d.link) { const o = objOf(S.st.sel); pushUndo(); o.link = { ...(o.link || {}), [d.link]: v }; if (!v) delete o.link[d.link]; changed(); return; }
+  if (d.shadowlink) { const o = objOf(S.st.sel); pushUndo(); o.shadowLink = { ...(o.shadowLink || {}), [d.shadowlink]: v }; if (!v) delete o.shadowLink[d.shadowlink]; changed(); return; }
   if (d.w) { pushUndo(); S.st.world[d.w] = d.w === 'color' ? fromHex(v) : d.w === 'hdri' ? v : +v || 0; changed(); return; }
   if (d.g) {
     pushUndo();

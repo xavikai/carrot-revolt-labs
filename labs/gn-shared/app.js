@@ -741,6 +741,6 @@ $('#bl-status').innerHTML = `<span>${U('statusHints')}</span><span class="bl-ver
 renderGuide(); renderConcepts(); setupEditor(); setupMenu(); setupSidebar(); setupSheet(); setupProps(); setupLesson();
 recompute({ structure: true, frame: true }); renderCard();
 requestAnimationFrame(() => { frameAll(); preview?.frame(); });
-await import('../../lab-brief.js?v=3');
+await import('../../lab-brief.js?v=7');
 initI18n({ mount: '.site-header', append: true });
 onLangChange(() => location.reload());

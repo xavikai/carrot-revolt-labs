@@ -24,7 +24,7 @@ export const API = [
   { level: 2, code: '"Hello".Length      "Hello"[0]', text: 'A string is a row of characters. <code>Length</code> counts them; <code>[0]</code> reads one (a <code>char</code>, in single quotes). Positions start at 0.' },
   { level: 2, code: 'text.ToUpper()   text.Substring(0, 3)', text: 'Methods of text: <code>ToUpper()</code>, <code>ToLower()</code>, <code>Substring(start, length)</code>, <code>IndexOf("x")</code>, <code>Contains("x")</code>, <code>Replace("a", "b")</code>.' },
   { level: 2, code: '$"{name} is {age}"', text: 'Interpolation: a <code>$</code> before the quotes lets you put values inside <code>{ }</code>.' },
-  { level: 3, code: '5 > 3    2 + 2 == 4    x != 0', text: 'Comparisons give a <code>bool</code> (true or false): <code>==</code> <code>!=</code> <code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code>. <code>=</code> stores, <code>==</code> compares.' },
+  { level: 3, code: '5 > 3    2 + 2 == 4    x != 0', text: 'Comparisons give a <code>bool</code> (true or false): <code>==</code> <code>!=</code> <code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code>. <code>=</code> stores, <code>==</code> compares equal, <code>!=</code> compares different.' },
   { level: 3, code: 'a && b    a || b    !a', text: '<code>&amp;&amp;</code> and: both must be true · <code>||</code> or: at least one · <code>!</code> not: flips true and false.' },
   { level: 1, code: 'int age = 16', text: 'A variable: type, name, value. Names use <b>camelCase</b>: <code>playerScore</code>. C# is case-sensitive.' },
   { level: 4, code: 'Console.WriteLine("Hello!");', text: 'Prints text or a value in the Console. The drone also says it out loud.' },
@@ -33,22 +33,24 @@ export const API = [
   { level: 5, code: 'drone.Place(Color.Red);', text: 'Places a block on top of the column under the drone. Colors: White, Red, Orange, Yellow, Green, Blue, Purple, Black.' },
   { level: 6, code: 'int distance = 3;', text: 'Creates a variable: a named box with a type and a value. Types: <code>int</code> 3 · <code>double</code> 2.5 · <code>float</code> 2.5f · <code>bool</code> true · <code>string</code> "text" · <code>Color</code>.' },
   { level: 6, code: 'drone.Move(Direction.Right, distance);', text: 'Moves several tiles at once.' },
-  { level: 7, code: 'for (int i = 0; i < 5; i++)\n{\n    \n}', text: 'Repeats the block. <code>i = 0</code> start · <code>i &lt; 5</code> keep going while true · <code>i++</code> add 1 after each turn.' },
-  { level: 7, code: 'drone.MoveTo(x, z);', text: 'Flies straight to a tile. X goes right, Z goes forward.' },
-  { level: 7, code: 'while (drone.Height < 6)\n{\n    \n}', text: 'Repeats while the condition is true. Use it when you don\'t know how many turns you need.' },
-  { level: 7, code: 'drone.Height', text: 'How many blocks are in the column under the drone (int). Also <code>drone.X</code> and <code>drone.Z</code>.' },
-  { level: 8, code: 'if (x == 0)\n{\n    \n}\nelse\n{\n    \n}', text: 'Runs one block or the other depending on the condition.' },
-  { level: 8, code: 'x % 2 == 0', text: 'Compare with <code>==</code> <code>!=</code> <code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code>. <code>%</code> is the remainder of a division. Combine with <code>&amp;&amp;</code> (and), <code>||</code> (or), <code>!</code> (not).' },
-  { level: 8, code: 'drone.Ground', text: 'The color painted on the floor under the drone. <code>Color.None</code> if the tile is empty.' },
-  { level: 9, code: 'void Tower(int height)\n{\n    \n}', text: 'Declares a method: a name for a group of instructions. <code>void</code>: it gives nothing back. <code>int height</code>: a parameter. Write methods below the main program.' },
-  { level: 9, code: 'Tower(3);', text: 'Calls the method: its instructions run with <code>height = 3</code>, then the program carries on with the next line.' },
-  { level: 9, code: 'int Area(int w, int d)\n{\n    return w * d;\n}', text: 'A method that gives back a value: write its type instead of <code>void</code> and end with <code>return</code>. The call is replaced by the value.' },
-  { level: 10, code: 'int[] heights = { 3, 5, 2 };', text: 'An array: many values of one type in numbered boxes. <code>heights[0]</code> is the first box (positions start at 0) and <code>heights.Length</code> counts them.' },
-  { level: 10, code: 'int[] floors = new int[4];', text: 'Creates an array of 4 boxes, all 0 for now. Write into a box with <code>floors[2] = 5;</code>' },
-  { level: 10, code: 'for (int i = 0; i < heights.Length; i++)\n{\n    drone.Build(heights[i]);\n}', text: 'Goes through every position with its index <code>i</code>. Use <code>&lt;</code>, not <code>&lt;=</code>: the last position is <code>Length - 1</code>.' },
-  { level: 10, code: 'foreach (int h in heights)\n{\n    \n}', text: 'Goes through the items one by one, without an index. <code>h</code> can be read but not changed.' },
-  { level: 11, code: 'int[] plan = drone.Scan();', text: 'Reads the plan of the street where the drone is: one number per plot, from x = 0. The plan changes every run.' },
-  { level: 11, code: 'Color LayerColor(int y)\n{\n    return Color.Green;\n}', text: 'A method can give back any type, also a <code>Color</code>: use it like a value, <code>drone.Place(LayerColor(y));</code>' },
+  { level: 7, code: 'b++;    b--;', text: '<code>b++</code> adds 1 to b and <code>b--</code> takes 1 away. They are short for <code>b = b + 1;</code> and <code>b = b - 1;</code>' },
+  { level: 7, code: 'result -= 2;    total += 5;', text: '<code>-=</code> <code>+=</code> <code>*=</code> <code>/=</code> change a variable using its own value: <code>result -= 2;</code> is <code>result = result - 2;</code>' },
+  { level: 8, code: 'for (int i = 0; i < 5; i++)\n{\n    \n}', text: 'Repeats the block. <code>i = 0</code> start · <code>i &lt; 5</code> keep going while true · <code>i++</code> add 1 after each turn.' },
+  { level: 8, code: 'drone.MoveTo(x, z);', text: 'Flies straight to a tile. X goes right, Z goes forward.' },
+  { level: 8, code: 'while (drone.Height < 6)\n{\n    \n}', text: 'Repeats while the condition is true. Use it when you don\'t know how many turns you need.' },
+  { level: 8, code: 'drone.Height', text: 'How many blocks are in the column under the drone (int). Also <code>drone.X</code> and <code>drone.Z</code>.' },
+  { level: 9, code: 'if (x == 0)\n{\n    \n}\nelse\n{\n    \n}', text: 'Runs one block or the other depending on the condition.' },
+  { level: 9, code: 'x % 2 == 0', text: 'Compare with <code>==</code> <code>!=</code> <code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code>. <code>%</code> is the remainder of a division. Combine with <code>&amp;&amp;</code> (and), <code>||</code> (or), <code>!</code> (not).' },
+  { level: 9, code: 'drone.Ground', text: 'The color painted on the floor under the drone. <code>Color.None</code> if the tile is empty.' },
+  { level: 10, code: 'void Tower(int height)\n{\n    \n}', text: 'Declares a method: a name for a group of instructions. <code>void</code>: it gives nothing back. <code>int height</code>: a parameter. Write methods below the main program.' },
+  { level: 10, code: 'Tower(3);', text: 'Calls the method: its instructions run with <code>height = 3</code>, then the program carries on with the next line.' },
+  { level: 10, code: 'int Area(int w, int d)\n{\n    return w * d;\n}', text: 'A method that gives back a value: write its type instead of <code>void</code> and end with <code>return</code>. The call is replaced by the value.' },
+  { level: 11, code: 'int[] heights = { 3, 5, 2 };', text: 'An array: many values of one type in numbered boxes. <code>heights[0]</code> is the first box (positions start at 0) and <code>heights.Length</code> counts them.' },
+  { level: 11, code: 'int[] floors = new int[4];', text: 'Creates an array of 4 boxes, all 0 for now. Write into a box with <code>floors[2] = 5;</code>' },
+  { level: 11, code: 'for (int i = 0; i < heights.Length; i++)\n{\n    drone.Build(heights[i]);\n}', text: 'Goes through every position with its index <code>i</code>. Use <code>&lt;</code>, not <code>&lt;=</code>: the last position is <code>Length - 1</code>.' },
+  { level: 11, code: 'foreach (int h in heights)\n{\n    \n}', text: 'Goes through the items one by one, without an index. <code>h</code> can be read but not changed.' },
+  { level: 12, code: 'int[] plan = drone.Scan();', text: 'Reads the plan of the street where the drone is: one number per plot, from x = 0. The plan changes every run.' },
+  { level: 12, code: 'Color LayerColor(int y)\n{\n    return Color.Green;\n}', text: 'A method can give back any type, also a <code>Color</code>: use it like a value, <code>drone.Place(LayerColor(y));</code>' },
 ];
 
 export const LEVELS = [
@@ -703,7 +705,21 @@ drone.Place(roof);`,
     ],
   },
   {
-    id: 7, name: 'Loops', concept: 'Repeat',
+    id: 7, name: 'Operators', concept: 'Test',
+    intro: 'A graded test on everything you know about operators: arithmetic, order, comparisons, logic and text. You can repeat it as many times as you like.',
+    challenges: [
+      {
+        id: 'q-ops', type: 'quiz', title: 'Operators test',
+        goal: 'Write the final value of result in each program. At the end you get your grade out of 10.',
+        brief: '<p><b>35 short programs</b>. Read each one like the computer does, from top to bottom, and write the value that <code>result</code> has at the end: a number, <code>true</code>/<code>false</code> or a text.</p><p>There is <b>no feedback until you finish</b>, like in an exam. Then you get your <b>grade</b>, your results by topic and, for every question, the steps that give the right answer. You can repeat the test as many times as you want: <b>5 or more</b> passes the level.</p>',
+        hint: 'Replace each variable by its value, solve the brackets first, then * / %, then + -, then comparisons, then && and finally ||.',
+        quiz: 'operators',
+        setup: () => ({ target: {} }),
+      },
+    ],
+  },
+  {
+    id: 8, name: 'Loops', concept: 'Repeat',
     intro: 'A loop repeats a block of code. The loop variable changes on every turn, so each turn can do something slightly different.',
     challenges: [
       {
@@ -850,7 +866,7 @@ for (int x = 0; x < 8; x++)
     ],
   },
   {
-    id: 8, name: 'Conditions', concept: 'Decide',
+    id: 9, name: 'Conditions', concept: 'Decide',
     intro: 'An if statement lets the program decide. The condition is evaluated to true or false, and only one path runs.',
     challenges: [
       {
@@ -991,7 +1007,7 @@ else
     ],
   },
   {
-    id: 9, name: 'Methods', concept: 'Reuse',
+    id: 10, name: 'Methods', concept: 'Reuse',
     intro: 'A method gives a name to a group of instructions. Write it once, then call it as many times as you need.',
     challenges: [
       {
@@ -1181,7 +1197,7 @@ void House(int walls)
     ],
   },
   {
-    id: 10, name: 'Arrays', concept: 'Many values',
+    id: 11, name: 'Arrays', concept: 'Many values',
     intro: 'An array keeps many values of the same type in one variable, in numbered boxes. Loops and arrays work together.',
     challenges: [
       {
@@ -1363,7 +1379,7 @@ void Skyline(int[] heights)
     ],
   },
   {
-    id: 11, name: 'From block to city', concept: 'Project',
+    id: 12, name: 'From block to city', concept: 'Project',
     intro: 'The final project: read a plan with drone.Scan() and generate a whole city with methods, arrays, loops and conditions. The plan changes every run, like in procedural generation.',
     challenges: [
       {
@@ -1577,7 +1593,7 @@ Color LayerColor(int y)
     ],
   },
   {
-    id: 12, name: 'Free build', concept: 'Sandbox',
+    id: 13, name: 'Free build', concept: 'Sandbox',
     intro: 'No goal: experiment with everything you have learned.',
     challenges: [
       {
@@ -1612,6 +1628,7 @@ export const TYPES = {
   fix: { label: 'Fix', mark: '!', tip: 'Find and fix the mistakes.' },
   complete: { label: 'Complete', mark: '_', tip: 'Fill in the gaps marked ___.' },
   classify: { label: 'Classify', mark: '≡', tip: 'Choose an answer for each item, then check.' },
+  quiz: { label: 'Test', mark: '✎', tip: 'Answer every question, then get your grade. You can repeat it.' },
   create: { label: 'Create', mark: '■', tip: 'Write the program yourself.' },
 };
 
@@ -1632,7 +1649,7 @@ export const buildChallenges = levels => levels.flatMap(level => level.challenge
   const ch = { ...c, type, level, mode: c.mode || 'program' };
   if (type === 'parsons') { ch.solution = assembleParsons(c.parsons.lines); ch.starter = ''; }
   if ((type === 'observe' || type === 'predict') && !ch.solution) ch.solution = ch.starter;
-  if (type === 'classify') { ch.starter = ''; ch.solution = ''; }
+  if (type === 'classify' || type === 'quiz') { ch.starter = ''; ch.solution = ''; }
   return ch;
 }));
 export const CHALLENGES = buildChallenges(LEVELS);

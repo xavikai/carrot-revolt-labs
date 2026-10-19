@@ -5,6 +5,8 @@ const COURSE = document.body.dataset.course || 'basics';
 const course = COURSE === 'objects' ? await import('./levels-objects.js') : await import('./levels.js');
 const { LEVELS, CHALLENGES, API } = course;
 import { prepare, verifySeeds, assess } from './evaluate.js';
+import { OPERATORS, TAGS, BANDS, PASS, score, explain, resultType, shownAnswer } from './quiz.js';
+const QUIZZES = { operators: OPERATORS };
 import { compare } from './world.js';
 import { IsoView, PALETTE } from './render.js';
 import { t, tr, onLangChange, addDictionary } from '../../i18n.js';
@@ -154,6 +156,7 @@ function onCodeInput() {
 ta.addEventListener('input', onCodeInput);
 function updateStats() {
   if (S.challenge?.type === 'parsons' && S.parsonsView === 'blocks') return;
+  if (S.challenge?.type === 'quiz') return;
   if (S.challenge?.type === 'classify') { $('#code-stats').textContent = `${S.challenge.classify.items.length} ITEMS`; return; }
   const c = compile(ta.value, { mode: S.challenge?.mode });
   const calc = S.challenge?.mode === 'calc';
@@ -226,6 +229,11 @@ function renderRequirements(stats = null, result = null) {
   if (!ch.sandbox && Object.keys(S.target || {}).length) items.push({ label: 'Build the target shape', ok: result ? (a?.shape?.ok ?? result.ok) : null });
   if (ch.expectTail) items.push({ label: `The last lines give ${ch.expectTail.join(', ')}`, ok: result ? !!a?.output?.ok : null });
   if (ch.expectLast != null) items.push({ label: `The last line gives ${ch.expectLast}`, ok: result ? !!a?.output?.ok : null });
+  if (ch.type === 'quiz' && S.quiz) {
+    const best = S.quiz.history.reduce((m, h) => Math.max(m, h.grade), -1);
+    items.push({ label: tr('Answer the {n} questions', { n: S.quiz.questions.length }), ok: S.quiz.history.length ? true : null }, { label: tr('Get {n} or more out of 10', { n: PASS }), ok: best < 0 ? null : best >= PASS });
+    if (best >= 0) items.push({ label: tr('Best grade: {g} · attempts: {a}', { g: fmtGrade(best), a: S.quiz.history.length }), ok: null });
+  }
   if (ch.type === 'classify') items.push({ label: 'Answer every item', ok: S.classify && Object.keys(S.classify.choices).length === ch.classify.items.length ? true : null }, { label: 'Get them all right', ok: S.classify?.checked ? S.classify.allRight : null });
   if (ch.expectOutput) items.push({ label: `Print exactly: ${ch.expectOutput.join(' · ')}`, ok: result ? !!a?.output?.ok : null });
   const reqs = stats ? checkRequirements(ch, stats) : (ch.requires || []).map(r => ({ ...r, ok: null }));
@@ -259,7 +267,7 @@ function loadChallenge(index) {
   stop(true);
   S.index = index;
   const ch = S.challenge = CHALLENGES[index];
-  store.set('index', index);
+  store.set('index', index); store.set('challenge', ch.id);
   history.replaceState(null, '', '#' + ch.id);
   renderChallengeHeader();
   $('#challenge-count').textContent = `${index + 1} / ${CHALLENGES.length}`;
@@ -269,13 +277,14 @@ function loadChallenge(index) {
   $('#challenge-brief').innerHTML = ch.brief;
   $('#hint').hidden = true; $('#hint').textContent = ch.hint || ''; $('#hint-button').textContent = 'Show hint';
   $('#hint-button').hidden = !ch.hint;
-  $('#reset-code').hidden = ch.type === 'observe' || ch.type === 'predict';
+  $('#reset-code').hidden = ch.type === 'observe' || ch.type === 'predict' || ch.type === 'quiz';
   $('#reset-code').textContent = ch.type === 'parsons' ? 'Shuffle again ↺' : ch.type === 'classify' ? 'Clear answers ↺' : 'Reset code ↺';
   S.assessment = null;
   ta.value = readOnlyType(ch) ? ch.starter : store.get('code:' + ch.id, ch.starter);
   setupPredict(ch);
   setupParsons(ch);
   setupClassify(ch);
+  setupQuiz(ch);
   S.breakpoints.clear();
   consoleEl.innerHTML = ''; S.outEl = null;
   logLine('c-info', `${t(ch.level.name)}: ${t(ch.level.intro)}`).dataset.levelIntro = ch.level.id;
@@ -519,7 +528,7 @@ function renderAll({ instant = false } = {}) {
 }
 
 // ─── Challenge types ─────────────────────────────────────────────────────────
-function readOnlyType(ch) { return ch.type === 'observe' || ch.type === 'predict' || ch.type === 'classify'; }
+function readOnlyType(ch) { return ch.type === 'observe' || ch.type === 'predict' || ch.type === 'classify' || ch.type === 'quiz'; }
 
 function setupPredict(ch) {
   S.prediction = null;
@@ -702,6 +711,198 @@ function checkClassify() {
   }
 }
 
+
+// ─── Test: a graded quiz that can be repeated ────────────────────────────────
+// Phases: intro → question → results. The attempt in progress, the last result and the
+// history of grades are saved in the browser, so a reload never loses answers.
+const fmtGrade = g => (Math.round(g * 10) / 10).toFixed(1);
+const TYPE_HINT = { int: 'a whole number', double: 'a decimal number', float: 'a decimal number (float)', bool: 'true or false', string: 'a text' };
+function quizSave() { const Q = S.quiz; store.set('quiz:' + S.challenge.id, { attempt: Q.attempt, last: Q.last, history: Q.history }); }
+function setupQuiz(ch) {
+  const on = ch.type === 'quiz';
+  $('.workspace').classList.toggle('quiz-mode', on);
+  $('#quiz').hidden = !on;
+  if (!on) { S.quiz = null; return; }
+  const questions = QUIZZES[ch.quiz];
+  const saved = store.get('quiz:' + ch.id, null) || {};
+  S.quiz = { questions, attempt: saved.attempt || null, last: saved.last || null, history: saved.history || [], phase: 'intro', onlyWrong: true, armed: false };
+  S.quiz.phase = S.quiz.attempt ? 'question' : S.quiz.last ? 'results' : 'intro';
+  renderQuiz();
+  renderRequirements();
+}
+const quizQ = n => S.quiz.questions.find(q => q.n === n);
+function quizCode(q) {
+  const st = { comment: false };
+  return q.code.split('\n').map((l, i) => `<div class="qz-ln"><span class="qz-n">${i + 1}</span><span>${highlight(l, st)}</span></div>`).join('');
+}
+function startQuiz() {
+  const Q = S.quiz, ns = Q.questions.map(q => q.n);
+  // The first attempt keeps the teacher's order (easy to hard); the next ones come shuffled.
+  const order = Q.history.length ? shuffleSeeded(ns, String(Date.now())) : ns;
+  Q.attempt = { order, answers: {}, i: 0, started: Date.now() };
+  Q.phase = 'question'; Q.armed = false;
+  quizSave(); renderQuiz();
+}
+function finishQuiz() {
+  const Q = S.quiz, A = Q.attempt;
+  const qs = A.order.map(quizQ), r = score(qs, A.answers);
+  Q.history.push({ date: Date.now(), right: r.right, total: r.total, grade: r.grade });
+  if (Q.history.length > 30) Q.history.shift();
+  Q.last = { order: A.order, answers: A.answers, date: Date.now() };
+  Q.attempt = null; Q.phase = 'results'; Q.onlyWrong = r.right < r.total;
+  if (r.passed) { S.done.add(S.challenge.id); store.set('done', [...S.done]); }
+  quizSave(); renderLevels(); renderRequirements(); renderQuiz();
+  $('#quiz').scrollTop = 0; $('#quiz').scrollIntoView({ block: 'nearest' });
+}
+function renderQuiz() {
+  const Q = S.quiz; if (!Q) return;
+  const el = $('#quiz');
+  if (Q.phase === 'question' && Q.attempt) el.innerHTML = quizQuestionHtml();
+  else if (Q.phase === 'results' && Q.last) el.innerHTML = quizResultsHtml();
+  else el.innerHTML = quizIntroHtml();
+  if (Q.phase === 'question') { const inp = $('#qz-input'); inp?.focus({ preventScroll: true }); inp?.select(); }
+}
+function historyHtml() {
+  const H = S.quiz.history;
+  if (!H.length) return '';
+  const best = Math.max(...H.map(h => h.grade));
+  const bars = H.slice(-12).map((h, i, a) => `<div class="qz-hbar${h.grade >= PASS ? ' pass' : ''}${i === a.length - 1 ? ' latest' : ''}" title="${esc(new Date(h.date).toLocaleString())}"><b style="height:${Math.max(4, h.grade * 10)}%"><span>${fmtGrade(h.grade)}</span></b></div>`).join('');
+  return `<section class="qz-history"><div class="qz-sub"><h4>${esc(t('Your attempts'))}</h4><span>${esc(tr('Best: {g} · attempts: {a}', { g: fmtGrade(best), a: H.length }))}</span></div><div class="qz-hbars"><i class="qz-passline" style="bottom:${PASS * 10}%"></i>${bars}</div></section>`;
+}
+function quizIntroHtml() {
+  const Q = S.quiz, n = Q.questions.length;
+  return `<div class="qz-intro">
+    <span class="eyebrow">${esc(tr('TEST · {n} QUESTIONS', { n }))}</span>
+    <h3>${esc(t('What is the value of result?'))}</h3>
+    <ul class="qz-rules">
+      <li>${esc(t('Read each program from top to bottom and write the value that result has at the end.'))}</li>
+      <li>${t('Write <code>true</code> and <code>false</code> in lowercase, decimals with a dot (<code>4.5</code>) and texts with or without quotes.')}</li>
+      <li>${esc(t('There is no feedback until you finish. Enter goes to the next question.'))}</li>
+      <li>${esc(tr('Grade out of 10: {n} or more passes. You can repeat the test as many times as you want.', { n: PASS }))}</li>
+      ${Q.history.length ? `<li>${esc(t('Each new attempt shows the questions in a different order.'))}</li>` : ''}
+    </ul>
+    <div class="qz-actions"><button class="primary qz-start">${esc(t(Q.history.length ? 'Start a new attempt' : 'Start the test'))}</button>${Q.last ? `<button class="quiet-btn qz-see-last">${esc(t('See the last result'))}</button>` : ''}</div>
+    ${historyHtml()}
+  </div>`;
+}
+function quizQuestionHtml() {
+  const Q = S.quiz, A = Q.attempt, total = A.order.length, q = quizQ(A.order[A.i]);
+  const answered = A.order.filter(n => (A.answers[n] ?? '').trim()).length;
+  const type = resultType(q);
+  const dots = A.order.map((n, i) => `<button class="qz-dot${i === A.i ? ' current' : ''}${(A.answers[n] ?? '').trim() ? ' answered' : ''}" data-go="${i}" aria-label="${esc(tr('Question {n}', { n: i + 1 }))}">${i + 1}</button>`).join('');
+  const left = total - answered;
+  return `<div class="qz-head">
+      <span class="eyebrow">${esc(tr('QUESTION {a} OF {b}', { a: A.i + 1, b: total }))}</span>
+      <span class="qz-count">${esc(tr('{a} of {b} answered', { a: answered, b: total }))}</span>
+    </div>
+    <div class="qz-progress"><b style="width:${(answered / total) * 100}%"></b></div>
+    <div class="qz-dots" role="navigation" aria-label="Questions">${dots}</div>
+    <div class="qz-card">
+      <div class="qz-code" data-no-i18n>${quizCode(q)}</div>
+      <label class="qz-answer"><span class="qz-prompt" data-no-i18n><span class="t-com">// </span><span class="t-id">result</span> <span class="t-punc">=</span></span>
+        <input id="qz-input" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(A.answers[q.n] ?? '')}" aria-label="${esc(t('Value of result'))}">
+        <span class="qz-type"><b class="t-kw">${type}</b> · ${esc(t(TYPE_HINT[type]))}</span></label>
+    </div>
+    <div class="qz-nav">
+      <button class="quiet-btn qz-prev"${A.i === 0 ? ' disabled' : ''}>${esc(t('← Previous'))}</button>
+      ${A.i < total - 1 ? `<button class="qz-next-q">${esc(t('Next →'))}</button>` : ''}
+      <span class="qz-spacer"></span>
+      <button class="quiet-btn qz-abandon">${esc(t('Start over'))}</button>
+      <button class="primary qz-finish${Q.armed ? ' armed' : ''}">${esc(Q.armed ? tr('{n} unanswered count as wrong. Finish?', { n: left }) : t('Finish the test'))}</button>
+    </div>`;
+}
+function quizResultsHtml() {
+  const Q = S.quiz, L = Q.last;
+  const qs = L.order.map(quizQ), r = score(qs, L.answers);
+  const bandIdx = BANDS.indexOf(r.band);
+  const topics = r.byTag.map(b => {
+    const T = TAGS[b.tag], pct = b.right / b.total, weak = pct < 0.7;
+    const review = CHALLENGES.find(c => c.id === T.review);
+    return `<div class="qz-topic${weak ? ' weak' : ''}"><div class="qz-tline"><b>${esc(t(T.label))}</b><span>${b.right} / ${b.total}</span></div><div class="qz-tbar"><i style="width:${pct * 100}%"></i></div>${weak ? `<p>${esc(t(T.tip))}${review ? ` <button class="qz-link" data-review="${review.id}">${esc(tr('Review: {title}', { title: t(review.title) }))} →</button>` : ''}</p>` : ''}</div>`;
+  }).join('');
+  const rows = r.rows.map((row, i) => ({ row, i })).filter(({ row }) => !Q.onlyWrong || !row.ok).map(({ row, i }) => {
+    const q = row.q, ex = explain(q), T = TAGS[q.tag];
+    const chain = ex ? [...ex.before.map(b => `<div class="eval qz-pre"><span>${esc(b)}</span></div>`), `<div class="eval">${ex.steps.map((p, k) => `<span class="${k === ex.steps.length - 1 && /^(true|false)$/.test(p) ? p : ''}">${esc(p)}</span>`).join('<i>→</i>')}</div>`, ...ex.after.map(b => `<div class="eval qz-pre"><span>${esc(b)}</span></div>`)].join('') : '';
+    const yours = row.empty ? `<em>${esc(t('no answer'))}</em>` : `<code>${esc(row.answer.trim())}</code>`;
+    return `<article class="qz-row ${row.ok ? 'right' : 'wrong'}">
+      <div class="qz-rhead"><span class="qz-mark">${row.ok ? '✓' : '✗'}</span><b>${esc(tr('Question {n}', { n: i + 1 }))}</b><span class="qz-tag">${esc(t(T.label))}</span></div>
+      <div class="qz-rbody"><div class="qz-code small" data-no-i18n>${quizCode(q)}</div>
+      <div class="qz-verdict"><p>${esc(t('Your answer:'))} ${yours}${row.ok ? '' : ` · ${esc(t('Right answer:'))} <code>${esc(shownAnswer(q))}</code>`}</p>
+        ${row.note ? `<p class="qz-note">${esc(t(row.note))}</p>` : ''}
+        <div class="qz-steps" data-no-i18n>${chain}</div>
+        ${row.ok ? '' : `<p class="qz-tip">${esc(t(T.tip))}</p>`}</div></div>
+    </article>`;
+  }).join('') || `<p class="qz-empty">${esc(t('No mistakes to review. Well done!'))}</p>`;
+  const nextLevel = CHALLENGES.findIndex(c => c.level.id === S.challenge.level.id + 1);
+  return `<div class="qz-results">
+    <div class="qz-grade b${bandIdx}">
+      <div class="qz-big">${fmtGrade(r.grade)}<small>/10</small></div>
+      <div class="qz-gtext"><span class="eyebrow">${esc(t('YOUR GRADE'))}</span><h3>${esc(t(r.band.label))}</h3><p>${esc(t(r.band.text))}</p>
+        <p class="qz-meta">${esc(tr('{a} of {b} right', { a: r.right, b: r.total }))} · ${esc(tr('Attempt {n}', { n: Q.history.length }))}</p></div>
+    </div>
+    <div class="qz-actions"><button class="primary qz-start">${esc(t('Try again ↺'))}</button>${r.passed && nextLevel >= 0 ? `<button class="qz-next-level" data-index="${nextLevel}">${esc(t('Next level →'))}</button>` : ''}</div>
+    <div class="qz-cols"><section class="qz-topics"><div class="qz-sub"><h4>${esc(t('By topic'))}</h4><span>${esc(t('Topics under 70% show what to review.'))}</span></div>${topics}</section>${historyHtml()}</div>
+    <section class="qz-review"><div class="qz-sub"><h4>${esc(t('Review the answers'))}</h4>
+      <div class="qz-filter" role="group"><button class="${Q.onlyWrong ? 'on' : ''}" data-filter="wrong">${esc(tr('Mistakes ({n})', { n: r.total - r.right }))}</button><button class="${Q.onlyWrong ? '' : 'on'}" data-filter="all">${esc(tr('All ({n})', { n: r.total }))}</button></div></div>
+      ${rows}</section>
+  </div>`;
+}
+function quizGo(i) {
+  const A = S.quiz.attempt;
+  quizStoreInput();
+  A.i = Math.max(0, Math.min(A.order.length - 1, i));
+  S.quiz.armed = false;
+  quizSave(); renderQuiz();
+}
+function quizStoreInput() {
+  const inp = $('#qz-input'), A = S.quiz?.attempt;
+  if (!inp || !A) return;
+  const n = A.order[A.i];
+  if (inp.value.trim()) A.answers[n] = inp.value; else delete A.answers[n];
+}
+function quizFinish() {
+  quizStoreInput();
+  const A = S.quiz.attempt;
+  const left = A.order.filter(n => !(A.answers[n] ?? '').trim()).length;
+  if (left && !S.quiz.armed) { S.quiz.armed = true; quizSave(); renderQuiz(); return; }
+  finishQuiz();
+}
+$('#quiz').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || !S.quiz) return;
+  const Q = S.quiz;
+  if (b.classList.contains('qz-start')) startQuiz();
+  else if (b.classList.contains('qz-see-last')) { Q.phase = 'results'; renderQuiz(); }
+  else if (b.classList.contains('qz-prev')) quizGo(Q.attempt.i - 1);
+  else if (b.classList.contains('qz-next-q')) quizGo(Q.attempt.i + 1);
+  else if (b.dataset.go) quizGo(Number(b.dataset.go));
+  else if (b.classList.contains('qz-finish')) quizFinish();
+  else if (b.classList.contains('qz-abandon')) {
+    if (!b.dataset.armed) { b.dataset.armed = '1'; b.textContent = t('Click again: answers are lost'); setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = t('Start over'); } }, 2500); return; }
+    Q.attempt = null; Q.phase = Q.last ? 'results' : 'intro'; quizSave(); renderQuiz();
+  }
+  else if (b.dataset.filter) { Q.onlyWrong = b.dataset.filter === 'wrong'; renderQuiz(); }
+  else if (b.dataset.review) loadChallenge(CHALLENGES.findIndex(c => c.id === b.dataset.review));
+  else if (b.classList.contains('qz-next-level')) loadChallenge(Number(b.dataset.index));
+});
+$('#quiz').addEventListener('input', e => {
+  if (e.target.id !== 'qz-input') return;
+  quizStoreInput();
+  const A = S.quiz.attempt, n = A.order[A.i];
+  document.querySelector(`.qz-dot[data-go="${A.i}"]`)?.classList.toggle('answered', !!(A.answers[n] ?? '').trim());
+  const answered = A.order.filter(k => (A.answers[k] ?? '').trim()).length;
+  $('.qz-count').textContent = tr('{a} of {b} answered', { a: answered, b: A.order.length });
+  $('.qz-progress b').style.width = `${(answered / A.order.length) * 100}%`;
+  clearTimeout(S.quizSaveTimer); S.quizSaveTimer = setTimeout(quizSave, 250);
+});
+$('#quiz').addEventListener('keydown', e => {
+  if (e.target.id !== 'qz-input' || e.key !== 'Enter') return;
+  e.preventDefault();
+  const A = S.quiz.attempt;
+  if (e.shiftKey) quizGo(A.i - 1);
+  else if (A.i < A.order.length - 1) quizGo(A.i + 1);
+  else quizFinish();
+});
+
 // ─── Running ─────────────────────────────────────────────────────────────────
 function build() {
   if (S.challenge.type === 'parsons') {
@@ -776,6 +977,7 @@ function needsPrediction() {
   return true;
 }
 function run() {
+  if (S.challenge.type === 'quiz') return;
   if (S.challenge.type === 'classify') { checkClassify(); return; }
   if (needsPrediction()) return;
   if (S.mode === 'running') { S.mode = 'paused'; clearTimer(); renderAll(); return; }
@@ -786,7 +988,7 @@ function run() {
 }
 // Step (F10) steps over method calls, like Visual Studio; Step Into (F11) follows the program into them.
 function step(into = false) {
-  if (S.challenge.type === 'classify') return;
+  if (S.challenge.type === 'classify' || S.challenge.type === 'quiz') return;
   if (needsPrediction()) return;
   if (S.mode === 'running') { S.mode = 'paused'; clearTimer(); renderAll(); return; }
   if (S.mode !== 'paused') { if (!build()) return; S.mode = 'paused'; if (advance()) renderAll(); return; }
@@ -918,6 +1120,7 @@ onLangChange(() => {
   renderChallengeHeader();
   renderLevels(); renderToolbox(); renderRequirements(S.compiled?.stats || null, S.result);
   if (S.challenge.type === 'classify') renderClassify();
+  if (S.challenge.type === 'quiz') renderQuiz();
   if (S.challenge.type === 'parsons' && S.parsonsView === 'blocks') renderParsons();
   renderAll();
   if (S.lastResult && !$('#result').hidden) { const r = S.lastResult; showResult(r.kind, r.title, r.text, r.next); }
@@ -925,5 +1128,6 @@ onLangChange(() => {
 
 // ─── Start ───────────────────────────────────────────────────────────────────
 const fromHash = CHALLENGES.findIndex(c => c.id === location.hash.slice(1));
-loadChallenge(fromHash >= 0 ? fromHash : Math.min(store.get('index', 0), CHALLENGES.length - 1));
+const fromStore = CHALLENGES.findIndex(c => c.id === store.get('challenge', null));
+loadChallenge(fromHash >= 0 ? fromHash : fromStore >= 0 ? fromStore : Math.min(store.get('index', 0), CHALLENGES.length - 1));
 if (!store.get('seen-help', false)) { store.set('seen-help', true); }

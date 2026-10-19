@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { blackbody, luminance, irradiance, measure, apparentSize, worldIrradiance, spotFactor, falseColorBand, FALSE_COLOR, MIDDLE_GREY } from '../labs/lighting/light.js';
-import { STAGES, startState, defaultState } from '../labs/lighting/stages.js';
+import { STAGES, startState, defaultState, upgradeState } from '../labs/lighting/stages.js';
+import { shadowOk, PROBES, fogCoeffs, spreadFactor, goboValue, iesValue, cookieFactor, sphereIllum, linkOk, customWindow } from '../labs/lighting/light.js';
 
 const near = (a, b, e) => Math.abs(a - b) <= e;
 const probe = { p: [0, 1.55, 0.2], n: [0, 0, 1], onHead: true };
@@ -47,6 +48,47 @@ test('light meter: ratio, bounce card and False Color', () => {
   assert.ok(measure(s).ratio > m1.ratio, 'a black card does not');
   assert.equal(FALSE_COLOR[falseColorBand(0)].label, '±0.5');
   assert.ok(falseColorBand(Math.log2(0.36 / MIDDLE_GREY)) > falseColorBand(0));
+});
+
+test('shaping the beam: Spread, gobos, IES', () => {
+  assert.equal(spreadFactor(180, 0.2), 1, 'no grid');
+  assert.equal(spreadFactor(60, 1), 1, 'the axis keeps its light');
+  assert.equal(spreadFactor(60, Math.cos(0.6)), 0, 'nothing outside Spread / 2');
+  const wide = irradiance(base({ type: 'AREA', size: 1, sizeY: 1, dist: 3, spread: 180 }), probe), grid = irradiance(base({ type: 'AREA', size: 1, sizeY: 1, dist: 3, spread: 30 }), probe);
+  assert.ok(grid < wide && grid > 0.5 * wide, 'a grid takes little light from the subject on its axis');
+  assert.equal(goboValue('blinds', 0, 0.02), 1); assert.equal(goboValue('blinds', 0, 0.15), 0, 'a slat');
+  assert.equal(goboValue('window', 0, 0), 0, 'the mullions'); assert.equal(goboValue('window', 0.4, 0.4), 1);
+  const spot = base({ type: 'SPOT', spotSize: 40, gobo: 'blinds' });
+  assert.equal(cookieFactor(spot, [0, 0, -1]), 1, 'the centre of the blinds lets light through');
+  assert.equal(iesValue('scallop', 60), 0, 'the scallop is cut off');
+  assert.ok(iesValue('scallop', 35) > iesValue('scallop', 0), 'a batwing is brighter to the side');
+  assert.ok(iesValue('narrow', 11) > 0.45 && iesValue('narrow', 11) < 0.55, 'half the light at 11°');
+});
+
+test('falloff, soft falloff, custom distance, linking and fog', () => {
+  const d1 = 1.2 - 0.2, d2 = 2.2 - 0.2;
+  const lin = f => irradiance(base({ dist: 1.2, falloff: f }), probe) / irradiance(base({ dist: 2.2, falloff: f }), probe);
+  assert.ok(near(lin('QUADRATIC'), (d2 / d1) ** 2, 1e-6) && near(lin('LINEAR'), d2 / d1, 1e-6) && near(lin('CONSTANT'), 1, 1e-6));
+  assert.ok(near(sphereIllum(0.8, 5, 0.1) / (Math.PI * 0.01), 0.8 / 25, 1e-9), 'a small sphere is a point light');
+  assert.equal(sphereIllum(1, 0.2, 0.3), 0, 'nothing is lit inside the lamp');
+  assert.ok(sphereIllum(-0.05, 1, 0.3) > 0, 'a big sphere still lights a surface a little past its horizon');
+  const hard = irradiance(base({ dist: 0.45, radius: 0.3, softFalloff: false }), probe), soft = irradiance(base({ dist: 0.45, radius: 0.3 }), probe);
+  assert.equal(hard, 0, 'the probe is inside the sphere'); assert.ok(soft > 0, 'Soft Falloff lights it smoothly');
+  assert.equal(customWindow({ customDist: true, customDistance: 2 }, 2.1), 0);
+  assert.ok(near(customWindow({ customDist: true, customDistance: 2 }, 0.5), (1 - 1 / 256) ** 2, 1e-9));
+  assert.ok(linkOk({ link: { backdrop: 'exclude' } }, 'bust') && !linkOk({ link: { backdrop: 'exclude' } }, 'backdrop'));
+  assert.ok(linkOk({ link: { bust: 'include' } }, 'bust') && !linkOk({ link: { bust: 'include' } }, 'balls'));
+  assert.ok(near(irradiance(base({}), probe, 0.2) / irradiance(base({}), probe), Math.exp(-0.2 * 0.8), 1e-9), 'the fog dims the light on its way');
+  const pv = fogCoeffs({ on: true, shader: 'PRINCIPLED', density: 1, color: [0.5, 0.5, 1], absorption: [0, 1, 0] });
+  assert.deepEqual(pv.sigS, [0.5, 0.5, 1]); assert.deepEqual(pv.sigT, [1, 0.5, 1], 'Absorption Color white lets the light through');
+  assert.deepEqual(fogCoeffs({ on: true, shader: 'SCATTER', density: 0.2, color: [1, 1, 1] }).sigT, [0.2, 0.2, 0.2]);
+  const low = base({ radius: 0.01, az: -30, el: 5, dist: 1.2 });
+  assert.equal(irradiance(low, PROBES.backS), 0, 'the bust shadows the backdrop');
+  assert.ok(irradiance({ ...low, shadowLink: { bust: 'exclude' } }, PROBES.backS) > 0, 'out of the Blocker Collection, it casts no shadow');
+  assert.ok(!shadowOk({ shadowLink: { backdrop: 'include' } }, 'bust') && shadowOk({ shadowLink: { backdrop: 'exclude' } }, 'bust'));
+  const old = JSON.parse(JSON.stringify(defaultState())); delete old.fog; delete old.lights.key.spread; delete old.lights.key.link;
+  const up = upgradeState(old);
+  assert.ok(up.fog && up.lights.key.spread === 180 && up.lights.key.link, 'work saved before the update gets the new settings');
 });
 
 test('every step starts unsolved and its solution solves it', () => {

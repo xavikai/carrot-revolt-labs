@@ -41,7 +41,7 @@
 .bo-row.active:hover{background:#3a5890}
 .bo-row.active .bo-name{color:#fff}
 .bo-row.dim .bo-name,.bo-row.dim .bo-icon{opacity:.5}
-.bo-row:focus-visible{outline:1px solid #ffbf00;outline-offset:-1px}
+.bo-row:focus-visible{outline:1px solid var(--lab-accent,#ffbf00);outline-offset:-1px}
 .bo-mode{width:18px;display:grid;place-items:center;flex:none}
 .bo-mode .bi{width:14px;height:14px}
 .bo-dot{width:4px;height:4px;border-radius:50%;background:#6a6a6a;display:block}

@@ -733,6 +733,6 @@ shell(); loadStep();
 renderStages(); renderGuide(); renderCard(); renderConcepts(); setupCanvas(); setupPanels(); setupLesson();
 renderGraph(); requestAnimationFrame(() => { fitView(); checkGoals(); missingDialog(); });
 $('#wf-dirty').hidden = true;
-await import('../../lab-brief.js?v=4');
+await import('../../lab-brief.js?v=7');
 initI18n({ mount: '.site-header', append: true });
 onLangChange(() => location.reload());

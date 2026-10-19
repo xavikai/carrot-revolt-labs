@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#191b1e">
+  <meta name="description" content="From Blender to Unity: the FBX export options and Unity's import settings. Axes and scale (Apply Scalings, Bake Axis Conversion, Ctrl A), origin and pivot, what to include, normals and modifiers, textures and materials, a clean skeleton and animation clips, and custom colliders.">
+  <title>Export Lab · Carrot Revolt Labs</title>
+  <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css?v=2">
+  <script type="importmap">{"imports":{"three":"../../vendor/three.module.js"}}</script>
+  <link rel="stylesheet" href="../../lab-brief.css?v=8">
+  <script type="module" src="../../lab-brief.js?v=7"></script>
+  <link rel="stylesheet" href="../../brand.css?v=1">
+</head>
+<body>
+  <header class="site-header"><a class="brand" href="../../" aria-label="Carrot Revolt Labs home"><span class="brand-mark">CARROT<span>REVOLT LABS</span></span></a><span class="header-rule" aria-hidden="true"></span><div class="header-title"><span class="header-label">INTERACTIVE STUDIES / 23</span><strong>Export Lab</strong></div><a class="home-link" href="../../">All labs ↗</a></header>
+  <main>
+    <section class="lab-top">
+      <div class="lab-lead">
+        <h1>From Blender <span>to Unity.</span></h1>
+        <p>The same model, on the left in <strong>Blender</strong> and on the right as <strong>Unity</strong> imports it. Change the <strong>FBX export</strong> options and Unity's <strong>import settings</strong>, fix the model in Blender and export again, until it arrives standing up, at real size, with its pivot in place, its textures, a clean skeleton, looping clips and colliders that work.</p>
+      </div>
+      <div class="model-switch stage-switch" id="stage-switch" role="group" aria-label="Stage">
+        <span class="control-label">STAGE</span>
+      </div>
+    </section>
+
+    <ol class="guide" id="guide" aria-label="Steps"></ol>
+
+    <section class="blender" id="workspace" aria-label="Blender and Unity side by side">
+      <div class="xp-body">
+        <section class="xp-app xp-blender" aria-label="Blender">
+          <div class="xp-appbar"><span class="xp-logo b" data-no-i18n>Blender</span>
+            <nav class="xp-menus" id="b-menus" data-no-i18n>
+              <button type="button" data-menu="file">File</button><button type="button" data-menu="object">Object</button><button type="button" data-menu="mesh">Mesh</button><button type="button" data-menu="add">Add</button><button type="button" data-menu="overlays">Overlays</button>
+            </nav>
+            <span class="xp-file" id="b-file" data-no-i18n></span>
+          </div>
+          <div class="view-host xp-view" id="b-host">
+            <canvas id="b-view" aria-label="Blender 3D Viewport"></canvas>
+            <div class="xp-overlay" id="b-overlay" data-no-i18n></div>
+            <div class="xp-gizmo" id="b-axes" aria-hidden="true"></div>
+            <span class="graph-hint">LMB select · drag orbit · Wheel zoom</span>
+          </div>
+          <div class="xp-lower">
+            <div class="xp-outliner" id="b-outliner" aria-label="Outliner"></div>
+            <div class="xp-props" id="b-props" aria-label="Properties"></div>
+          </div>
+        </section>
+        <section class="xp-app xp-unity" aria-label="Unity">
+          <div class="xp-appbar u"><span class="xp-logo u" data-no-i18n>Unity</span>
+            <button type="button" class="xp-play" id="u-play" aria-pressed="false" data-no-i18n>▶</button>
+            <span class="xp-file" id="u-file" data-no-i18n></span>
+          </div>
+          <div class="view-host xp-view u" id="u-host">
+            <canvas id="u-view" aria-label="Unity Scene view"></canvas>
+            <div class="xp-overlay" id="u-overlay" data-no-i18n></div>
+            <span class="graph-hint">LMB select · drag orbit · Wheel zoom</span>
+          </div>
+          <div class="xp-lower u">
+            <div class="xp-hier" id="u-hier" aria-label="Hierarchy and Project"></div>
+            <div class="xp-insp" id="u-insp" aria-label="Inspector"></div>
+          </div>
+          <div class="xp-console" id="u-console" aria-live="polite" data-no-i18n></div>
+        </section>
+      </div>
+      <div class="xp-menu" id="menu" hidden data-no-i18n></div>
+      <div class="statusbar">
+        <span class="status-keys"><span><kbd>LMB</kbd>Select</span><span><kbd>Drag</kbd>Orbit</span><span><kbd>Wheel</kbd>Zoom</span><span><kbd>Ctrl</kbd><kbd>Z</kbd>Undo</span></span>
+        <span id="status-msg" class="status-msg" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section class="below">
+      <div class="step-card" id="step-card"></div>
+    </section>
+
+    <section class="shortcuts" aria-label="Key ideas">
+      <div><span class="eyebrow">KEY IDEAS</span><h2>What travels in an FBX</h2><p>An FBX carries objects with their transforms, meshes with normals and UVs, material names with image paths, armatures and baked animation. Everything else (modifiers, nodes, constraints, drivers) stays in Blender unless it is applied or baked.</p></div>
+      <dl>
+        <div><dt>Axes</dt><dd>Blender is Z up, Unity Y up. -Z Forward, Y Up and Unity's Bake Axis Conversion turn one into the other without leaving a −90° rotation on the object.</dd></div>
+        <div><dt>Units</dt><dd>1 unit is 1 metre in both programs. Model at real size and export with Apply Scalings FBX Units Scale so the object's scale stays 1.</dd></div>
+        <div><dt>Apply (Ctrl A)</dt><dd>Rotation and scale set in Object Mode live in the object. Applying them moves them into the mesh, so the engine gets 0 and 1.</dd></div>
+        <div><dt>Origin = pivot</dt><dd>The origin in Blender is the point Unity turns, scales and places the object around.</dd></div>
+        <div><dt>Baked, not live</dt><dd>Modifiers, procedural textures and IK controls do not exist in Unity: apply, bake or leave them out.</dd></div>
+        <div><dt>Colliders</dt><dd>Physics uses simple shapes, not the render mesh: primitives, or one convex object per part.</dd></div>
+      </dl>
+    </section>
+
+    <aside class="blender-bridge"><div><span class="eyebrow">BLENDER → UNITY 6</span><h2>A checklist for every export</h2><p>The names are the ones of Blender's FBX exporter and of Unity 6's Model Import Settings.</p></div><ol><li><strong>Blender</strong>: real size in metres, <strong>Ctrl A › All Transforms</strong> (or Rotation &amp; Scale), origin on the floor or on the hinge, the object at the world origin, normals facing out (Face Orientation).</li><li><strong>File › Export › FBX</strong>: Limit to <strong>Selected Objects</strong>, Object Types <strong>Mesh</strong> (+ Armature), Apply Scalings <strong>FBX Units Scale</strong>, <strong>-Z Forward</strong>, <strong>Y Up</strong>, <strong>Apply Modifiers</strong>, Smoothing <strong>Face</strong>.</li><li>Characters: <strong>Only Deform Bones</strong>, no <strong>Add Leaf Bones</strong>, no Apply Transform; <strong>Bake Animation</strong> with only the actions you want.</li><li>Textures: <strong>Path Mode Copy</strong> + <strong>Embed Textures</strong>, or copy the image files into the Unity project yourself.</li><li><strong>Unity</strong>, Model tab: Scale Factor 1, <strong>Convert Units</strong>, <strong>Bake Axis Conversion</strong>, Generate Colliders only for static scenery. Rig: Humanoid or Generic. Animation: <strong>Loop Time</strong>. Materials: <strong>Extract Materials</strong>.</li><li>Colliders: primitives added in Unity, or <strong>_COL</strong> objects exported with the model and turned into convex Mesh Colliders without a renderer.</li></ol></aside>
+  </main>
+  <footer><span>Carrot Revolt Labs · Export Lab</span><a href="https://docs.unity3d.com/6000.0/Documentation/Manual/FBXImporter-Model.html" target="_blank" rel="noopener">Unity: Model import settings ↗</a><span>Teaching model · the transforms follow Blender's FBX exporter and Unity's importer.</span><a href="../../">All labs ↑</a></footer>
+  <script type="module" src="./app.js?v=1"></script>
+  <script type="module">import { initI18n } from '../../i18n.js'; initI18n({ mount: '.site-header', append: true });</script>
+</body>
+</html>

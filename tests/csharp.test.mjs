@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { compile, Runner, formatValue } from '../labs/csharp/interpreter.js';
 import { World } from '../labs/csharp/world.js';
 import { CHALLENGES, assembleParsons, judge } from '../labs/csharp/levels.js';
+import { TAGS } from '../labs/csharp/quiz.js';
 import { runHeadless, verifySeeds } from '../labs/csharp/evaluate.js';
 
 function run(code, world = new World()) {
@@ -16,7 +17,7 @@ const out = code => run(code).output.map(o => o.text);
 const errors = code => compile(code).errors.map(e => e.code);
 
 test('every challenge solution passes, including extra random seeds', () => {
-  for (const ch of CHALLENGES.filter(c => !c.sandbox && c.type !== 'classify')) {
+  for (const ch of CHALLENGES.filter(c => !c.sandbox && c.type !== 'classify' && c.type !== 'quiz')) {
     const r = runHeadless(ch, ch.solution, 7, ch.question?.answer);
     assert.equal(r.ok, true, `${ch.id}: ${r.error?.message || r.compiled.errors.map(e => e.message).join(', ') || JSON.stringify({ shape: r.shape, output: r.output, req: r.requirements })}`);
     if (ch.randomized) assert.ok(verifySeeds(ch, ch.solution, [11, 23, 42]).every(s => s.ok), ch.id);
@@ -36,7 +37,7 @@ test('predict questions: the declared answer is what really happens, and it is o
 
 test('starters: create/fix/complete need work, observe/predict run as given', () => {
   for (const ch of CHALLENGES) {
-    if (ch.type === 'parsons' || ch.type === 'classify') { assert.equal(ch.starter, ''); continue; }
+    if (ch.type === 'parsons' || ch.type === 'classify' || ch.type === 'quiz') { assert.equal(ch.starter, ''); continue; }
     const c = compile(ch.starter, { mode: ch.mode });
     if (ch.type === 'observe' || ch.type === 'predict') { assert.equal(runHeadless(ch, ch.starter).error, null, ch.id); continue; }
     if (ch.type === 'complete') { assert.ok(c.errors.some(e => e.message === 'Fill in the blank ___'), ch.id); continue; }
@@ -77,6 +78,14 @@ test('the sandbox pyramid runs without errors', () => {
 
 test('integer division truncates, double division does not', () => {
   assert.deepEqual(out('int a = 7; Console.WriteLine(a / 2); double b = 7; Console.WriteLine(b / 2); Console.WriteLine(-7 / 2); Console.WriteLine(7 % 3);'), ['3', '3.5', '-3', '1']);
+});
+
+test('C# teaches not-equal with the != operator', () => {
+  assert.deepEqual(out('Console.WriteLine(4 != 8); Console.WriteLine(4 != 4);'), ['True', 'False']);
+  assert.match(TAGS.compare.tip, /!= means different/);
+  assert.doesNotMatch(TAGS.compare.tip, /≠/);
+  const guide = CHALLENGES.find(ch => ch.id === 'l-1');
+  assert.match(guide.brief, /<code>!=<\/code>/);
 });
 
 test('values print like C#', () => {

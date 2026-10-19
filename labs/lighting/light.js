@@ -17,7 +17,7 @@ export const CARD_COLORS = { white: [0.85, 0.85, 0.85], gold: [0.85, 0.62, 0.25]
 export const HEAD = { c: [0, 1.55, 0], r: 0.1 };
 export const CHEST = { c: [0, 1.3, 0], r: 0.13 };
 export const BACKDROP_Z = -1.2;
-export const TARGETS = { head: [0, 1.55, 0], backdrop: [0, 1.35, BACKDROP_Z] };
+export const TARGETS = { head: [0, 1.55, 0], backdrop: [0, 1.35, BACKDROP_Z], wallL: [-0.5, 1.5, BACKDROP_Z] };
 export const CAMERA = { pos: [0.12, 1.52, 2.2], target: [0.12, 1.45, 0], fov: 18 };
 const nrm = v => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
 const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
@@ -30,15 +30,17 @@ export const V = { nrm, add, sub, mul, dot, cross };
 // Points where the lab measures the light (the light meter). cam L / cam R are the cheeks on the
 // camera's left (−X) and right (+X); rim L / rim R are the back edges of the head; the backdrop is
 // measured on both sides of the bust, where its shadow does not fall.
-const onHead = (x, y, z, n) => ({ p: add(HEAD.c, [x, y, z]), n: nrm(n), onHead: true });
+const onHead = (x, y, z, n) => ({ p: add(HEAD.c, [x, y, z]), n: nrm(n), onHead: true, obj: 'bust' });
 export const PROBES = {
   camL: onHead(-0.05, -0.012, 0.07, [-0.6, -0.05, 0.8]),
   camR: onHead(0.05, -0.012, 0.07, [0.6, -0.05, 0.8]),
   rimL: onHead(-0.072, 0.03, -0.035, [-0.85, 0.15, -0.5]),
   rimR: onHead(0.072, 0.03, -0.035, [0.85, 0.15, -0.5]),
-  backL: { p: [-0.75, 1.6, BACKDROP_Z], n: [0, 0, 1] },
-  backR: { p: [0.75, 1.6, BACKDROP_Z], n: [0, 0, 1] },
-  backC: { p: [0, 1.8, BACKDROP_Z], n: [0, 0, 1] },
+  backL: { p: [-0.75, 1.6, BACKDROP_Z], n: [0, 0, 1], obj: 'backdrop' },
+  backR: { p: [0.75, 1.6, BACKDROP_Z], n: [0, 0, 1], obj: 'backdrop' },
+  backC: { p: [0, 1.8, BACKDROP_Z], n: [0, 0, 1], obj: 'backdrop' },
+  // where the bust's shadow falls on the backdrop in the Shadow Linking step
+  backS: { p: [0.6, 1.3, BACKDROP_Z], n: [0, 0, 1], obj: 'backdrop' },
 };
 
 export const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
@@ -90,7 +92,9 @@ function hitsSphere(o, d, len, s) {
   const t = -b - Math.sqrt(h);
   return t > 1e-4 && t < len;
 }
-function visible(p, onHead, to, len) {
+// bust = false when Shadow Linking takes the bust out of the light's blockers.
+function visible(p, onHead, to, len, bust = true) {
+  if (!bust) return true;
   if (!onHead && hitsSphere(p, to, len, HEAD)) return false;
   return !hitsSphere(p, to, len, CHEST);
 }
@@ -122,43 +126,173 @@ export function spotFactor(l, toPoint) {
   const t = (cosA - outer) / (inner - outer);
   return t * t * (3 - 2 * t);
 }
-// Irradiance (W/m²) that one light gives to a probe {p, n, onHead}.
-export function irradiance(l, probe) {
+// ─── Shaping the beam: Spread, gobos and IES profiles ───────────────────────
+// Spread (Cycles, Area lights): every point of the panel only sends light within Spread/2 of its normal,
+// like a softbox with a honeycomb grid. The lab uses max(0, 1 − tan a / tan(Spread/2)): the light at the
+// sides is removed (a real grid absorbs it) and the light on the axis stays the same.
+export function spreadFactor(spreadDeg = 180, cosA = 1) {
+  if (spreadDeg >= 179.9) return 1;
+  if (cosA <= 0) return 0;
+  const tanA = Math.sqrt(Math.max(0, 1 - cosA * cosA)) / cosA;
+  return Math.max(0, 1 - tanA / Math.tan(rad(spreadDeg) / 2));
+}
+// Gobos: procedural stand-ins for the Image Texture of a gobo, with Clip extension. x, y go from −1 to 1
+// across the cone of the Spot. 1 = the light passes, 0 = the metal of the gobo blocks it.
+export const GOBOS = { none: 'None', window: 'Window', blinds: 'Blinds', leaves: 'Leaves' };
+export function goboValue(name, x, y) {
+  if (!name || name === 'none') return 1;
+  if (Math.abs(x) > 1 || Math.abs(y) > 1) return 0;
+  if (name === 'window') {
+    const ax = Math.abs(x), ay = Math.abs(y);
+    if (ax > 0.82 || ay > 0.82) return 0;          // the wall around the window
+    return ax < 0.05 || ay < 0.05 ? 0 : 1;          // the mullions
+  }
+  if (name === 'blinds') {
+    if (Math.abs(x) > 0.9 || Math.abs(y) > 0.9) return 0;
+    return (y * 4.5 + 10) % 1 < 0.55 ? 1 : 0;      // horizontal slats
+  }
+  // leaves: dappled light through foliage
+  const nz = Math.sin(3.1 * x + 1.7 * y + 0.3) * Math.sin(2.3 * y - 1.1 * x + 0.5) + 0.55 * Math.sin(6.7 * x - 5.3 * y + 1.2) * Math.sin(4.9 * x + 6.1 * y) + 0.3 * Math.sin(11.3 * x + 9.7 * y + 2.1);
+  return x * x + y * y < 1 && nz > 0.15 ? 1 : 0;
+}
+// The Mapping node in front of the gobo (Point type): Scale, then Rotation around Z.
+export function goboAt(l, x, y) {
+  const s = l.goboScale || 1, a = rad(l.goboRot || 0), c = Math.cos(a), sn = Math.sin(a), px = x * s, py = y * s;
+  return goboValue(l.gobo, c * px + sn * py, -sn * px + c * py);
+}
+// IES profiles: the light a real fixture sends at each angle from its axis (0° = straight along the axis),
+// relative to its brightest direction. They stand in for .ies files measured by manufacturers.
+export const IES = {
+  none: { name: 'None' },
+  downlight: { name: 'Downlight · wide', cutoff: 62 },
+  narrow: { name: 'Spot · narrow beam', cutoff: 40 },
+  scallop: { name: 'Downlight · scallop', cutoff: 46 },
+};
+const smooth = (a, b, x) => { const u = Math.max(0, Math.min(1, (x - a) / (b - a))); return u * u * (3 - 2 * u); };
+export function iesValue(name, t) {
+  if (!name || name === 'none' || !IES[name]) return 1;
+  if (name === 'downlight') return Math.sqrt(Math.max(0, Math.cos(rad(t)))) * (1 - smooth(48, 62, t));
+  if (name === 'narrow') return Math.pow(0.5, (t / 11) ** 2) * (1 - smooth(30, 40, t));    // half the light at 11°
+  // a batwing downlight: brightest around 35°, then a sharp cut-off that draws a scallop on a wall
+  const r = Math.sin(Math.min(t, 36) / 36 * Math.PI / 2);
+  return (0.45 + 0.55 * r * r) * (1 - smooth(42, 46, t));
+}
+// The "cookie" of a light: its beam across the cone, as a projector sees it. x and y are tangents of the
+// angle from the axis; tanHalf is where the cookie ends. The render projects the same function.
+export function cookieOf(l) {
+  if (l.type === 'AREA') {
+    if ((l.spread ?? 180) >= 179.9) return null;
+    const T = Math.tan(Math.min(rad(l.spread) / 2, rad(85)));
+    return { tanHalf: T, key: `S${l.spread}`, f: (x, y) => { const c = 1 / Math.sqrt(1 + x * x + y * y); return c * spreadFactor(l.spread, c); } };
+  }
+  const gobo = l.type === 'SPOT' && l.gobo && l.gobo !== 'none', ies = (l.type === 'SPOT' || l.type === 'POINT') && l.ies && l.ies !== 'none' && IES[l.ies];
+  if (!gobo && !ies) return null;
+  const half = l.type === 'SPOT' ? Math.min(rad(l.spotSize) / 2, rad(85)) : rad(Math.min(IES[l.ies].cutoff + 2, 85)), T = Math.tan(half);
+  return {
+    tanHalf: T, key: `${l.type}${gobo ? `${l.gobo}${l.goboScale}${l.goboRot}` : ''}|${ies ? l.ies : ''}|${T.toFixed(4)}`,
+    f: (x, y) => (gobo ? goboAt(l, x / T, y / T) : 1) * (ies ? iesValue(l.ies, deg(Math.atan(Math.hypot(x, y)))) : 1),
+  };
+}
+// Value of the cookie in a direction (unit vector from the light towards the point).
+export function cookieFactor(l, toPoint, ck = cookieOf(l)) {
+  if (!ck) return 1;
+  const { w, u, v } = lightFrame(l), c = dot(w, toPoint);
+  if (c <= 1e-6) return 0;
+  const x = dot(u, toPoint) / c, y = dot(v, toPoint) / c;
+  return Math.abs(x) > ck.tanHalf || Math.abs(y) > ck.tanHalf ? 0 : ck.f(x, y);
+}
+
+// ─── Falloff, Soft Falloff, Custom Distance, Light Linking, fog ───────────────
+// Light Falloff node (Cycles): Quadratic is physical (1/d²). Linear and Constant multiply the strength by d
+// or d², so the light falls as 1/d or not at all.
+export const FALLOFF_EXP = { QUADRATIC: 2, LINEAR: 1, CONSTANT: 0 };
+// Custom Distance (EEVEE): the light fades smoothly to nothing at that distance.
+export function customWindow(l, d) {
+  if (!l.customDist) return 1;
+  const q = 1 - (d / Math.max(l.customDistance, 1e-3)) ** 4;
+  return q > 0 ? q * q : 0;
+}
+// A sphere of radius R seen from a surface at distance d with the centre at angle θ from its normal,
+// partly below the horizon if it has to (Lagarde & de Rousiers 2014). Returns the illuminance of a unit
+// radiance sphere; 0 when the point is inside the sphere.
+export function sphereIllum(cosT, d, R) {
+  if (d <= R) return 0;
+  const s2 = (R * R) / (d * d);
+  if (cosT * cosT > s2) return Math.PI * s2 * Math.max(cosT, 0);
+  const sinT = Math.sqrt(Math.max(0, 1 - cosT * cosT)), x = Math.sqrt(1 / s2 - 1), y = Math.max(-1, Math.min(1, -x * (cosT / Math.max(sinT, 1e-6))));
+  const sy = sinT * Math.sqrt(1 - y * y);
+  return Math.max(0, (cosT * Math.acos(y) - x * sy) * s2 + Math.atan(sy / x));
+}
+// Light Linking: with any object set to Include, the light only reaches the included objects; Exclude
+// always removes an object.
+export function linkOk(l, obj) {
+  const L = l.link; if (!L) return true;
+  if (L[obj] === 'exclude') return false;
+  return !Object.values(L).includes('include') || L[obj] === 'include';
+}
+// Shadow Linking (Blocker Collection): the same rules decide which objects cast this light's shadows.
+export const shadowOk = (l, obj) => linkOk({ link: l.shadowLink }, obj);
+// Is the sphere of a Point or Spot light going into the backdrop?
+export function wallGap(l) { return lightPos(l)[2] - BACKDROP_Z; }
+
+// Irradiance (W/m²) that one light gives to a probe {p, n, onHead, obj}. fog is the Density of the
+// fog volume: the light is dimmed by exp(−Density · d) on its way.
+export function irradiance(l, probe, fog = 0) {
   if (!l.on) return 0;
   const { p, n } = probe;
+  if (probe.obj && !linkOk(l, probe.obj)) return 0;
+  const blocks = shadowOk(l, 'bust');
   if (l.type === 'SUN') {
     const d = lightDir(l), c = dot(n, d);
-    return c > 0 && visible(p, probe.onHead, d, 50) ? l.strength * c : 0;
+    return c > 0 && visible(p, probe.onHead, d, 50, blocks) ? l.strength * c : 0;
   }
+  const e = FALLOFF_EXP[l.falloff] ?? 2;
   if (l.type === 'AREA') {
-    const S = areaSamples(l), { w } = lightFrame(l), I0 = l.power / Math.PI / S.length;
+    const S = areaSamples(l), { w } = lightFrame(l), I0 = l.power / Math.PI / S.length, spread = l.spread ?? 180;
     let E = 0;
     for (const s of S) {
       const v = sub(s, p), d = Math.hypot(...v), dir = mul(v, 1 / d);
       const cr = dot(n, dir), cl = -dot(w, dir);
-      if (cr > 0 && cl > 0 && visible(p, probe.onHead, dir, d)) E += I0 * cl * cr / (d * d);
+      if (cr > 0 && cl > 0 && visible(p, probe.onHead, dir, d, blocks)) E += I0 * cl * spreadFactor(spread, cl) * cr / Math.max(d ** e, 0.01) * customWindow(l, d) * Math.exp(-fog * d);
     }
     return E;
   }
-  const L = lightPos(l), v = sub(L, p), d = Math.hypot(...v), dir = mul(v, 1 / d), c = dot(n, dir);
-  if (c <= 0 || !visible(p, probe.onHead, dir, d)) return 0;
-  const spot = l.type === 'SPOT' ? spotFactor(l, mul(dir, -1)) : 1;
-  return l.power / (4 * Math.PI) * c * spot / (d * d);
+  const L = lightPos(l), v = sub(L, p), d = Math.hypot(...v), dir = mul(v, 1 / d), c = dot(n, dir), R = l.radius || 0;
+  const sphere = e === 2 && l.softFalloff === false && R > 0;
+  if ((c <= 0 && !sphere) || !visible(p, probe.onHead, dir, d, blocks)) return 0;
+  const toP = mul(dir, -1), shape = (l.type === 'SPOT' ? spotFactor(l, toP) : 1) * cookieFactor(l, toP), I = l.power / (4 * Math.PI);
+  let E;
+  if (sphere) E = I / (Math.PI * R * R) * sphereIllum(c, d, R);            // Soft Falloff off: a real glowing sphere
+  else if (e === 2) E = I * c / (d * d + (l.softFalloff === false ? 0 : R * R)); // Soft Falloff on
+  else E = I * c / Math.max(d ** e, 0.01);
+  return E * shape * customWindow(l, d) * Math.exp(-fog * d);
 }
 
 // The bounce card is a sheet of foam board: it receives light and sends ρ·E back as a diffuse panel.
 // In the render and in the meter it becomes an area light with power ρ · E · A.
-export function cardAsLight(card, lights) {
-  const probe = { p: lightPos({ ...card, target: 'head' }), n: mul(lightDir(card), -1) };  // the card faces the head
+export function cardAsLight(card, lights, fog = 0) {
+  const probe = { p: lightPos({ ...card, target: 'head' }), n: mul(lightDir(card), -1), obj: 'card' };  // the card faces the head
   const col = CARD_COLORS[card.color] || CARD_COLORS.white;
   let E = [0, 0, 0];
-  for (const l of lights) { const e = irradiance(l, probe), c = lightColor(l); E = add(E, mul(c, e)); }
+  for (const l of lights) { const e = irradiance(l, probe, fog), c = lightColor(l); E = add(E, mul(c, e)); }
   const refl = [E[0] * col[0], E[1] * col[1], E[2] * col[2]], y = luminance(refl), A = card.size * card.size;
   return { on: card.on && y > 0, type: 'AREA', shape: 'SQUARE', size: card.size, power: y * A, colorMode: 'rgb', color: y > 0 ? refl.map(v => v / y) : [1, 1, 1], az: card.az, el: card.el, dist: card.dist, target: 'head', shadow: true, card: true };
 }
+// The fog volume's shader, as Cycles does it. Volume Scatter: scattering = extinction = Density · Color.
+// Principled Volume: scattering = Density · Color, absorption = Density · (1 − Color) · (1 − Absorption Color),
+// extinction = scattering + absorption (per channel). A white Color never absorbs; a black one only absorbs.
+export function fogCoeffs(fog) {
+  if (!fog?.on) return { sigS: [0, 0, 0], sigT: [0, 0, 0] };
+  const d = fog.density, c = fog.color || [1, 1, 1];
+  if (fog.shader !== 'PRINCIPLED') { const s = c.map(v => d * v); return { sigS: s, sigT: s }; }
+  const a = fog.absorption || [0, 0, 0], sigS = c.map(v => d * v);
+  return { sigS, sigT: c.map((v, k) => d * (v + Math.max(0, 1 - v) * Math.max(0, 1 - a[k]))) };
+}
+// One number for the light meter: how fast the fog dims light (the luminance of the extinction).
+export const fogDensity = state => luminance(fogCoeffs(state.fog).sigT);
 export function allLights(state) {
   const ls = Object.values(state.lights);
-  return state.card?.on ? [...ls, cardAsLight(state.card, ls)] : ls;
+  return state.card?.on ? [...ls, cardAsLight(state.card, ls, fogDensity(state))] : ls;
 }
 
 // ─── The world ───────────────────────────────────────────────────────────────
@@ -235,11 +369,11 @@ export function apparentSize(l) {
 // Everything the lab measures: irradiance at every probe (lights + world), ratios, and the scene-linear
 // value of the plaster and the backdrop after the exposure (what the view transform receives).
 export function measure(state) {
-  const ls = allLights(state), E = {};
+  const ls = allLights(state), E = {}, fog = fogDensity(state);
   for (const [k, probe] of Object.entries(PROBES)) {
     const per = {};
-    for (const [id, l] of Object.entries(state.lights)) per[id] = irradiance(l, probe);
-    if (state.card?.on) per.card = irradiance(ls[ls.length - 1], probe);
+    for (const [id, l] of Object.entries(state.lights)) per[id] = irradiance(l, probe, fog);
+    if (state.card?.on) per.card = irradiance(ls[ls.length - 1], probe, fog);
     const world = worldIrradiance(state.world, probe.n);
     E[k] = { per, world, total: Object.values(per).reduce((a, b) => a + b, 0) + world };
   }
