@@ -2,7 +2,7 @@
 
 Interactive browser labs for learning by experimenting. This independent collection begins with 3D, game development, design, and stage topics and can grow into other subjects.
 
-**Publication status:** The repository is public and the website is published with GitHub Pages.
+**Live collection:** https://carrotrevoltstudio.com (Netlify). The repository is public.
 
 ## Learning areas
 
@@ -10,7 +10,7 @@ The home page groups labs by their **main teaching interface**. Blender has its 
 
 The 3ds Max area has a dedicated Animation Lab. Its rig (`labs/3ds-max-animation/rig.js`) copies the class scene: `ctrl_master` › `ctrl_pilota` (shapes), `squash_space` › `ctrl_bottom`, `ctrl_top` (point helpers), the hidden `ball_Bone` › `tip_bone` and the frozen `pilota_Mesh`. Every control has the nine Transform tracks (Zero Pos XYZ, Zero Euler XYZ, Bezier Scale) and can be moved, rotated and scaled on any axis; Auto Key keys changes, Set Key Mode holds a pose until Set Keys, and with both off an animated track moves all its keys, as in Max. It shares the bouncing-ball principles and the stages of the class (keys every 10 frames, timing, travel, rotation, squash and stretch, and weight as an extra) with the Blender lab, while using a separate 3ds Max-inspired viewport, helper rig, Time Slider and Track Bar, Track View Curve Editor/Dope Sheet, and Auto Key/Set Keys workflow. Its progress is stored separately in the browser. Future Max labs can build on the same learning goals with their own application controls and terminology.
 
-Lab content and shared lab controls were last synchronized from CIFOG Lab through commit `e7d835b` (2026-10-19), including the Copy iframe embeds, the NLA Lab, the new LOD & Mipmaps Lab and the Export, Outliner, Photoshop and Runway Live labs. Carrot Revolt Labs is meant to replace CIFOG Lab, so new shared work should land here first. The Carrot Revolt Labs home page, learning areas, branding, 3ds Max Animation Lab and local preview configuration are maintained here.
+Both collections now expose the same 45 active labs, including the latest CAT Rig work, all ComfyUI and 3ds Max labs, and Copy iframe controls on every active lab. Carrot Revolt is the primary collection for future development. See [the version comparison and verification](docs/catalog-sync-2026-10-21.md).
 
 - Home page (local): `index.html`
 - Material Lab: ./labs/materials/

@@ -7,7 +7,11 @@ export const boneSegments = [
   ['hipL','kneeL','legs'],['kneeL','ankleL','legs'],
   ['hipR','kneeR','legs'],['kneeR','ankleR','legs']
 ];
-export const targetJoints = Object.freeze({pelvis:[300,298],chest:[300,190],head:[300,128],shoulderL:[370,190],elbowL:[440,196],wristL:[504,198],hipL:[330,308],kneeL:[335,387],ankleL:[335,462],shoulderR:[230,190],elbowR:[160,196],wristR:[96,198],hipR:[270,308],kneeR:[265,387],ankleR:[265,462]});
+// Pivots measured on the practice mesh (Night Striker, 1.79 m): [screen x, screen y] in the 225 px/m grid.
+export const targetJoints = Object.freeze({pelvis:[300,259],chest:[300,183],head:[300,113],shoulderL:[344,159],elbowL:[400,161],wristL:[452,159],hipL:[320,274],kneeL:[326,370],ankleL:[327,461],shoulderR:[256,159],elbowR:[200,161],wristR:[148,159],hipR:[280,274],kneeR:[274,370],ankleR:[273,461]});
+// Depth (metres, +Z = character front) of each pivot inside the mesh, as checked in the Left view.
+export const targetDepths = Object.freeze({pelvis:-.01,chest:0,head:.01,shoulderL:-.05,elbowL:-.075,wristL:-.045,shoulderR:-.05,elbowR:-.075,wristR:-.045,hipL:-.01,kneeL:-.02,ankleL:-.06,hipR:-.01,kneeR:-.02,ankleR:-.06});
+export const targetPoint = name => [(targetJoints[name][0]-300)/225,(480-targetJoints[name][1])/225,targetDepths[name]];
 export function mirrorJoint(name, point){const suffix=name.slice(-1);if(!['L','R'].includes(suffix))return null;return [name.slice(0,-1)+(suffix==='L'?'R':'L'),[600-point[0],point[1]]];}
 // Solve a two-bone leg toward a FootPlatform target. Coordinates are [screen x, screen y, depth in pixel units].
 export function solveLegIK(hip, restKnee, target, upperLength, lowerLength) {

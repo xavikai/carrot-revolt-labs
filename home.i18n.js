@@ -1,335 +1,1515 @@
-// Carrot Revolt Labs home page · Catalan and Spanish texts. Keys are the English texts of the page.
+// Shared catalog translations, including the Carrot Revolt roadmap.
 export default {
-  'INTERACTIVE LEARNING': { ca: 'APRENENTATGE INTERACTIU', es: 'APRENDIZAJE INTERACTIVO' },
-  'Explore labs <span aria-hidden="true">↗</span>': { ca: 'Explora els labs <span aria-hidden="true">↗</span>', es: 'Explora los labs <span aria-hidden="true">↗</span>' },
-  'Carrot Revolt / INTERACTIVE STUDIES': { ca: 'Carrot Revolt / ESTUDIS INTERACTIUS', es: 'Carrot Revolt / ESTUDIOS INTERACTIVOS' },
-  'Learn by<br><em>changing things.</em>': { ca: 'Aprèn<br><em>canviant coses.</em>', es: 'Aprende<br><em>cambiando cosas.</em>' },
-  'Small interactive labs to explore what happens when you change a material, a texture, a connection or a line of code. Open one, experiment, and see what you learn.': {
-    ca: 'Petits labs interactius per descobrir què passa quan canvies un material, una textura, una connexió o una línia de codi. Obre\'n un, experimenta i descobreix què has après.',
-    es: 'Pequeños labs interactivos para descubrir qué pasa cuando cambias un material, una textura, una conexión o una línea de código. Abre uno, experimenta y descubre lo que has aprendido.',
+  "INTERACTIVE LEARNING": {
+    "ca": "APRENENTATGE INTERACTIU",
+    "es": "APRENDIZAJE INTERACTIVO"
   },
-  'Explore the labs <span aria-hidden="true">↘</span>': { ca: 'Explora els labs <span aria-hidden="true">↘</span>', es: 'Explora los labs <span aria-hidden="true">↘</span>' },
-  'Brick wall': { ca: 'Paret de maó', es: 'Pared de ladrillo' },
-  'CHANGE A VALUE · SEE THE EFFECT': { ca: 'CANVIA UN VALOR · MIRA L\'EFECTE', es: 'CAMBIA UN VALOR · MIRA EL EFECTO' },
-  'THE COLLECTION': { ca: 'LA COL·LECCIÓ', es: 'LA COLECCIÓN' },
-  'Explore the labs': { ca: 'Explora els labs', es: 'Explora los labs' },
-  'Each lab is a place to test one idea for yourself.': { ca: 'Cada lab és un lloc per provar una idea tu mateix.', es: 'Cada lab es un lugar para probar una idea por ti mismo.' },
-  'AVAILABLE': { ca: 'DISPONIBLE', es: 'DISPONIBLE' },
-  'Connect Blender style nodes. Change the color, roughness, normal map and texture repetition, then watch the object react in 3D.': { ca: 'Connecta nodes a l\'estil de Blender. Canvia el color, la rugositat, el normal map i la repetició de la textura, i mira com reacciona l\'objecte en 3D.', es: 'Conecta nodos al estilo de Blender. Cambia el color, la rugosidad, el normal map y la repetición de la textura, y mira cómo reacciona el objeto en 3D.' },
-  'Blender concepts · English interface': { ca: 'Conceptes de Blender · Interfície en anglès', es: 'Conceptos de Blender · Interfaz en inglés' },
-  'Open lab <span aria-hidden="true">↗</span>': { ca: 'Obre el lab <span aria-hidden="true">↗</span>', es: 'Abrir lab <span aria-hidden="true">↗</span>' },
-  'Work in a Blender-style UV Editing workspace: select edges, press U to Mark Seam and Unwrap, and find the same face in the 3D Viewport and the UV map.': { ca: 'Treballa en un espai UV Editing com el de Blender: selecciona arestes, prem U per fer Mark Seam i Unwrap, i troba la mateixa cara al 3D Viewport i al mapa UV.', es: 'Trabaja en un espacio UV Editing como el de Blender: selecciona aristas, pulsa U para hacer Mark Seam y Unwrap, y encuentra la misma cara en el 3D Viewport y en el mapa UV.' },
-  'Seams · UV islands · Blender concepts': { ca: 'Costures · Illes UV · Conceptes de Blender', es: 'Costuras · Islas UV · Conceptos de Blender' },
-  'Program a drone in C# that builds voxel sculptures. Run it line by line and watch variables, loops and conditions change the world.': { ca: 'Programa en C# un dron que construeix escultures de vòxels. Executa\'l línia a línia i mira com les variables, els bucles i les condicions canvien el món.', es: 'Programa en C# un dron que construye esculturas de vóxeles. Ejecútalo línea a línea y mira cómo las variables, los bucles y las condiciones cambian el mundo.' },
-  'Variables · loops · if/else · ready for Unity': { ca: 'Variables · bucles · if/else · a punt per a Unity', es: 'Variables · bucles · if/else · listo para Unity' },
-  'The collection can grow with new subjects. Each lab has its own page and keeps its own experiments.': { ca: 'La col·lecció pot créixer amb noves especialitats. Cada lab té la seva pàgina i els seus experiments.', es: 'La colección puede crecer con nuevas especialidades. Cada lab tiene su propia página y sus propios experimentos.' },
-  'A SIMPLE LOOP': { ca: 'UN CICLE SENZILL', es: 'UN CICLO SENCILLO' },
-  'Open a lab': { ca: 'Obre un lab', es: 'Abre un lab' },
-  'Change something': { ca: 'Canvia alguna cosa', es: 'Cambia algo' },
-  'Observe the result': { ca: 'Observa el resultat', es: 'Observa el resultado' },
-  'Interactive studies for the classroom': { ca: 'Estudis interactius per a l\'aula', es: 'Estudios interactivos para el aula' },
-  'Back to labs ↑': { ca: 'Torna als labs ↑', es: 'Volver a los labs ↑' },
-  'Animate a bouncing ball with a Blender-style Graph Editor and Timeline: timing and spacing, squash and stretch, and weight shaped with F-curve handles.': { ca: 'Anima una pilota que bota amb un Graph Editor i un Timeline a l\'estil de Blender: timing i spacing, squash and stretch, i pes modelat amb els handles de les F-curves.', es: 'Anima una pelota que bota con un Graph Editor y un Timeline al estilo de Blender: timing y spacing, squash and stretch, y peso modelado con los handles de las F-curves.' },
-  'Keyframes · F-curves · animation principles': { ca: 'Claus · F-curves · principis d\'animació', es: 'Claves · F-curves · principios de animación' },
-  'Classes, objects and references with a heap you can see, lists, Vector3 structs and a Unity-like Update loop: from a drone\'s blueprints to bouncing balls simulated in code.': { ca: 'Classes, objectes i referències amb un heap que es veu, llistes, structs Vector3 i un bucle Update com el de Unity: dels plànols del dron a pilotes que boten simulades amb codi.', es: 'Clases, objetos y referencias con un heap que se ve, listas, structs Vector3 y un bucle Update como el de Unity: de los planos del dron a pelotas que botan simuladas con código.' },
-  'Objects · null · List · Vector3 · Update · inheritance': { ca: 'Objectes · null · List · Vector3 · Update · herència', es: 'Objetos · null · List · Vector3 · Update · herencia' },
-  'Paint vertex weights in a Blender-style Weight Paint workspace, bend the bones to test them and fix the elbow, the zero weights and the symmetry. Finish with a game-ready checklist.': { ca: 'Pinta pesos de vèrtex en un espai Weight Paint a l\'estil de Blender, doblega els ossos per provar-los i arregla el colze, els pesos zero i la simetria. Acaba amb una llista de comprovació per a jocs.', es: 'Pinta pesos de vértice en un espacio Weight Paint al estilo de Blender, dobla los huesos para probarlos y arregla el codo, los pesos cero y la simetría. Termina con una lista de comprobación para juegos.' },
-  'Pose an armature in a Blender-style Pose Mode: FK rotations along an arm, then an IK constraint with a pole target on a leg, Chain Length, Pole Angle and an IK/FK Influence switch.': { ca: 'Posa un armature en un Pose Mode a l\'estil de Blender: rotacions FK al llarg d\'un braç i després un constraint IK amb pole target en una cama, Chain Length, Pole Angle i un interruptor IK/FK amb la Influence.', es: 'Posa un armature en un Pose Mode al estilo de Blender: rotaciones FK a lo largo de un brazo y después un constraint IK con pole target en una pierna, Chain Length, Pole Angle y un interruptor IK/FK con la Influence.' },
-  'A DSLR cut in half next to the photo it takes: the exposure triangle, depth of field, motion blur and noise, focal length and sensor size, and the same ideas in Blender\'s camera.': { ca: 'Una rèflex tallada per la meitat al costat de la foto que fa: el triangle d\'exposició, la profunditat de camp, el rastre de moviment i el soroll, la distància focal i la mida del sensor, i les mateixes idees a la càmera de Blender.', es: 'Una réflex cortada por la mitad al lado de la foto que hace: el triángulo de exposición, la profundidad de campo, el rastro de movimiento y el ruido, la distancia focal y el tamaño del sensor, y las mismas ideas en la cámara de Blender.' },
-  'Exposure · depth of field · focal length · Blender camera': { ca: 'Exposició · profunditat de camp · distància focal · càmera de Blender', es: 'Exposición · profundidad de campo · distancia focal · cámara de Blender' },
-  "Animate a rigged bouncing ball in 3D with a Blender-style Graph Editor and Timeline, in the order used in class: keys every 10 frames, timing and spacing, travel, a Rotation control to make it roll, and squash and stretch with the rig's two controls, with weight as an extra.": { ca: "Anima en 3D una pilota amb rig que bota, amb un Graph Editor i un Timeline a l'estil de Blender, en l'ordre de classe: claus cada 10 fotogrames, timing i spacing, desplaçament, un control Rotation perquè rodi, i squash and stretch amb els dos controls del rig, amb el pes com a extra.", es: "Anima en 3D una pelota con rig que bota, con un Graph Editor y un Timeline al estilo de Blender, en el orden de clase: claves cada 10 fotogramas, timing y spacing, desplazamiento, un control Rotation para que ruede, y squash and stretch con los dos controles del rig, con el peso como extra." },
-  'Bake a high poly crate into a normal map, ambient occlusion and colour for a 12-triangle cube: watch the rays, fix Extrusion, Cage and overlapping UVs, read the colours of tangent space and take the maps to a game engine. Then bake it again in a Substance Painter-style Baking window.': { ca: 'Fes el bake d\'una caixa high poly a un normal map, oclusió ambiental i color per a un cub de 12 triangles: mira els raigs, arregla l\'Extrusion, la Cage i les UV solapades, llegeix els colors de l\'espai tangent i porta els mapes a un motor de joc. Després torna a fer-ne el bake en una finestra Baking a l\'estil de Substance Painter.', es: 'Haz el bake de una caja high poly a un normal map, oclusión ambiental y color para un cubo de 12 triángulos: mira los rayos, arregla la Extrusion, la Cage y las UV solapadas, lee los colores del espacio tangente y lleva los mapas a un motor de juego. Después vuelve a hacer su bake en una ventana Baking al estilo de Substance Painter.' },
-  'Selected to Active · cage · tangent space · Substance Painter': { ca: 'Selected to Active · cage · espai tangent · Substance Painter', es: 'Selected to Active · cage · espacio tangente · Substance Painter' },
-  'Light a plaster bust with Point, Sun, Spot and Area lights, a bounce card and HDRIs. Measure it with a light meter: inverse square law, hard and soft light, three-point and portrait setups, colour temperature, Exposure, AgX and False Color.': { ca: 'Il·lumina un bust de guix amb llums Point, Sun, Spot i Area, un panell de rebot i HDRI. Mesura-ho amb un fotòmetre: la llei de l\'invers del quadrat, llum dura i suau, esquemes de tres punts i de retrat, temperatura de color, Exposure, AgX i False Color.', es: 'Ilumina un busto de yeso con luces Point, Sun, Spot y Area, un panel de rebote y HDRI. Mídelo con un fotómetro: la ley del inverso del cuadrado, luz dura y suave, esquemas de tres puntos y de retrato, temperatura de color, Exposure, AgX y False Color.' },
-  'Light types · ratios · HDRI · colour management': { ca: 'Tipus de llum · ràtios · HDRI · gestió del color', es: 'Tipos de luz · ratios · HDRI · gestión del color' },
-  'A Blender-style Edit Mode on small meshes: fix n-gons and triangles, find poles, keep shapes under Subdivision Surface with holding edges and creases, put edge loops where an elbow bends, and build a clean retopology cage on a sculpt.': { ca: 'Un Edit Mode a l\'estil de Blender sobre malles petites: arregla n-gons i triangles, troba els pols, mantén les formes amb Subdivision Surface amb holding edges i creases, posa edge loops on es doblega un colze i construeix una malla de retopologia neta sobre una escultura.', es: 'Un Edit Mode al estilo de Blender sobre mallas pequeñas: arregla n-gons y triángulos, encuentra los polos, mantén las formas con Subdivision Surface con holding edges y creases, pon edge loops donde se dobla un codo y construye una malla de retopología limpia sobre una escultura.' },
-  'Quads · subdivision · edge loops · retopology': { ca: 'Quads · subdivisió · edge loops · retopologia', es: 'Quads · subdivisión · edge loops · retopología' },
-  'Grouped in the order of a 3D production: model, texture, light, animate, and program the game.': { ca: 'Agrupats en l\'ordre d\'una producció 3D: modelar, texturitzar, il·luminar, animar i programar el joc.', es: 'Agrupados en el orden de una producción 3D: modelar, texturizar, iluminar, animar y programar el juego.' },
-  'Topics': { ca: 'Temes', es: 'Temas' },
-  'Modeling &amp; UVs': { ca: 'Modelatge i UV', es: 'Modelado y UV' },
-  'Build clean meshes and unfold them for textures.': { ca: 'Construeix malles netes i desplega-les per a les textures.', es: 'Construye mallas limpias y despliégalas para las texturas.' },
-  'Materials &amp; texturing': { ca: 'Materials i texturitzat', es: 'Materiales y texturizado' },
-  'How a surface reacts to light, and how the detail of a sculpt becomes images.': { ca: 'Com reacciona una superfície a la llum, i com el detall d\'una escultura es converteix en imatges.', es: 'Cómo reacciona una superficie a la luz, y cómo el detalle de una escultura se convierte en imágenes.' },
-  'Light, camera &amp; render': { ca: 'Llum, càmera i render', es: 'Luz, cámara y render' },
-  'Light the scene, then photograph it like a camera would.': { ca: 'Il·lumina l\'escena i després fotografia-la com ho faria una càmera.', es: 'Ilumina la escena y después fotografíala como lo haría una cámara.' },
-  'Rigging &amp; animation': { ca: 'Rigging i animació', es: 'Rigging y animación' },
-  'Bones, weights and controls, and then the movement.': { ca: 'Ossos, pesos i controls, i després el moviment.', es: 'Huesos, pesos y controles, y después el movimiento.' },
-  'Programming for games': { ca: 'Programació per a jocs', es: 'Programación para juegos' },
-  'C# for Unity: from the first loop to objects and an Update loop.': { ca: 'C# per a Unity: del primer bucle als objectes i un bucle Update.', es: 'C# para Unity: del primer bucle a los objetos y un bucle Update.' },
-  '{n} labs': { ca: '{n} labs', es: '{n} labs' },
-  "Build PBR materials in a Blender-style Shader Editor: roughness, metal or not, sRGB and Non-Color, masks and gloss maps, bump and displacement, emission, glass, coat and alpha cut-outs. Five stages, checked step by step.": { ca: "Construeix materials PBR en un Shader Editor com el de Blender: roughness, metall o no, sRGB i Non-Color, màscares i mapes de gloss, bump i displacement, emission, vidre, coat i retalls amb alpha. Cinc etapes, comprovades pas a pas.", es: "Construye materiales PBR en un Shader Editor como el de Blender: roughness, metal o no, sRGB y Non-Color, máscaras y mapas de gloss, bump y displacement, emission, vidrio, coat y recortes con alpha. Cinco etapas, comprobadas paso a paso." },
-  "Principled BSDF · colour spaces · displacement": { ca: "Principled BSDF · espais de color · displacement", es: "Principled BSDF · espacios de color · displacement" },
-  "How a surface reacts to light, how the detail of a sculpt becomes images, and how one texture can dress a whole set.": { ca: "Com reacciona una superfície a la llum, com el detall d'una escultura es converteix en imatges, i com una sola textura pot vestir tot un decorat.", es: "Cómo reacciona una superficie a la luz, cómo el detalle de una escultura se convierte en imágenes, y cómo una sola textura puede vestir todo un decorado." },
-  "Build a medieval wood and stone trim sheet from scratch and use it: choose the texel density from the platform and the camera, plan the strips, model the high poly at real scale, bake normal and ID maps in Blender, texture it in Substance Painter with ID masks, put UV islands on the strips with G, S and R, round edges with bevel strips and Weighted Normal, and texture many props with one material.": { ca: "Construeix des de zero un trimsheet medieval de fusta i pedra i fes-lo servir: tria la texel density a partir de la plataforma i la càmera, planifica les franges, modela el high poly a escala real, fes el bake del normal i l'ID a Blender, textura'l a Substance Painter amb màscares d'ID, posa illes UV a les franges amb G, S i R, arrodoneix vores amb franges de bisell i Weighted Normal, i textura molts props amb un sol material.", es: "Construye desde cero un trimsheet medieval de madera y piedra y úsalo: elige la texel density a partir de la plataforma y la cámara, planifica las franjas, modela el high poly a escala real, haz el bake del normal y el ID en Blender, texturízalo en Substance Painter con máscaras de ID, pon islas UV en las franjas con G, S y R, redondea bordes con franjas de bisel y Weighted Normal, y texturiza muchos props con un solo material." },
-  "Texel density · high poly · bake · Painter · UVs": { ca: "Texel density · high poly · bake · Painter · UVs", es: "Texel density · high poly · bake · Painter · UVs" },
-  "STRIPS · U REPEAT": { ca: "FRANGES · REPETICIÓ EN U", es: "FRANJAS · REPETICIÓN EN U" },
-  "12 / TEXTURING": { ca: "12 / TEXTURITZAT", es: "12 / TEXTURIZADO" },
-  "3 labs": { ca: "3 labs", es: "3 labs" },
-  "Stage &amp; scenography": { ca: "Escenari i escenografia", es: "Escenario y escenografía" },
-  "Stage & scenography": { ca: "Escenari i escenografia", es: "Escenario y escenografía" },
-  "The theatre as a machine: where the scenery waits, how it flies and what the audience must never see.": { ca: "El teatre com a màquina: on esperen els decorats, com pugen i baixen i què no ha de veure mai el públic.", es: "El teatro como máquina: dónde esperan los decorados, cómo suben y bajan y qué no debe ver nunca el público." },
-  "1 lab": { ca: "1 lab", es: "1 lab" },
-  "An opera house stage cut in half, after the Teatro Real: find the parts of the stage house, balance a counterweight, share loads between bars, move platforms and wagons, mask the wings and the lights from the worst seats and plan a scene change.": { ca: "L'escenari d'un teatre d'òpera tallat per la meitat, a partir del Teatro Real: troba les parts de la caixa escènica, equilibra un contrapès, reparteix càrregues entre vares, mou plataformes i carros, amaga els laterals i els llums des de les pitjors butaques i planifica un canvi d'escena.", es: "El escenario de un teatro de ópera cortado por la mitad, a partir del Teatro Real: encuentra las partes de la caja escénica, equilibra un contrapeso, reparte cargas entre varas, mueve plataformas y carros, esconde los hombros y las luces desde las peores butacas y planifica un cambio de escena." },
-  "Fly tower · platforms · sightlines · scene change": { ca: "Torre escènica · plataformes · visuals · canvi d'escena", es: "Telar · plataformas · visuales · cambio de escena" },
-  "FLY · MASK · CHANGE": { ca: "PUJAR · AFORAR · CANVIAR", es: "VOLAR · AFORAR · CAMBIAR" },
-  "13 / STAGECRAFT": { ca: "13 / ESCENOTÈCNIA", es: "13 / ESCENOTECNIA" },
-    "Grouped in the order of a 3D production: model, texture, light, animate, and program the game. And a visit to the theatre and to graphic design.": { ca: "Agrupats en l'ordre d'una producció 3D: modelar, texturitzar, il·luminar, animar i programar el joc. I una visita al teatre i al disseny gràfic.", es: "Agrupados en el orden de una producción 3D: modelar, texturizar, iluminar, animar y programar el juego. Y una visita al teatro y al diseño gráfico." },
-  "Graphic design &amp; UI": { ca: "Disseny gràfic i interfícies", es: "Diseño gráfico e interfaces" },
-  "Graphic design & UI": { ca: "Disseny gràfic i interfícies", es: "Diseño gráfico e interfaces" },
-  "Colour and type for screens and print: what makes a page readable for everybody.": { ca: "Color i tipografia per a pantalla i impressió: què fa que una pàgina sigui llegible per a tothom.", es: "Color y tipografía para pantalla e impresión: qué hace que una página sea legible para todo el mundo." },
-  "Design a festival website in a Figma-style editor: mix colours in HSL, pass WCAG contrast, check colour-blind vision, bring colours into the CMYK gamut and set rich black, learn the anatomy of type and readable text, then build a type scale, colour styles and a dark mode.": { ca: "Dissenya el web d'un festival en un editor a l'estil de Figma: barreja colors en HSL, passa el contrast WCAG, comprova la visió dels daltònics, porta els colors dins la gamma CMYK i fes un negre ric, aprèn l'anatomia de la lletra i el text llegible, i construeix una escala tipogràfica, estils de color i un mode fosc.", es: "Diseña la web de un festival en un editor al estilo de Figma: mezcla colores en HSL, pasa el contraste WCAG, comprueba la visión de los daltónicos, lleva los colores dentro de la gama CMYK y haz un negro enriquecido, aprende la anatomía de la letra y el texto legible, y construye una escala tipográfica, estilos de color y un modo oscuro." },
-  "HSL · contrast · CMYK · type scale · tokens": { ca: "HSL · contrast · CMYK · escala tipogràfica · tokens", es: "HSL · contraste · CMYK · escala tipográfica · tokens" },
-  "HSL · WCAG · CMYK · TYPE": { ca: "HSL · WCAG · CMYK · TIPOGRAFIA", es: "HSL · WCAG · CMYK · TIPOGRAFÍA" },
-  "14 / GRAPHIC DESIGN": { ca: "14 / DISSENY GRÀFIC", es: "14 / DISEÑO GRÁFICO" },
-  "A small stage and a lighting rig driven like Lightkey: profiles, Fresnels, PCs, LED PARs and a moving head, DMX channels and values, patch and DIP switches, a face lit in lux with key, fill and backlight, colour mixing, pan and tilt, and a cue list with fades and GO.": { ca: "Un escenari petit i una instal·lació de llums controlada com Lightkey: retalls, Fresnels, PC, PAR LED i un capçal mòbil, canals i valors DMX, patch i interruptors DIP, una cara il·luminada en lux amb llum principal, farciment i contrallum, mescla de colors, pan i tilt, i una llista de memòries amb foses i GO.", es: "Un escenario pequeño y una instalación de luces controlada como Lightkey: recortes, Fresnels, PC, PAR LED y una cabeza móvil, canales y valores DMX, patch e interruptores DIP, una cara iluminada en lux con luz principal, relleno y contraluz, mezcla de colores, pan y tilt, y una lista de memorias con fundidos y GO." },
-  "Fixtures · DMX · patch · lux · cues": { ca: "Projectors · DMX · patch · lux · memòries", es: "Proyectores · DMX · patch · lux · memorias" },
-  "DMX · PATCH · CUES": { ca: "DMX · PATCH · MEMÒRIES", es: "DMX · PATCH · MEMORIAS" },
-  "15 / STAGE LIGHTING": { ca: "15 / IL·LUMINACIÓ ESCÈNICA", es: "15 / ILUMINACIÓN ESCÉNICA" },
-  "2 labs": { ca: "2 labs", es: "2 labs" },
-  "Understand texel density, pixels of texture per metre: see it with a checker map, compute it in px/m, make every prop equally sharp with S, Average Islands Scale, Pack Islands and Set TD, choose the target from the camera and the texture budget, and give hero areas more on purpose.": { ca: "Entén la texel density, els píxels de textura per metre: mira-la amb un mapa de quadres, calcula-la en px/m, fes que tots els props siguin igual de nítids amb S, Average Islands Scale, Pack Islands i Set TD, tria l'objectiu a partir de la càmera i del pressupost de textures, i dona'n més a les zones protagonistes expressament.", es: "Entiende la texel density, los píxeles de textura por metro: mírala con un mapa de cuadros, calcúlala en px/m, haz que todos los props sean igual de nítidos con S, Average Islands Scale, Pack Islands y Set TD, elige el objetivo a partir de la cámara y del presupuesto de texturas, y da más a las zonas protagonistas a propósito." },
-  "Checker map · px/m · Set TD · memory": { ca: "Mapa de quadres · px/m · Set TD · memòria", es: "Mapa de cuadros · px/m · Set TD · memoria" },
-  "CHECKER · PX/M · SET TD": { ca: "QUADRES · PX/M · SET TD", es: "CUADROS · PX/M · SET TD" },
-  "16 / TEXTURING": { ca: "16 / TEXTURITZAT", es: "16 / TEXTURIZADO" },
-  "4 labs": { ca: "4 labs", es: "4 labs" },
-  "Build PBR materials in a Blender-style Shader Editor with the full Principled BSDF: roughness, metal, colour spaces and masks, bump and real displacement, emission and Glare, glass in EEVEE and Cycles, coat, sheen, subsurface, thin film and brushed metal. Seven stages and a free Studio with presets.": { ca: "Construeix materials PBR en un Shader Editor com el de Blender amb tot el Principled BSDF: roughness, metall, espais de color i màscares, bump i displacement real, emissió i Glare, vidre a EEVEE i Cycles, coat, sheen, subsurface, thin film i metall raspallat. Set etapes i un Estudi lliure amb presets.", es: "Construye materiales PBR en un Shader Editor como el de Blender con todo el Principled BSDF: roughness, metal, espacios de color y máscaras, bump y displacement real, emisión y Glare, vidrio en EEVEE y Cycles, coat, sheen, subsurface, thin film y metal cepillado. Siete etapas y un Estudio libre con presets." },
-  "Principled BSDF · EEVEE and Cycles · displacement": { ca: "Principled BSDF · EEVEE i Cycles · displacement", es: "Principled BSDF · EEVEE y Cycles · displacement" },
-  "17 / OPTIMIZATION": {"ca": "17 / OPTIMITZACIÓ", "es": "17 / OPTIMIZACIÓN"},
-  "LOD &amp; Mipmaps Lab": {"ca": "LOD &amp; Mipmaps Lab", "es": "LOD &amp; Mipmaps Lab"},
-  "Understand levels of detail: watch a LOD Group switch as a rock gets smaller on screen, set its thresholds from the error in pixels, make the LODs with Decimate, stop a floor from shimmering with mipmaps and filtering, and fit a field of rocks in a triangle budget.": {"ca": "Entén els nivells de detall: mira com canvia un LOD Group quan una roca es fa petita a la pantalla, fixa'n els llindars a partir de l'error en píxels, fes els LOD amb Decimate, evita que un terra parpellegi amb mipmaps i filtratge, i fes cabre un camp de roques en un pressupost de triangles.", "es": "Entiende los niveles de detalle: mira cómo cambia un LOD Group cuando una roca se hace pequeña en pantalla, fija sus umbrales a partir del error en píxeles, haz los LOD con Decimate, evita que un suelo parpadee con mipmaps y filtrado, y haz caber un campo de rocas en un presupuesto de triángulos."},
-  "LOD Group · Decimate · mipmaps · budget": {"ca": "LOD Group · Decimate · mipmaps · pressupost", "es": "LOD Group · Decimate · mipmaps · presupuesto"},
-  "Open LOD &amp; Mipmaps Lab": {"ca": "Obre el LOD &amp; Mipmaps Lab", "es": "Abre el LOD &amp; Mipmaps Lab"},
-  "18 / VIDEO": {"ca": "18 / VÍDEO", "es": "18 / VÍDEO"},
-  "Color Grading Lab": {"ca": "Color Grading Lab", "es": "Color Grading Lab"},
-  "Grade video in a DaVinci Resolve-style Color page: read the Waveform, Parade and Vectorscope, set blacks, whites and white balance with Lift, Gamma and Gain, build a look with serial nodes, a LUT and Curves, key the sky with a Qualifier, light a face with a Power Window and match two cameras.": {"ca": "Etalona vídeo en una pàgina Color com la de DaVinci Resolve: llegeix el Waveform, el Parade i el Vectorscope, fixa negres, blancs i balanç de blancs amb Lift, Gamma i Gain, crea un look amb nodes en sèrie, una LUT i Curves, aïlla el cel amb un Qualifier, il·lumina una cara amb una Power Window i iguala dues càmeres.", "es": "Etalona vídeo en una página Color como la de DaVinci Resolve: lee el Waveform, el Parade y el Vectorscope, fija negros, blancos y balance de blancos con Lift, Gamma y Gain, crea un look con nodos en serie, una LUT y Curves, aísla el cielo con un Qualifier, ilumina una cara con una Power Window e iguala dos cámaras."},
-  "Scopes · color wheels · nodes · matching": {"ca": "Scopes · color wheels · nodes · igualació", "es": "Scopes · color wheels · nodos · igualación"},
-  "19 / GAME ENGINES": {"ca": "19 / MOTORS DE JOC", "es": "19 / MOTORES DE JUEGO"},
-  "23 / GAME ENGINES": {"ca": "23 / MOTORS DE JOC", "es": "23 / MOTORES DE JUEGO"},
-  "Lightmap Lab": {"ca": "Lightmap Lab", "es": "Lightmap Lab"},
-  "Bake light for Unity 6 (URP): make a second UV map with a margin in Blender, export the FBX with the right settings, set Lightmap Resolution, Scale In Lightmap, bounces and the denoiser, choose Baked or Mixed lights and static objects, and light moving objects with Light Probes, Adaptive Probe Volumes and a Reflection Probe.": {"ca": "Fes el bake de la llum per a Unity 6 (URP): crea un segon mapa UV amb marge a Blender, exporta l'FBX amb els ajustos correctes, ajusta Lightmap Resolution, Scale In Lightmap, els rebots i el denoiser, tria llums Baked o Mixed i objectes estàtics, i il·lumina els objectes que es mouen amb Light Probes, Adaptive Probe Volumes i una Reflection Probe.", "es": "Haz el bake de la luz para Unity 6 (URP): crea un segundo mapa UV con margen en Blender, exporta el FBX con los ajustes correctos, ajusta Lightmap Resolution, Scale In Lightmap, los rebotes y el denoiser, elige luces Baked o Mixed y objetos estáticos, e ilumina los objetos que se mueven con Light Probes, Adaptive Probe Volumes y una Reflection Probe."},
-  "UV2 · FBX · Progressive Lightmapper · probes": {"ca": "UV2 · FBX · Progressive Lightmapper · probes", "es": "UV2 · FBX · Progressive Lightmapper · probes"},
-  "Start with the basics of Blender, then follow the order of a 3D production: model, texture, light, animate, and program the game. And a visit to the theatre and to graphic design.": {"ca": "Comença pels fonaments de Blender i després segueix l'ordre d'una producció 3D: modelar, texturitzar, il·luminar, animar i programar el joc. I una visita al teatre i al disseny gràfic.", "es": "Empieza por los fundamentos de Blender y después sigue el orden de una producción 3D: modelar, texturizar, iluminar, animar y programar el juego. Y una visita al teatro y al diseño gráfico."},
-  "Blender basics": {"ca": "Fonaments de Blender", "es": "Fundamentos de Blender"},
-  "The first hours in Blender: move around a scene, move objects, then edit a mesh.": {"ca": "Les primeres hores a Blender: mou-te per una escena, mou objectes i després edita una malla.", "es": "Las primeras horas en Blender: muévete por una escena, mueve objetos y después edita una malla."},
-  "2 labs": {"ca": "2 labs", "es": "2 labs"},
-  "ORBIT · G R S · NUMPAD": {"ca": "ORBITAR · G R S · NUMPAD", "es": "ORBITAR · G R S · NUMPAD"},
-  "20 / BLENDER BASICS": {"ca": "20 / FONAMENTS DE BLENDER", "es": "20 / FUNDAMENTOS DE BLENDER"},
-  "21 / BLENDER BASICS": {"ca": "21 / FONAMENTS DE BLENDER", "es": "21 / FUNDAMENTOS DE BLENDER"},
-  "Viewport Lab": {"ca": "Viewport Lab", "es": "Viewport Lab"},
-  "Edit Mode Lab": {"ca": "Edit Mode Lab", "es": "Edit Mode Lab"},
-  "Your first hour in Blender's 3D Viewport: orbit, pan and zoom, frame objects, use the axis views and Auto Perspective, select with click, Shift, B and A, and move, rotate and scale with G, R and S, axis constraints, typed values, cancel and undo.": {"ca": "La teva primera hora al 3D Viewport de Blender: orbita, desplaça't i fes zoom, enquadra objectes, fes servir les vistes d'eix i l'Auto Perspective, selecciona amb clic, Shift, B i A, i mou, gira i escala amb G, R i S, restriccions d'eix, valors escrits, cancel·lar i desfer.", "es": "Tu primera hora en el 3D Viewport de Blender: orbita, desplázate y haz zoom, encuadra objetos, usa las vistas de eje y la Auto Perspective, selecciona con clic, Shift, B y A, y mueve, gira y escala con G, R y S, restricciones de eje, valores escritos, cancelar y deshacer."},
-  "Navigation · selection · G R S · exact values": {"ca": "Navegació · selecció · G R S · valors exactes", "es": "Navegación · selección · G R S · valores exactos"},
-  "Open Viewport Lab": {"ca": "Obre el Viewport Lab", "es": "Abre el Viewport Lab"},
-  "TAB · E · I · CTRL R · CTRL B": {"ca": "TAB · E · I · CTRL R · CTRL B", "es": "TAB · E · I · CTRL R · CTRL B"},
-  "Press Tab and edit the mesh: vertex, edge and face select modes, X-ray, edge loops, moving parts of a mesh, Extrude, Inset, Loop Cut and Bevel, cleaning a broken mesh with Merge by Distance, Delete and Dissolve, and a stool as the final challenge.": {"ca": "Prem Tab i edita la malla: modes de selecció de vèrtexs, arestes i cares, X-ray, edge loops, moure parts d'una malla, Extrude, Inset, Loop Cut i Bevel, netejar una malla trencada amb Merge by Distance, Delete i Dissolve, i un tamboret com a repte final.", "es": "Pulsa Tab y edita la malla: modos de selección de vértices, aristas y caras, X-ray, edge loops, mover partes de una malla, Extrude, Inset, Loop Cut y Bevel, limpiar una malla rota con Merge by Distance, Delete y Dissolve, y un taburete como reto final."},
-  "Select modes · extrude · loop cut · clean mesh": {"ca": "Modes de selecció · extrude · loop cut · malla neta", "es": "Modos de selección · extrude · loop cut · malla limpia"},
-  "Open Edit Mode Lab": {"ca": "Obre l'Edit Mode Lab", "es": "Abre el Edit Mode Lab"},
-  "Use tileable textures in Blender with Repeat and the Mapping node, lay out UVs for them (outside 0–1, same size, round the corner), make one from a photo in a Photoshop-style workspace (crop, even light, Offset, Clone Stamp, Healing Brush, Pattern Preview), keep PBR maps tiling and aligned, project with Box and break the repetition.": { ca: "Fes servir textures repetibles a Blender amb Repeat i el node Mapping, prepara'n les UV (fora de 0–1, mateixa mida, girant la cantonada), crea'n una a partir d'una foto en un espai tipus Photoshop (retallar, igualar la llum, Offset, Clone Stamp, Healing Brush, Pattern Preview), fes que els mapes PBR es repeteixin i quedin alineats, projecta amb Box i trenca la repetició.", es: "Usa texturas repetibles en Blender con Repeat y el nodo Mapping, prepara sus UV (fuera de 0–1, mismo tamaño, girando la esquina), crea una a partir de una foto en un espacio tipo Photoshop (recortar, igualar la luz, Offset, Clone Stamp, Healing Brush, Pattern Preview), haz que los mapas PBR se repitan y queden alineados, proyecta con Box y rompe la repetición." },
-  "Photoshop Offset · UVs · Box projection": { ca: "Offset de Photoshop · UV · projecció Box", es: "Offset de Photoshop · UV · proyección Box" },
-  "OFFSET · REPEAT · UV": { ca: "OFFSET · REPETICIÓ · UV", es: "OFFSET · REPETICIÓN · UV" },
-  "5 labs": { ca: "5 labs", es: "5 labs" },
-  "Open Tileable Texture Lab": { ca: "Obre el Tileable Texture Lab", es: "Abre el Tileable Texture Lab" },
-  'Explore areas <span aria-hidden="true">↗</span>': { ca: 'Explora les àrees <span aria-hidden="true">↗</span>', es: 'Explora las áreas <span aria-hidden="true">↗</span>' },
-  'Explore the areas <span aria-hidden="true">↘</span>': { ca: 'Explora les àrees <span aria-hidden="true">↘</span>', es: 'Explora las áreas <span aria-hidden="true">↘</span>' },
-  'LEARNING AREAS': { ca: 'ÀREES D\'APRENENTATGE', es: 'ÁREAS DE APRENDIZAJE' },
-  'Choose an area': { ca: 'Tria una àrea', es: 'Elige un área' },
-  'Explore a tool or a subject. Each area has its own labs, and the collection can grow with new specialties.': { ca: 'Explora una eina o una matèria. Cada àrea té els seus labs, i la col·lecció pot créixer amb noves especialitats.', es: 'Explora una herramienta o una materia. Cada área tiene sus propios labs y la colección puede crecer con nuevas especialidades.' },
-  '3D SOFTWARE': { ca: 'PROGRAMARI 3D', es: 'SOFTWARE 3D' },
-  'GAME DEVELOPMENT': { ca: 'DESENVOLUPAMENT DE VIDEOJOCS', es: 'DESARROLLO DE VIDEOJUEGOS' },
-  'IMAGE &amp; VIDEO': { ca: 'IMATGE I VÍDEO', es: 'IMAGEN Y VÍDEO' },
-  'SCENOGRAPHY': { ca: 'ESCENOGRAFIA', es: 'ESCENOGRAFÍA' },
-  'VISUAL DESIGN': { ca: 'DISSENY VISUAL', es: 'DISEÑO VISUAL' },
-  'Modeling, UVs, materials, lighting, rigging and animation in Blender-style workspaces.': { ca: 'Modelatge, UV, materials, il·luminació, rigging i animació en espais de treball com els de Blender.', es: 'Modelado, UV, materiales, iluminación, rigging y animación en espacios de trabajo como los de Blender.' },
-  'The same 3D ideas, taught through 3ds Max controls and workflows.': { ca: 'Els mateixos conceptes 3D, treballats amb els controls i els processos de 3ds Max.', es: 'Los mismos conceptos 3D, trabajados con los controles y procesos de 3ds Max.' },
-  'Optimize assets and bake lighting for real-time scenes.': { ca: 'Optimitza recursos i calcula la il·luminació per a escenes en temps real.', es: 'Optimiza recursos y calcula la iluminación para escenas en tiempo real.' },
-  'Learn C# through interactive game examples.': { ca: 'Aprèn C# amb exemples interactius de videojocs.', es: 'Aprende C# con ejemplos interactivos de videojuegos.' },
-  'Explore color grading with scopes, wheels and nodes.': { ca: 'Explora l\'etalatge amb scopes, rodes de color i nodes.', es: 'Explora el etalonaje con scopes, ruedas de color y nodos.' },
-  'Understand stage machinery, lighting and live cues.': { ca: 'Entén la maquinària escènica, la il·luminació i els cues en directe.', es: 'Entiende la maquinaria escénica, la iluminación y los cues en directo.' },
-  'Work with color, type and accessibility for screens and print.': { ca: 'Treballa el color, la tipografia i l\'accessibilitat per a pantalles i impressió.', es: 'Trabaja el color, la tipografía y la accesibilidad para pantallas e impresión.' },
-  '14 labs available': { ca: '14 labs disponibles', es: '14 labs disponibles' },
-  '9 labs available': { ca: '9 labs disponibles', es: '9 labs disponibles' },
-  '6 labs available': { ca: '6 labs disponibles', es: '6 labs disponibles' },
-  '5 labs available': { ca: '5 labs disponibles', es: '5 labs disponibles' },
-  '4 labs available': { ca: '4 labs disponibles', es: '4 labs disponibles' },
-  '3 labs available': { ca: '3 labs disponibles', es: '3 labs disponibles' },
-  '3D SOFTWARE · 3 LABS': { ca: 'PROGRAMARI 3D · 3 LABS', es: 'SOFTWARE 3D · 3 LABS' },
-  'Start with the basics of the viewports and the Command Panel, then explore animation principles and practice the Time Slider, Curve Editor and Dope Sheet.': { ca: 'Comença pels fonaments dels visors i el Command Panel, i després explora els principis d’animació i practica el Time Slider, el Curve Editor i el Dope Sheet.', es: 'Empieza por los fundamentos de los visores y el Command Panel, y luego explora los principios de animación y practica el Time Slider, el Curve Editor y el Dope Sheet.' },
-  'VIEWPORTS · TRANSFORMS · MODIFIERS': { ca: 'VISORS · TRANSFORMACIONS · MODIFICADORS', es: 'VISORES · TRANSFORMACIONES · MODIFICADORES' },
-  '3DS MAX / BASICS': { ca: '3DS MAX / FONAMENTS', es: '3DS MAX / FUNDAMENTOS' },
-  'The first week in 3ds Max 2027: the four viewports, navigation and the ViewCube, selecting and transforming with exact values, the Create and Modify panels, modifiers, Copy, Instance and Reference, Array and groups.': { ca: 'La primera setmana a 3ds Max 2027: els quatre visors, la navegació i el ViewCube, seleccionar i transformar amb valors exactes, els panells Create i Modify, els modificadors, Copy, Instance i Reference, Array i els grups.', es: 'La primera semana en 3ds Max 2027: los cuatro visores, la navegación y el ViewCube, seleccionar y transformar con valores exactos, los paneles Create y Modify, los modificadores, Copy, Instance y Reference, Array y los grupos.' },
-  'Navigate · select · create · clone': { ca: 'Navega · selecciona · crea · clona', es: 'Navega · selecciona · crea · clona' },
-  'Open 3ds Max Viewport Lab': { ca: 'Obre el lab de visors de 3ds Max', es: 'Abrir el lab de visores de 3ds Max' },
-  '2 labs available': { ca: '2 labs disponibles', es: '2 labs disponibles' },
-  '1 lab available': { ca: '1 lab disponible', es: '1 lab disponible' },
-  'Coming later': { ca: 'Més endavant', es: 'Más adelante' },
-  '3D SOFTWARE · 14 LABS': { ca: 'PROGRAMARI 3D · 14 LABS', es: 'SOFTWARE 3D · 14 LABS' },
-  'Start with the interface, then follow a 3D production from modeling to animation. These labs use Blender tools and Blender-style workspaces.': { ca: 'Comença per la interfície i segueix una producció 3D, del modelatge a l\'animació. Aquests labs fan servir eines i espais de treball com els de Blender.', es: 'Empieza por la interfaz y sigue una producción 3D, del modelado a la animación. Estos labs utilizan herramientas y espacios de trabajo como los de Blender.' },
-  'Light &amp; camera': { ca: 'Llum i càmera', es: 'Luz y cámara' },
-  'Light the scene, then photograph it like a camera would.': { ca: 'Il·lumina l\'escena i després fotografia-la com ho faria una càmera.', es: 'Ilumina la escena y después fotografíala como lo haría una cámara.' },
-  '3D SOFTWARE · COMING LATER': { ca: 'PROGRAMARI 3D · MÉS ENDAVANT', es: 'SOFTWARE 3D · MÁS ADELANTE' },
-  'The next 3D track will teach familiar concepts through its own interface.': { ca: 'El proper itinerari 3D ensenyarà conceptes coneguts amb la seva pròpia interfície.', es: 'El próximo itinerario 3D enseñará conceptos conocidos con su propia interfaz.' },
-  '3D SOFTWARE · 1 LAB': { ca: 'PROGRAMARI 3D · 1 LAB', es: 'SOFTWARE 3D · 1 LAB' },
-  '3D SOFTWARE · 2 LABS': { ca: 'PROGRAMARI 3D · 2 LABS', es: 'SOFTWARE 3D · 2 LABS' },
-  'Explore animation principles, then practice the Time Slider, Curve Editor and Dope Sheet.': { ca: 'Explora els principis d’animació i després practica el Time Slider, el Curve Editor i el Dope Sheet.', es: 'Explora los principios de animación y después practica el Time Slider, el Curve Editor y el Dope Sheet.' },
-  'Explore the same animation principles with the viewport, Time Slider and Track View of 3ds Max 2027.': { ca: 'Explora els mateixos principis d’animació amb el visor, el Time Slider i el Track View de 3ds Max 2027.', es: 'Explora los mismos principios de animación con el visor, el Time Slider y Track View de 3ds Max 2027.' },
-  '3DS MAX / ANIMATION': { ca: '3DS MAX / ANIMACIÓ', es: '3DS MAX / ANIMACIÓN' },
-  "Animate a bouncing ball in the order used in class: keys every 10 frames, timing, travel, rotation, and squash and stretch, with weight as an extra. Work with helpers, Auto Key, Set Keys, the Track Bar and Track View – Curve Editor in a 3ds Max 2027 workspace.": { ca: "Anima una pilota que bota en l’ordre de classe: claus cada 10 fotogrames, timing, desplaçament, rotació i squash and stretch, amb el pes com a extra. Treballa amb helpers, Auto Key, Set Keys, el Track Bar i el Track View – Curve Editor en un espai de 3ds Max 2027.", es: "Anima una pelota que bota en el orden de clase: claves cada 10 fotogramas, timing, desplazamiento, rotación y squash and stretch, con el peso como extra. Trabaja con helpers, Auto Key, Set Keys, el Track Bar y Track View – Curve Editor en un espacio de 3ds Max 2027." },
-  'Keys · tangents · animation principles': { ca: 'Claus · tangents · principis d’animació', es: 'Claves · tangentes · principios de animación' },
-  'Open 3ds Max Animation Lab': { ca: 'Obre el lab d’animació de 3ds Max', es: 'Abrir el lab de animación de 3ds Max' },
-  '3DS MAX / TRACK VIEW': { ca: '3DS MAX / TRACK VIEW', es: '3DS MAX / TRACK VIEW' },
-  'Track View Lab': { ca: 'Lab de Track View', es: 'Lab de Track View' },
-  'Practice keyframes, timing, tangents and animation tracks in a workspace laid out like 3ds Max 2027, with its hotkeys. Move and copy keys, compare tangent types, and make cycles and loops.': { ca: 'Practica fotogrames clau, timing, tangents i pistes d’animació en un espai organitzat com 3ds Max 2027, amb les seves dreceres. Mou i copia claus, compara tipus de tangent i fes cicles i loops.', es: 'Practica fotogramas clave, timing, tangentes y pistas de animación en un espacio organizado como 3ds Max 2027, con sus atajos. Mueve y copia claves, compara tipos de tangente y haz ciclos y loops.' },
-  'Timeline · curves · Dope Sheet': { ca: 'Timeline · corbes · Dope Sheet', es: 'Timeline · curvas · Dope Sheet' },
-  'Open 3ds Max Track View Lab': { ca: 'Obre el lab de Track View de 3ds Max', es: 'Abrir el lab de Track View de 3ds Max' },
-  'IN PREPARATION': { ca: 'EN PREPARACIÓ', es: 'EN PREPARACIÓN' },
-  '3ds Max labs': { ca: 'Labs de 3ds Max', es: 'Labs de 3ds Max' },
-  'Modeling, UVs, materials and animation will build on the same learning goals, with 3ds Max tools, controls and examples. No 3ds Max labs are published yet.': { ca: 'El modelatge, les UV, els materials i l\'animació partiran dels mateixos objectius d\'aprenentatge, amb eines, controls i exemples de 3ds Max. Encara no hi ha labs de 3ds Max publicats.', es: 'El modelado, las UV, los materiales y la animación partirán de los mismos objetivos de aprendizaje, con herramientas, controles y ejemplos de 3ds Max. Todavía no hay labs de 3ds Max publicados.' },
-  'Modeling': { ca: 'Modelatge', es: 'Modelado' },
-  'Materials': { ca: 'Materials', es: 'Materiales' },
-  'Animation': { ca: 'Animació', es: 'Animación' },
-  'GAME DEVELOPMENT · 2 LABS': { ca: 'DESENVOLUPAMENT DE VIDEOJOCS · 2 LABS', es: 'DESARROLLO DE VIDEOJUEGOS · 2 LABS' },
-  'Game engines': { ca: 'Motors de joc', es: 'Motores de juego' },
-  'Optimize 3D assets and light real-time scenes in Unity.': { ca: 'Optimitza recursos 3D i il·lumina escenes en temps real a Unity.', es: 'Optimiza recursos 3D e ilumina escenas en tiempo real en Unity.' },
-  'Programming': { ca: 'Programació', es: 'Programación' },
-  'IMAGE &amp; VIDEO · 1 LAB': { ca: 'IMATGE I VÍDEO · 1 LAB', es: 'IMAGEN Y VÍDEO · 1 LAB' },
-  'Video': { ca: 'Vídeo', es: 'Vídeo' },
-  'Color correction and grading in a DaVinci Resolve-style workspace.': { ca: 'Correcció de color i etalatge en un espai de treball com el de DaVinci Resolve.', es: 'Corrección de color y etalonaje en un espacio de trabajo como el de DaVinci Resolve.' },
-  'SCENOGRAPHY · 2 LABS': { ca: 'ESCENOGRAFIA · 2 LABS', es: 'ESCENOGRAFÍA · 2 LABS' },
-  'VISUAL DESIGN · 1 LAB': { ca: 'DISSENY VISUAL · 1 LAB', es: 'DISEÑO VISUAL · 1 LAB' },
-  'Graphic design': { ca: 'Disseny gràfic', es: 'Diseño gráfico' },
-  'GENERATIVE IMAGE': { ca: 'IMATGE GENERATIVA', es: 'IMAGEN GENERATIVA' },
-  'Learn how node connections turn a model, prompts and latent data into an image workflow.': { ca: 'Aprèn com les connexions entre nodes converteixen un model, prompts i dades latents en un flux d’imatge.', es: 'Aprende cómo las conexiones entre nodos convierten un modelo, prompts y datos latentes en un flujo de imagen.' },
-  'GENERATIVE IMAGE · 1 LAB': { ca: 'IMATGE GENERATIVA · 1 LAB', es: 'IMAGEN GENERATIVA · 1 LAB' },
-  'Start with the nodes and data flow of a basic text-to-image workflow. Practice in the browser before opening the real app.': { ca: 'Comença pels nodes i el flux de dades d’un procés bàsic de text a imatge. Practica al navegador abans d’obrir l’aplicació real.', es: 'Empieza por los nodos y el flujo de datos de un proceso básico de texto a imagen. Practica en el navegador antes de abrir la aplicación real.' },
-  '01 / COMFYUI BASICS': { ca: '01 / FONAMENTS DE COMFYUI', es: '01 / FUNDAMENTOS DE COMFYUI' },
-  'Flow Lab': { ca: 'Lab de flux', es: 'Lab de flujo' },
-  'Inspect the seven nodes of a basic text-to-image graph, connect compatible sockets, repair a broken workflow and trace what runs when you queue it. Browser simulation; no model or GPU needed.': { ca: 'Inspecciona els set nodes d’un graf bàsic de text a imatge, connecta ports compatibles, repara un flux trencat i segueix què s’executa quan el poses a la cua. Simulació al navegador; no cal model ni GPU.', es: 'Inspecciona los siete nodos de un grafo básico de texto a imagen, conecta puertos compatibles, repara un flujo roto y sigue lo que se ejecuta al ponerlo en cola. Simulación en el navegador; no hace falta modelo ni GPU.' },
-  'Nodes · types · connections · execution': { ca: 'Nodes · tipus · connexions · execució', es: 'Nodos · tipos · conexiones · ejecución' },
-  'Open ComfyUI Flow Lab': { ca: 'Obre el lab de flux de ComfyUI', es: 'Abrir el lab de flujo de ComfyUI' },
-  'Understand what each node does and how LoRA and ControlNet change generation.': { ca: 'Entén què fa cada node i com LoRA i ControlNet canvien la generació.', es: 'Entiende qué hace cada nodo y cómo LoRA y ControlNet cambian la generación.' },
-  'GENERATIVE IMAGE · 2 LABS': { ca: 'IMATGE GENERATIVA · 2 LABS', es: 'IMAGEN GENERATIVA · 2 LABS' },
-  'Understand what each node receives, changes and outputs. Explore LoRA and ControlNet before practising the graph.': { ca: 'Entén què rep, canvia i produeix cada node. Explora LoRA i ControlNet abans de practicar el graf.', es: 'Entiende qué recibe, cambia y produce cada nodo. Explora LoRA y ControlNet antes de practicar el grafo.' },
-  '01 / COMFYUI CONCEPTS': { ca: '01 / CONCEPTES DE COMFYUI', es: '01 / CONCEPTOS DE COMFYUI' },
-  'Concept Lab': { ca: 'Lab de conceptes', es: 'Lab de conceptos' },
-  'Inspect what each core node does, compare LoRA with ControlNet, and test your understanding through short diagnostic cases. No model or GPU needed.': { ca: 'Inspecciona què fa cada node principal, compara LoRA amb ControlNet i comprova què has entès amb casos breus. No cal model ni GPU.', es: 'Inspecciona qué hace cada nodo principal, compara LoRA con ControlNet y comprueba lo que has entendido con casos breves. No hace falta modelo ni GPU.' },
-  'Node roles · LoRA · ControlNet': { ca: 'Funció dels nodes · LoRA · ControlNet', es: 'Función de los nodos · LoRA · ControlNet' },
-  'Open ComfyUI Concept Lab': { ca: 'Obre el lab de conceptes de ComfyUI', es: 'Abrir el lab de conceptos de ComfyUI' },
-  'UNDERSTAND THE NODES': { ca: 'ENTÉN ELS NODES', es: 'ENTIENDE LOS NODOS' },
-  'WEIGHT ADJUSTMENTS': { ca: 'AJUSTOS DE PESOS', es: 'AJUSTES DE PESOS' },
-  'STRUCTURE GUIDE': { ca: 'GUIA ESTRUCTURAL', es: 'GUÍA ESTRUCTURAL' },
-  '02 / OPTIONAL PRACTICE': { ca: '02 / PRÀCTICA OPCIONAL', es: '02 / PRÁCTICA OPCIONAL' },
-  'Practise connecting compatible sockets, repairing a broken workflow and tracing execution. This follow-up is optional.': { ca: 'Practica la connexió de ports compatibles, la reparació d’un flux trencat i el seguiment de l’execució. Aquest pas és opcional.', es: 'Practica la conexión de puertos compatibles, la reparación de un flujo roto y el seguimiento de la ejecución. Este paso es opcional.' },
-  'Connections · execution': { ca: 'Connexions · execució', es: 'Conexiones · ejecución' },
-  'Modeling, UVs, materials, lighting, rigging, animation and Geometry Nodes in Blender-style workspaces.': { ca: 'Modelatge, UV, materials, il·luminació, rigging, animació i Geometry Nodes en espais de treball com els de Blender.', es: 'Modelado, UV, materiales, iluminación, rigging, animación y Geometry Nodes en espacios de trabajo como los de Blender.' },
-  '18 labs available': { ca: '18 labs disponibles', es: '18 labs disponibles' },
-  '3D SOFTWARE · 18 LABS': { ca: 'PROGRAMARI 3D · 18 LABS', es: 'SOFTWARE 3D · 18 LABS' },
-  'Geometry Nodes': { ca: 'Geometry Nodes', es: 'Geometry Nodes' },
-  'Procedural modeling with a working node editor: geometry flow, fields, scatter and curves.': { ca: 'Modelatge procedural amb un editor de nodes que funciona: flux de geometria, camps, scatter i corbes.', es: 'Modelado procedural con un editor de nodos que funciona: flujo de geometría, campos, scatter y curvas.' },
-  'A Blender-style Geometry Nodes workspace with Spreadsheet, Viewport, Node Editor and modifier panel. Connect Group Input and Group Output, transform and join primitives into a table, look inside with the Viewer and expose a control in the modifier.': { ca: 'Un espai Geometry Nodes com el de Blender, amb Spreadsheet, Viewport, Node Editor i panell del modificador. Connecta Group Input i Group Output, transforma i uneix primitives fins a fer una taula, mira per dins amb el Viewer i exposa un control al modificador.', es: 'Un espacio Geometry Nodes como el de Blender, con Spreadsheet, Viewport, Node Editor y panel del modificador. Conecta Group Input y Group Output, transforma y une primitivas hasta hacer una mesa, mira por dentro con el Viewer y expón un control en el modificador.' },
-  'Group Input · Join Geometry · Viewer · modifier inputs': { ca: 'Group Input · Join Geometry · Viewer · entrades del modificador', es: 'Group Input · Join Geometry · Viewer · entradas del modificador' },
-  'What a field is and why its sockets are diamonds: read attributes in the Spreadsheet, see Index with the Viewer, and use Position, Normal, Math and Set Position to turn a grid into a terrain with a height control.': { ca: "Què és un camp i per què els seus sockets són rombes: llegeix atributs al Spreadsheet, mira Index amb el Viewer i fes servir Position, Normal, Math i Set Position per convertir un Grid en un terreny amb control d'altura.", es: 'Qué es un campo y por qué sus sockets son rombos: lee atributos en el Spreadsheet, mira Index con el Viewer y usa Position, Normal, Math y Set Position para convertir un Grid en un terreno con control de altura.' },
-  'Fields · Spreadsheet · Set Position · terrain': { ca: 'Camps · Spreadsheet · Set Position · terreny', es: 'Campos · Spreadsheet · Set Position · terreno' },
-  'Scatter rocks on your GN 02 terrain: Distribute Points on Faces, Collection Info with Separate Children, Reset Children and Pick Instance, random scale and rotation, a selection mask, and instances versus Realize Instances.': { ca: 'Escampa pedres pel teu terreny del GN 02: Distribute Points on Faces, Collection Info amb Separate Children, Reset Children i Pick Instance, escala i rotació aleatòries, una màscara de selecció, i instàncies contra Realize Instances.', es: 'Esparce rocas por tu terreno de GN 02: Distribute Points on Faces, Collection Info con Separate Children, Reset Children y Pick Instance, escala y rotación aleatorias, una máscara de selección, e instancias frente a Realize Instances.' },
-  'Instances · Pick Instance · Random Value · mask': { ca: 'Instàncies · Pick Instance · Random Value · màscara', es: 'Instancias · Pick Instance · Random Value · máscara' },
-  'Build a procedural fence: Curve Line and Curve Circle into Curve to Mesh, posts with Curve to Points and Instance on Points, bend it with a Quadratic Bézier and deliver it with three modifier controls.': { ca: 'Construeix una tanca procedural: Curve Line i Curve Circle cap a Curve to Mesh, pals amb Curve to Points i Instance on Points, doblega-la amb una Quadratic Bézier i lliura-la amb tres controls al modificador.', es: 'Construye una valla procedural: Curve Line y Curve Circle hacia Curve to Mesh, postes con Curve to Points e Instance on Points, dóblala con una Quadratic Bézier y entrégala con tres controles en el modificador.' },
-  'Curve to Mesh · Curve to Points · reusable asset': { ca: 'Curve to Mesh · Curve to Points · asset reutilitzable', es: 'Curve to Mesh · Curve to Points · asset reutilizable' },
-  'Learn the interface and the shortcuts, what each node does, and how LoRA and ControlNet change a generation.': { ca: 'Aprèn la interfície i les dreceres, què fa cada node i com canvien una generació la LoRA i la ControlNet.', es: 'Aprende la interfaz y los atajos, qué hace cada nodo y cómo cambian una generación la LoRA y la ControlNet.' },
-  'Learn the interface, the shortcuts, LoRA and ControlNet in a ComfyUI-style workspace.': { ca: 'Aprèn la interfície, les dreceres, la LoRA i la ControlNet en un espai com el de ComfyUI.', es: 'Aprende la interfaz, los atajos, la LoRA y la ControlNet en un espacio como el de ComfyUI.' },
-  '01 / COMFYUI': { ca: '01 / COMFYUI', es: '01 / COMFYUI' },
-  'ComfyUI Lab': { ca: 'Lab de ComfyUI', es: 'Lab de ComfyUI' },
-  'Learn ComfyUI in a copy of its interface, with the real shortcuts: canvas, node search, Run and Queue, the seven nodes of text-to-image, seed, steps, CFG and samplers, image to image, what a LoRA is and what a ControlNet is, bypass, groups and workflows saved in the image. A simulator draws the pictures: no model or GPU needed.': { ca: 'Aprèn ComfyUI en una còpia de la seva interfície, amb les dreceres reals: llenç, cerca de nodes, Run i Queue, els set nodes del text a imatge, seed, steps, CFG i samplers, imatge a imatge, què és una LoRA i què és una ControlNet, bypass, grups i workflows desats dins la imatge. Un simulador dibuixa les imatges: no cal cap model ni GPU.', es: 'Aprende ComfyUI en una copia de su interfaz, con los atajos reales: lienzo, búsqueda de nodos, Run y Queue, los siete nodos del texto a imagen, seed, steps, CFG y samplers, imagen a imagen, qué es una LoRA y qué es una ControlNet, bypass, grupos y workflows guardados dentro de la imagen. Un simulador dibuja las imágenes: no hace falta ningún modelo ni GPU.' },
-  'Interface · KSampler · LoRA · ControlNet · shortcuts': { ca: 'Interfície · KSampler · LoRA · ControlNet · dreceres', es: 'Interfaz · KSampler · LoRA · ControlNet · atajos' },
-  'Open ComfyUI Lab': { ca: 'Obre el lab de ComfyUI', es: 'Abre el lab de ComfyUI' },
-  'Learn the interface, inpainting, upscaling to 4K, Flux, and control with ControlNet and IPAdapter, in a ComfyUI-style workspace.': { ca: 'Aprèn la interfície, l’inpainting, l’upscale fins a 4K, Flux i el control amb ControlNet i IPAdapter, en un espai com el de ComfyUI.', es: 'Aprende la interfaz, el inpainting, el upscale hasta 4K, Flux y el control con ControlNet e IPAdapter, en un espacio como el de ComfyUI.' },
-  'Learn the interface and the shortcuts, what each node does, how LoRA and ControlNet change a generation, how to change only part of a picture, how to take it to 4K, how modern models like Flux work, how to steer a picture with other pictures, and how to make it move or turn it into a 3D model.': { ca: 'Aprèn la interfície i les dreceres, què fa cada node, com canvien una generació la LoRA i la ControlNet, com canviar només una part d’una imatge, com portar-la a 4K, com funcionen els models moderns com Flux com guiar una imatge amb altres imatges, i com fer-la moure o convertir-la en un model 3D.', es: 'Aprende la interfaz y los atajos, qué hace cada nodo, cómo cambian una generación la LoRA y la ControlNet, cómo cambiar solo una parte de una imagen, cómo llevarla a 4K, cómo funcionan los modelos modernos como Flux cómo guiar una imagen con otras imágenes, y cómo hacer que se mueva o convertirla en un modelo 3D.' },
-  'GENERATIVE IMAGE · 5 LABS': { ca: 'IMATGE GENERATIVA · 5 LABS', es: 'IMAGEN GENERATIVA · 5 LABS' },
-  '05 / COMFYUI': { ca: '05 / COMFYUI', es: '05 / COMFYUI' },
-  'Control &amp; Injection Lab': { ca: 'Lab de control i injecció', es: 'Lab de control e inyección' },
-  'Steer with pictures, not only words: preprocessors and control maps, the right ControlNet for each map, stacking ControlNets, regional prompts with areas and masks, IPAdapter style, content and composition, FaceID identity and two faces with attention masks.': { ca: 'Guia amb imatges, no només amb paraules: preprocessadors i mapes de control, la ControlNet bona per a cada mapa, apilar ControlNets, prompts regionals amb àrees i màscares, estil, contingut i composició amb IPAdapter, identitat amb FaceID i dues cares amb màscares d’atenció.', es: 'Guía con imágenes, no solo con palabras: preprocesadores y mapas de control, la ControlNet buena para cada mapa, apilar ControlNets, prompts regionales con áreas y máscaras, estilo, contenido y composición con IPAdapter, identidad con FaceID y dos caras con máscaras de atención.' },
-  'ControlNet · regions · IPAdapter · FaceID': { ca: 'ControlNet · regions · IPAdapter · FaceID', es: 'ControlNet · regiones · IPAdapter · FaceID' },
-  'GENERATIVE IMAGE · 6 LABS': { ca: 'IMATGE GENERATIVA · 6 LABS', es: 'IMAGEN GENERATIVA · 6 LABS' },
-  '06 / COMFYUI': { ca: '06 / COMFYUI', es: '06 / COMFYUI' },
-  'Sampling &amp; Prompting Lab': { ca: 'Lab de sampling i prompts', es: 'Lab de sampling y prompts' },
-  'Make better choices with the same graph: workflows with missing models, negative embeddings, samplers that converge and samplers that never settle, schedulers and enough steps, two samplers sharing the steps, prompts on a timetable, weights, dynamic prompts, long prompts, and how to explore and keep a seed.': { ca: 'Pren millors decisions amb el mateix graf: workflows amb models que falten, embeddings negatius, samplers que convergeixen i samplers que no s’aturen mai, schedulers i prou steps, dos samplers que es reparteixen els steps, prompts amb horari, pesos, prompts dinàmics, prompts llargs, i com explorar i conservar un seed.', es: 'Toma mejores decisiones con el mismo grafo: workflows con modelos que faltan, embeddings negativos, samplers que convergen y samplers que nunca se paran, schedulers y suficientes steps, dos samplers que se reparten los steps, prompts con horario, pesos, prompts dinámicos, prompts largos, y cómo explorar y conservar un seed.' },
-  'Samplers · KSampler Advanced · prompts · seeds': { ca: 'Samplers · KSampler Advanced · prompts · seeds', es: 'Samplers · KSampler Advanced · prompts · seeds' },
-  'GENERATIVE IMAGE · 9 LABS': { ca: 'IMATGE GENERATIVA · 9 LABS', es: 'IMAGEN GENERATIVA · 9 LABS' },
-  '07 / COMFYUI': { ca: '07 / COMFYUI', es: '07 / COMFYUI' },
-  'LoRA Lab': { ca: 'Lab de LoRA', es: 'Lab de LoRA' },
-  'Use LoRAs well and make your own: model and clip strength, trigger words and stacking, a dataset with variety, captions that say the right things, training with ComfyUI’s training nodes, underfitting and overfitting, learning rate and rank, and testing and picking the best file. With Pip, our own mascot.': { ca: 'Fes servir bé les LoRAs i fes-ne de teves: força del model i del clip, paraules clau i apilar-les, un dataset variat, captions que diguin el que cal, entrenar amb els nodes d’entrenament de ComfyUI, infraentrenar i sobreentrenar, learning rate i rank, i provar i triar el millor fitxer. Amb la Pip, la nostra mascota.', es: 'Usa bien las LoRAs y haz las tuyas: fuerza del modelo y del clip, palabras clave y apilarlas, un dataset variado, captions que digan lo que toca, entrenar con los nodos de entrenamiento de ComfyUI, infraentrenar y sobreentrenar, learning rate y rank, y probar y elegir el mejor archivo. Con Pip, nuestra mascota.' },
-  'Strength · datasets · captions · training': { ca: 'Força · datasets · captions · entrenament', es: 'Fuerza · datasets · captions · entrenamiento' },
-  'Open LoRA Lab': { ca: 'Obre el lab de LoRA', es: 'Abre el lab de LoRA' },
-  'Video &amp; 3D Lab': { ca: 'Lab de vídeo i 3D', es: 'Lab de vídeo y 3D' },
-  'Video & 3D Lab': { ca: 'Lab de vídeo i 3D', es: 'Lab de vídeo y 3D' },
-  'Make pictures move and give them a back: video latents with frames, fps and duration, prompts that describe motion and camera, image to video and first and last frame, video memory and length, the two experts of Wan 2.2, and from one picture to a 3D mesh with a clean input and the right resolution.': { ca: 'Fes que les imatges es moguin i dona’ls una esquena: latents de vídeo amb frames, fps i durada, prompts que descriuen moviment i càmera, imatge a vídeo i primer i últim frame, la memòria i la llargada del vídeo, els dos experts de Wan 2.2, i d’una imatge a una malla 3D amb una entrada neta i la resolució bona.', es: 'Haz que las imágenes se muevan y dales una espalda: latentes de vídeo con frames, fps y duración, prompts que describen movimiento y cámara, imagen a vídeo y primer y último frame, la memoria y la duración del vídeo, los dos expertos de Wan 2.2, y de una imagen a una malla 3D con una entrada limpia y la resolución buena.' },
-  'Wan · frames · image to video · mesh': { ca: 'Wan · frames · imatge a vídeo · malla', es: 'Wan · frames · imagen a vídeo · malla' },
-  'Open Video and 3D Lab': { ca: 'Obre el lab de vídeo i 3D', es: 'Abre el lab de vídeo y 3D' },
-  'Workflow Lab': { ca: 'Lab de workflows', es: 'Lab de workflows' },
-  'Everything around the nodes: open a workflow from someone else and install its missing custom nodes and models with the Manager, tidy links with reroutes, drive several widgets from one Int or String node, pack nodes into reusable subgraphs, and compare settings with XY grids.': { ca: 'Tot el que envolta els nodes: obre el workflow d’una altra persona i instal·la els custom nodes i els models que li falten amb el Manager, endreça els enllaços amb reroutes, governa diversos widgets des d’un sol node Int o String, empaqueta nodes en subgraphs reutilitzables i compara paràmetres amb graelles XY.', es: 'Todo lo que rodea a los nodos: abre el workflow de otra persona e instala los custom nodes y los modelos que le faltan con el Manager, ordena los enlaces con reroutes, gobierna varios widgets desde un solo nodo Int o String, empaqueta nodos en subgraphs reutilizables y compara parámetros con rejillas XY.' },
-  'Manager · reroutes · primitives · subgraphs · XY': { ca: 'Manager · reroutes · primitives · subgraphs · XY', es: 'Manager · reroutes · primitivas · subgraphs · XY' },
-  'Open Workflow Lab': { ca: 'Obre el lab de workflows', es: 'Abre el lab de workflows' },
-  'Open Sampling and Prompting Lab': { ca: 'Obre el lab de sampling i prompts', es: 'Abre el lab de sampling y prompts' },
-  'Open Control and Injection Lab': { ca: 'Obre el lab de control i injecció', es: 'Abre el lab de control e inyección' },
-  'GENERATIVE IMAGE · 4 LABS': { ca: 'IMATGE GENERATIVA · 4 LABS', es: 'IMAGEN GENERATIVA · 4 LABS' },
-  '04 / COMFYUI': { ca: '04 / COMFYUI', es: '04 / COMFYUI' },
-  'Flux Lab': { ca: 'Lab de Flux', es: 'Lab de Flux' },
-  'Work with a modern model: load Flux in three parts, make it fit in memory (fp8, GGUF), sample at CFG 1 with Flux Guidance, live without a negative prompt, choose dev or schnell, prompt with sentences and text in quotes, pick the right size, and use Flux Fill, Kontext editing and Flux LoRAs.': { ca: 'Treballa amb un model modern: carrega Flux en tres parts, fes-lo cabre a la memòria (fp8, GGUF), mostreja amb CFG 1 i Flux Guidance, viu sense prompt negatiu, tria entre dev i schnell, escriu prompts amb frases i text entre cometes, tria la mida bona i fes servir Flux Fill, l’edició amb Kontext i les LoRAs de Flux.', es: 'Trabaja con un modelo moderno: carga Flux en tres partes, hazlo caber en la memoria (fp8, GGUF), muestrea con CFG 1 y Flux Guidance, vive sin prompt negativo, elige entre dev y schnell, escribe prompts con frases y texto entre comillas, elige el tamaño bueno y usa Flux Fill, la edición con Kontext y las LoRAs de Flux.' },
-  'Models in parts · guidance · T5 · Fill · Kontext': { ca: 'Models per parts · guidance · T5 · Fill · Kontext', es: 'Modelos por partes · guidance · T5 · Fill · Kontext' },
-  'Open Flux Lab': { ca: 'Obre el lab de Flux', es: 'Abre el lab de Flux' },
-  'GENERATIVE IMAGE · 3 LABS': { ca: 'IMATGE GENERATIVA · 3 LABS', es: 'IMAGEN GENERATIVA · 3 LABS' },
-  '03 / COMFYUI': { ca: '03 / COMFYUI', es: '03 / COMFYUI' },
-  'Upscale &amp; Detail Lab': { ca: 'Lab d’upscale i detall', es: 'Lab de upscale y detalle' },
-  'Make big pictures that hold up at 100%: why models draw well only at their own size, resize vs upscale models, the hires fix and its denoise window, running out of memory, tiled upscaling without seams or ghosts, ControlNet Tile, face detailers and a full pipeline to 4K. Every result shows a zoom with the real pixels.': { ca: 'Fes imatges grans que aguantin al 100%: per què els models només dibuixen bé a la seva mida, redimensionar vs models d’upscale, el hires fix i la seva finestra de denoise, quedar-se sense memòria, upscale per tiles sense costures ni fantasmes, ControlNet Tile, detailers de cares i un pipeline complet fins a 4K. Cada resultat mostra un zoom amb els píxels reals.', es: 'Haz imágenes grandes que aguanten al 100%: por qué los modelos solo dibujan bien a su tamaño, redimensionar vs modelos de upscale, el hires fix y su ventana de denoise, quedarse sin memoria, upscale por tiles sin costuras ni fantasmas, ControlNet Tile, detailers de caras y un pipeline completo hasta 4K. Cada resultado muestra un zoom con los píxeles reales.' },
-  'Upscale models · hires fix · tiles · detailers · 4K': { ca: 'Models d’upscale · hires fix · tiles · detailers · 4K', es: 'Modelos de upscale · hires fix · tiles · detailers · 4K' },
-  'Open Upscale and Detail Lab': { ca: 'Obre el lab d’upscale i detall', es: 'Abre el lab de upscale y detalle' },
-  '02 / COMFYUI': { ca: '02 / COMFYUI', es: '02 / COMFYUI' },
-  'Inpainting Lab': { ca: 'Lab d’inpainting', es: 'Lab de inpainting' },
-  'Change one part of a picture and keep the rest: paint and grow masks, compare the four inpainting routes (VAE Encode for Inpainting, Set Latent Noise Mask, InpaintModelConditioning, Differential Diffusion), finish without seams, inpaint small details with crop and stitch, outpaint beyond the frame and make clean plates.': { ca: 'Canvia una part d’una imatge i conserva la resta: pinta i fes créixer màscares, compara les quatre vies d’inpainting (VAE Encode for Inpainting, Set Latent Noise Mask, InpaintModelConditioning, Differential Diffusion), acaba sense costures, pinta detalls petits amb crop and stitch, fes outpainting més enllà del marc i crea cleanplates.', es: 'Cambia una parte de una imagen y conserva el resto: pinta y haz crecer máscaras, compara las cuatro vías de inpainting (VAE Encode for Inpainting, Set Latent Noise Mask, InpaintModelConditioning, Differential Diffusion), acaba sin costuras, pinta detalles pequeños con crop and stitch, haz outpainting más allá del marco y crea cleanplates.' },
-  'Masks · inpainting models · outpainting · clean plates': { ca: 'Màscares · models d’inpainting · outpainting · cleanplates', es: 'Máscaras · modelos de inpainting · outpainting · cleanplates' },
-  'Open Inpainting Lab': { ca: 'Obre el lab d’inpainting', es: 'Abre el lab de inpainting' },
-  '3D SOFTWARE · 5 LABS': { ca: 'PROGRAMARI 3D · 5 LABS', es: 'SOFTWARE 3D · 5 LABS' },
-  'Learn the 3ds Max interface and animation tools, then build, skin and animate a CAT character.': { ca: 'Aprèn la interfície i les eines d’animació de 3ds Max; després construeix, aplica Skin i anima un personatge CAT.', es: 'Aprende la interfaz y las herramientas de animación de 3ds Max; después construye, aplica Skin y anima un personaje CAT.' },
-  'CAT Rig Lab': { ca: 'Lab de CAT Rig', es: 'Lab de CAT Rig' },
-  "Build a CAT character from CATParent and hubs, place the bones, bind a character with Skin, paint and test vertex weights, and explore CAT's rig tools. Use your own model or a free CC0 example.": { ca: 'Construeix un personatge CAT amb CATParent i hubs, col·loca els ossos, vincula la malla amb Skin, pinta i prova els pesos i explora les eines del rig. Fes servir un model propi o un exemple CC0 gratuït.', es: 'Construye un personaje CAT con CATParent y hubs, coloca los huesos, vincula la malla con Skin, pinta y prueba los pesos y explora las herramientas del rig. Usa un modelo propio o un ejemplo CC0 gratuito.' },
-  'Skeleton · Skin · weights · CAT tools': { ca: 'Esquelet · Skin · pesos · eines CAT', es: 'Esqueleto · Skin · pesos · herramientas CAT' },
-  'Open CAT Rig Lab': { ca: 'Obre el lab de CAT Rig', es: 'Abrir el lab de CAT Rig' },
-  'CAT Animation Lab': { ca: 'Lab d’animació CAT', es: 'Lab de animación CAT' },
-  'Animate the rig on an Absolute layer, key poses, keep a foot planted with the FootPlatform, add Relative Local corrections, and blend a CATMotion walk cycle.': { ca: 'Anima el rig en una capa Absolute, crea poses clau, planta un peu amb la FootPlatform, afegeix correccions Relative Local i barreja un cicle de caminar de CATMotion.', es: 'Anima el rig en una capa Absolute, crea poses clave, planta un pie con FootPlatform, añade correcciones Relative Local y mezcla un ciclo de caminar de CATMotion.' },
-  'Keyframes · IK · layers · walk cycle': { ca: 'Claus · IK · capes · cicle de caminar', es: 'Claves · IK · capas · ciclo de caminar' },
-  'Open CAT Animation Lab': { ca: 'Obre el lab d’animació CAT', es: 'Abrir el lab de animación CAT' },
-  // Labs brought over from CIFOG Lab: Export, Outliner, Photoshop and Runway Live
-  'Optimize assets, bake lighting and export from Blender to Unity.': { ca: 'Optimitza recursos, calcula la il·luminació i exporta de Blender a Unity.', es: 'Optimiza recursos, calcula la iluminación y exporta de Blender a Unity.' },
-  'Grade an image and direct a live multicamera production.': { ca: 'Etalona una imatge i realitza una producció multicàmera en directe.', es: 'Etalona una imagen y realiza una producción multicámara en directo.' },
-  'Work with color grading and decide what viewers see during a live show.': { ca: 'Treballa l’etalatge i decideix què veu el públic durant una producció en directe.', es: 'Trabaja el etalonaje y decide qué ve el público durante una producción en directo.' },
-  'Work with image selection, masks, color and readable type.': { ca: 'Treballa seleccions, màscares, color i tipografia llegible.', es: 'Trabaja selecciones, máscaras, color y tipografía legible.' },
-  "24 / BLENDER BASICS": {"ca": "24 / FONAMENTS DE BLENDER", "es": "24 / FUNDAMENTOS DE BLENDER"},
-  "Outliner Lab": {"ca": "Outliner Lab", "es": "Outliner Lab"},
-  "Put a game level in order with the Outliner: collections inside collections, objects linked to two collections, collection instances, exclude, hide, disable in renders and selectable, isolate, search and filters, Object Contents, and the Blender File and Unused Data modes to remap and purge data-blocks.": {"ca": "Posa ordre en un nivell de joc amb l'Outliner: collections dins de collections, objectes enllaçats a dues collections, collection instances, exclude, amagar, desactivar als renders i selectable, aïllar, cerca i filtres, Object Contents, i els modes Blender File i Unused Data per remapejar i purgar data-blocks.", "es": "Pon orden en un nivel de juego con el Outliner: collections dentro de collections, objetos enlazados a dos collections, collection instances, exclude, ocultar, desactivar en los renders y selectable, aislar, búsqueda y filtros, Object Contents, y los modos Blender File y Unused Data para remapear y purgar data-blocks."},
-  "Collections · visibility · filters · data-blocks": {"ca": "Collections · visibilitat · filtres · data-blocks", "es": "Collections · visibilidad · filtros · data-blocks"},
-  "Open Outliner Lab": {"ca": "Obre l'Outliner Lab", "es": "Abre el Outliner Lab"},
-  "M · SHIFT M · CTRL F · PURGE": {"ca": "M · SHIFT M · CTRL F · PURGE", "es": "M · SHIFT M · CTRL F · PURGE"},
-  'Blender and Unity side by side: fix the FBX export options and Unity\'s import settings until a model arrives standing up, at real size, with its pivot in place, its textures, a clean skeleton, looping clips and custom colliders.': { ca: 'Blender i Unity de costat: arregla les opcions d\'exportació FBX i la configuració d\'importació d\'Unity fins que un model arribi dret, a mida real, amb el pivot al seu lloc, les textures, un esquelet net, clips en bucle i colliders personalitzats.', es: 'Blender y Unity lado a lado: arregla las opciones de exportación FBX y la configuración de importación de Unity hasta que un modelo llegue de pie, a tamaño real, con el pivote en su sitio, las texturas, un esqueleto limpio, clips en bucle y colliders personalizados.' },
-  'FBX · axes · pivot · rig · colliders': { ca: 'FBX · eixos · pivot · rig · colliders', es: 'FBX · ejes · pivote · rig · colliders' },
-  'Colour, type and image editing for screens and print.': { ca: 'Color, tipografia i edició d’imatge per a pantalles i impressió.', es: 'Color, tipografía y edición de imagen para pantallas e impresión.' },
-  '25 / IMAGE EDITING': { ca: '25 / EDICIÓ D’IMATGE', es: '25 / EDICIÓN DE IMAGEN' },
-  'Photoshop Selection & Mask Lab': { ca: 'Lab de seleccions i màscares de Photoshop', es: 'Lab de selecciones y máscaras de Photoshop' },
-  'Practise rectangular, elliptical, lasso, object and quick selections. Turn a selection into a layer mask, then use black and white brush strokes to refine it without changing the original photo.': { ca: 'Practica seleccions rectangulars, el·líptiques, amb llaç, d’objectes i ràpides. Converteix una selecció en màscara de capa i després afina-la amb pinzellades negres i blanques sense canviar la foto original.', es: 'Practica selecciones rectangulares, elípticas, con lazo, de objetos y rápidas. Convierte una selección en máscara de capa y después afínala con pinceladas negras y blancas sin cambiar la foto original.' },
-  'Selections · layer masks · black and white': { ca: 'Seleccions · màscares de capa · blanc i negre', es: 'Selecciones · máscaras de capa · blanco y negro' },
-  'Open Photoshop Selection & Mask Lab': { ca: 'Obre el lab de seleccions i màscares de Photoshop', es: 'Abre el lab de selecciones y máscaras de Photoshop' },
-  'SELECT · MASK · BRUSH': { ca: 'SELECCIÓ · MÀSCARA · PINZELL', es: 'SELECCIÓN · MÁSCARA · PINCEL' },
-  '26 / LIVE VIDEO': { ca: '26 / VÍDEO EN DIRECTE', es: '26 / VÍDEO EN DIRECTO' },
-  'Runway Live Lab': { ca: 'Lab de realització de passarel·la', es: 'Lab de realización de pasarela' },
-  'Direct a five-camera fashion show on a T-shaped runway. Assign the cameras, keep one on the presenter, prepare each shot in preview, cut it to program and make a feet-to-head vertical tilt.': { ca: 'Realitza una desfilada amb cinc càmeres i una passarel·la en T. Assigna les càmeres, mantén-ne una amb el presentador, prepara cada pla en previ, passa’l a programa i fes un moviment vertical dels peus al cap.', es: 'Realiza un desfile con cinco cámaras y una pasarela en T. Asigna las cámaras, mantén una con el presentador, prepara cada plano en previo, pásalo a programa y haz un movimiento vertical de los pies a la cabeza.' },
-  'Five cameras · T route · preview/program · tilt': { ca: 'Cinc càmeres · recorregut en T · previ/programa · moviment vertical', es: 'Cinco cámaras · recorrido en T · previo/programa · movimiento vertical' },
-  'Open Runway Live Lab': { ca: 'Obre el lab de realització de passarel·la', es: 'Abre el lab de realización de pasarela' },
-  'PREVIEW · CUT · LIVE': { ca: 'PREVI · TALL · DIRECTE', es: 'PREVIO · CORTE · DIRECTO' },
-  '3D SOFTWARE · 19 LABS': { ca: 'PROGRAMARI 3D · 19 LABS', es: 'SOFTWARE 3D · 19 LABS' },
-  '19 labs available': { ca: '19 labs disponibles', es: '19 labs disponibles' },
-  'GAME DEVELOPMENT · 3 LABS': { ca: 'DESENVOLUPAMENT DE VIDEOJOCS · 3 LABS', es: 'DESARROLLO DE VIDEOJUEGOS · 3 LABS' },
-  'IMAGE &amp; VIDEO · 2 LABS': { ca: 'IMATGE I VÍDEO · 2 LABS', es: 'IMAGEN Y VÍDEO · 2 LABS' },
-  'IMAGE & VIDEO · 2 LABS': { ca: 'IMATGE I VÍDEO · 2 LABS', es: 'IMAGEN Y VÍDEO · 2 LABS' },
-  'VISUAL DESIGN · 2 LABS': { ca: 'DISSENY VISUAL · 2 LABS', es: 'DISEÑO VISUAL · 2 LABS' },
-  // NLA Lab
-  "Learn Blender's NLA Editor with a walking mannequin: push actions down into strips, sequence them, layer a wave over a walk, fix an action in Tweak Mode, use Extrapolation, Blending and Influence, repeat and scale cycles, and bake the mix for Unity.": { ca: "Aprèn el NLA Editor de Blender amb un maniquí que camina: converteix accions en strips amb Push Down, posa-les en seqüència, afegeix una salutació sobre el caminar, corregeix una acció en Tweak Mode, fes servir Extrapolation, Blending i Influence, repeteix i escala cicles i fes el bake de la mescla per a Unity.", es: "Aprende el NLA Editor de Blender con un maniquí que camina: convierte acciones en strips con Push Down, ponlas en secuencia, añade un saludo sobre el caminar, corrige una acción en Tweak Mode, usa Extrapolation, Blending e Influence, repite y escala ciclos y haz el bake de la mezcla para Unity." },
-  'Actions · strips · tracks · blending': { ca: 'Accions · strips · tracks · blending', es: 'Acciones · strips · tracks · blending' },
-  '3D SOFTWARE · 20 LABS': { ca: 'PROGRAMARI 3D · 20 LABS', es: 'SOFTWARE 3D · 20 LABS' },
-  '20 labs available': { ca: '20 labs disponibles', es: '20 labs disponibles' },
+  "Explore labs <span aria-hidden=\"true\">↗</span>": {
+    "ca": "Explora els labs <span aria-hidden=\"true\">↗</span>",
+    "es": "Explora los labs <span aria-hidden=\"true\">↗</span>"
+  },
+  "Carrot Revolt / INTERACTIVE STUDIES": {
+    "ca": "Carrot Revolt / ESTUDIS INTERACTIUS",
+    "es": "Carrot Revolt / ESTUDIOS INTERACTIVOS"
+  },
+  "Learn by<br><em>changing things.</em>": {
+    "ca": "Aprèn<br><em>canviant coses.</em>",
+    "es": "Aprende<br><em>cambiando cosas.</em>"
+  },
+  "Small interactive labs to explore what happens when you change a material, a texture, a connection or a line of code. Open one, experiment, and see what you learn.": {
+    "ca": "Petits labs interactius per descobrir què passa quan canvies un material, una textura, una connexió o una línia de codi. Obre'n un, experimenta i descobreix què has après.",
+    "es": "Pequeños labs interactivos para descubrir qué pasa cuando cambias un material, una textura, una conexión o una línea de código. Abre uno, experimenta y descubre lo que has aprendido."
+  },
+  "Explore the labs <span aria-hidden=\"true\">↘</span>": {
+    "ca": "Explora els labs <span aria-hidden=\"true\">↘</span>",
+    "es": "Explora los labs <span aria-hidden=\"true\">↘</span>"
+  },
+  "Brick wall": {
+    "ca": "Paret de maó",
+    "es": "Pared de ladrillo"
+  },
+  "CHANGE A VALUE · SEE THE EFFECT": {
+    "ca": "CANVIA UN VALOR · MIRA L'EFECTE",
+    "es": "CAMBIA UN VALOR · MIRA EL EFECTO"
+  },
+  "THE COLLECTION": {
+    "ca": "LA COL·LECCIÓ",
+    "es": "LA COLECCIÓN"
+  },
+  "Explore the labs": {
+    "ca": "Explora els labs",
+    "es": "Explora los labs"
+  },
+  "Each lab is a place to test one idea for yourself.": {
+    "ca": "Cada lab és un lloc per provar una idea tu mateix.",
+    "es": "Cada lab es un lugar para probar una idea por ti mismo."
+  },
+  "AVAILABLE": {
+    "ca": "DISPONIBLE",
+    "es": "DISPONIBLE"
+  },
+  "Connect Blender style nodes. Change the color, roughness, normal map and texture repetition, then watch the object react in 3D.": {
+    "ca": "Connecta nodes a l'estil de Blender. Canvia el color, la rugositat, el normal map i la repetició de la textura, i mira com reacciona l'objecte en 3D.",
+    "es": "Conecta nodos al estilo de Blender. Cambia el color, la rugosidad, el normal map y la repetición de la textura, y mira cómo reacciona el objeto en 3D."
+  },
+  "Blender concepts · English interface": {
+    "ca": "Conceptes de Blender · Interfície en anglès",
+    "es": "Conceptos de Blender · Interfaz en inglés"
+  },
+  "Open lab <span aria-hidden=\"true\">↗</span>": {
+    "ca": "Obre el lab <span aria-hidden=\"true\">↗</span>",
+    "es": "Abrir lab <span aria-hidden=\"true\">↗</span>"
+  },
+  "Work in a Blender-style UV Editing workspace: select edges, press U to Mark Seam and Unwrap, and find the same face in the 3D Viewport and the UV map.": {
+    "ca": "Treballa en un espai UV Editing com el de Blender: selecciona arestes, prem U per fer Mark Seam i Unwrap, i troba la mateixa cara al 3D Viewport i al mapa UV.",
+    "es": "Trabaja en un espacio UV Editing como el de Blender: selecciona aristas, pulsa U para hacer Mark Seam y Unwrap, y encuentra la misma cara en el 3D Viewport y en el mapa UV."
+  },
+  "Seams · UV islands · Blender concepts": {
+    "ca": "Costures · Illes UV · Conceptes de Blender",
+    "es": "Costuras · Islas UV · Conceptos de Blender"
+  },
+  "Program a drone in C# that builds voxel sculptures. Run it line by line and watch variables, loops and conditions change the world.": {
+    "ca": "Programa en C# un dron que construeix escultures de vòxels. Executa'l línia a línia i mira com les variables, els bucles i les condicions canvien el món.",
+    "es": "Programa en C# un dron que construye esculturas de vóxeles. Ejecútalo línea a línea y mira cómo las variables, los bucles y las condiciones cambian el mundo."
+  },
+  "Variables · loops · if/else · ready for Unity": {
+    "ca": "Variables · bucles · if/else · a punt per a Unity",
+    "es": "Variables · bucles · if/else · listo para Unity"
+  },
+  "The collection can grow with new subjects. Each lab has its own page and keeps its own experiments.": {
+    "ca": "La col·lecció pot créixer amb noves especialitats. Cada lab té la seva pàgina i els seus experiments.",
+    "es": "La colección puede crecer con nuevas especialidades. Cada lab tiene su propia página y sus propios experimentos."
+  },
+  "A SIMPLE LOOP": {
+    "ca": "UN CICLE SENZILL",
+    "es": "UN CICLO SENCILLO"
+  },
+  "Open a lab": {
+    "ca": "Obre un lab",
+    "es": "Abre un lab"
+  },
+  "Change something": {
+    "ca": "Canvia alguna cosa",
+    "es": "Cambia algo"
+  },
+  "Observe the result": {
+    "ca": "Observa el resultat",
+    "es": "Observa el resultado"
+  },
+  "Interactive studies for the classroom": {
+    "ca": "Estudis interactius per a l'aula",
+    "es": "Estudios interactivos para el aula"
+  },
+  "Back to labs ↑": {
+    "ca": "Torna als labs ↑",
+    "es": "Volver a los labs ↑"
+  },
+  "Animate a bouncing ball with a Blender-style Graph Editor and Timeline: timing and spacing, squash and stretch, and weight shaped with F-curve handles.": {
+    "ca": "Anima una pilota que bota amb un Graph Editor i un Timeline a l'estil de Blender: timing i spacing, squash and stretch, i pes modelat amb els handles de les F-curves.",
+    "es": "Anima una pelota que bota con un Graph Editor y un Timeline al estilo de Blender: timing y spacing, squash and stretch, y peso modelado con los handles de las F-curves."
+  },
+  "Keyframes · F-curves · animation principles": {
+    "ca": "Claus · F-curves · principis d'animació",
+    "es": "Claves · F-curves · principios de animación"
+  },
+  "Classes, objects and references with a heap you can see, lists, Vector3 structs and a Unity-like Update loop: from a drone's blueprints to bouncing balls simulated in code.": {
+    "ca": "Classes, objectes i referències amb un heap que es veu, llistes, structs Vector3 i un bucle Update com el de Unity: dels plànols del dron a pilotes que boten simulades amb codi.",
+    "es": "Clases, objetos y referencias con un heap que se ve, listas, structs Vector3 y un bucle Update como el de Unity: de los planos del dron a pelotas que botan simuladas con código."
+  },
+  "Objects · null · List · Vector3 · Update · inheritance": {
+    "ca": "Objectes · null · List · Vector3 · Update · herència",
+    "es": "Objetos · null · List · Vector3 · Update · herencia"
+  },
+  "Paint vertex weights in a Blender-style Weight Paint workspace, bend the bones to test them and fix the elbow, the zero weights and the symmetry. Finish with a game-ready checklist.": {
+    "ca": "Pinta pesos de vèrtex en un espai Weight Paint a l'estil de Blender, doblega els ossos per provar-los i arregla el colze, els pesos zero i la simetria. Acaba amb una llista de comprovació per a jocs.",
+    "es": "Pinta pesos de vértice en un espacio Weight Paint al estilo de Blender, dobla los huesos para probarlos y arregla el codo, los pesos cero y la simetría. Termina con una lista de comprobación para juegos."
+  },
+  "Pose an armature in a Blender-style Pose Mode: FK rotations along an arm, then an IK constraint with a pole target on a leg, Chain Length, Pole Angle and an IK/FK Influence switch.": {
+    "ca": "Posa un armature en un Pose Mode a l'estil de Blender: rotacions FK al llarg d'un braç i després un constraint IK amb pole target en una cama, Chain Length, Pole Angle i un interruptor IK/FK amb la Influence.",
+    "es": "Posa un armature en un Pose Mode al estilo de Blender: rotaciones FK a lo largo de un brazo y después un constraint IK con pole target en una pierna, Chain Length, Pole Angle y un interruptor IK/FK con la Influence."
+  },
+  "A DSLR cut in half next to the photo it takes: the exposure triangle, depth of field, motion blur and noise, focal length and sensor size, and the same ideas in Blender's camera.": {
+    "ca": "Una rèflex tallada per la meitat al costat de la foto que fa: el triangle d'exposició, la profunditat de camp, el rastre de moviment i el soroll, la distància focal i la mida del sensor, i les mateixes idees a la càmera de Blender.",
+    "es": "Una réflex cortada por la mitad al lado de la foto que hace: el triángulo de exposición, la profundidad de campo, el rastro de movimiento y el ruido, la distancia focal y el tamaño del sensor, y las mismas ideas en la cámara de Blender."
+  },
+  "Exposure · depth of field · focal length · Blender camera": {
+    "ca": "Exposició · profunditat de camp · distància focal · càmera de Blender",
+    "es": "Exposición · profundidad de campo · distancia focal · cámara de Blender"
+  },
+  "Animate a rigged bouncing ball in 3D with a Blender-style Graph Editor and Timeline, in the order used in class: keys every 10 frames, timing and spacing, travel, a Rotation control to make it roll, and squash and stretch with the rig's two controls, with weight as an extra.": {
+    "ca": "Anima en 3D una pilota amb rig que bota, amb un Graph Editor i un Timeline com els de Blender, seguint l'ordre de classe: claus cada 10 fotogrames, timing i spacing, desplaçament, un control Rotation perquè rodi, i squash and stretch amb els dos controls del rig, amb el pes com a extra.",
+    "es": "Anima en 3D una pelota con rig que bota, con un Graph Editor y un Timeline como los de Blender, siguiendo el orden de clase: claves cada 10 fotogramas, timing y spacing, desplazamiento, un control Rotation para que ruede, y squash and stretch con los dos controles del rig, con el peso como extra."
+  },
+  "Bake a high poly crate into a normal map, ambient occlusion and colour for a 12-triangle cube: watch the rays, fix Extrusion, Cage and overlapping UVs, read the colours of tangent space and take the maps to a game engine. Then bake it again in a Substance Painter-style Baking window.": {
+    "ca": "Fes el bake d'una caixa high poly a un normal map, oclusió ambiental i color per a un cub de 12 triangles: mira els raigs, arregla l'Extrusion, la Cage i les UV solapades, llegeix els colors de l'espai tangent i porta els mapes a un motor de joc. Després torna a fer-ne el bake en una finestra Baking a l'estil de Substance Painter.",
+    "es": "Haz el bake de una caja high poly a un normal map, oclusión ambiental y color para un cubo de 12 triángulos: mira los rayos, arregla la Extrusion, la Cage y las UV solapadas, lee los colores del espacio tangente y lleva los mapas a un motor de juego. Después vuelve a hacer su bake en una ventana Baking al estilo de Substance Painter."
+  },
+  "Selected to Active · cage · tangent space · Substance Painter": {
+    "ca": "Selected to Active · cage · espai tangent · Substance Painter",
+    "es": "Selected to Active · cage · espacio tangente · Substance Painter"
+  },
+  "Light a plaster bust with Point, Sun, Spot and Area lights, a bounce card and HDRIs. Measure it with a light meter: inverse square law, hard and soft light, three-point and portrait setups, colour temperature, Exposure, AgX and False Color.": {
+    "ca": "Il·lumina un bust de guix amb llums Point, Sun, Spot i Area, un panell de rebot i HDRI. Mesura-ho amb un fotòmetre: la llei de l'invers del quadrat, llum dura i suau, esquemes de tres punts i de retrat, temperatura de color, Exposure, AgX i False Color.",
+    "es": "Ilumina un busto de yeso con luces Point, Sun, Spot y Area, un panel de rebote y HDRI. Mídelo con un fotómetro: la ley del inverso del cuadrado, luz dura y suave, esquemas de tres puntos y de retrato, temperatura de color, Exposure, AgX y False Color."
+  },
+  "Light types · ratios · HDRI · colour management": {
+    "ca": "Tipus de llum · ràtios · HDRI · gestió del color",
+    "es": "Tipos de luz · ratios · HDRI · gestión del color"
+  },
+  "A Blender-style Edit Mode on small meshes: fix n-gons and triangles, find poles, keep shapes under Subdivision Surface with holding edges and creases, put edge loops where an elbow bends, and build a clean retopology cage on a sculpt.": {
+    "ca": "Un Edit Mode a l'estil de Blender sobre malles petites: arregla n-gons i triangles, troba els pols, mantén les formes amb Subdivision Surface amb holding edges i creases, posa edge loops on es doblega un colze i construeix una malla de retopologia neta sobre una escultura.",
+    "es": "Un Edit Mode al estilo de Blender sobre mallas pequeñas: arregla n-gons y triángulos, encuentra los polos, mantén las formas con Subdivision Surface con holding edges y creases, pon edge loops donde se dobla un codo y construye una malla de retopología limpia sobre una escultura."
+  },
+  "Quads · subdivision · edge loops · retopology": {
+    "ca": "Quads · subdivisió · edge loops · retopologia",
+    "es": "Quads · subdivisión · edge loops · retopología"
+  },
+  "Grouped in the order of a 3D production: model, texture, light, animate, and program the game.": {
+    "ca": "Agrupats en l'ordre d'una producció 3D: modelar, texturitzar, il·luminar, animar i programar el joc.",
+    "es": "Agrupados en el orden de una producción 3D: modelar, texturizar, iluminar, animar y programar el juego."
+  },
+  "Topics": {
+    "ca": "Temes",
+    "es": "Temas"
+  },
+  "Modeling &amp; UVs": {
+    "ca": "Modelatge i UV",
+    "es": "Modelado y UV"
+  },
+  "Build clean meshes and unfold them for textures.": {
+    "ca": "Construeix malles netes i desplega-les per a les textures.",
+    "es": "Construye mallas limpias y despliégalas para las texturas."
+  },
+  "Materials &amp; texturing": {
+    "ca": "Materials i texturitzat",
+    "es": "Materiales y texturizado"
+  },
+  "How a surface reacts to light, and how the detail of a sculpt becomes images.": {
+    "ca": "Com reacciona una superfície a la llum, i com el detall d'una escultura es converteix en imatges.",
+    "es": "Cómo reacciona una superficie a la luz, y cómo el detalle de una escultura se convierte en imágenes."
+  },
+  "Light, camera &amp; render": {
+    "ca": "Llum, càmera i render",
+    "es": "Luz, cámara y render"
+  },
+  "Light the scene, then photograph it like a camera would.": {
+    "ca": "Il·lumina l'escena i després fotografia-la com ho faria una càmera.",
+    "es": "Ilumina la escena y después fotografíala como lo haría una cámara."
+  },
+  "Rigging &amp; animation": {
+    "ca": "Rigging i animació",
+    "es": "Rigging y animación"
+  },
+  "Bones, weights and controls, and then the movement.": {
+    "ca": "Ossos, pesos i controls, i després el moviment.",
+    "es": "Huesos, pesos y controles, y después el movimiento."
+  },
+  "Programming for games": {
+    "ca": "Programació per a jocs",
+    "es": "Programación para juegos"
+  },
+  "C# for Unity: from the first loop to objects and an Update loop.": {
+    "ca": "C# per a Unity: del primer bucle als objectes i un bucle Update.",
+    "es": "C# para Unity: del primer bucle a los objetos y un bucle Update."
+  },
+  "{n} labs": {
+    "ca": "{n} labs",
+    "es": "{n} labs"
+  },
+  "Build PBR materials in a Blender-style Shader Editor: roughness, metal or not, sRGB and Non-Color, masks and gloss maps, bump and displacement, emission, glass, coat and alpha cut-outs. Five stages, checked step by step.": {
+    "ca": "Construeix materials PBR en un Shader Editor com el de Blender: roughness, metall o no, sRGB i Non-Color, màscares i mapes de gloss, bump i displacement, emission, vidre, coat i retalls amb alpha. Cinc etapes, comprovades pas a pas.",
+    "es": "Construye materiales PBR en un Shader Editor como el de Blender: roughness, metal o no, sRGB y Non-Color, máscaras y mapas de gloss, bump y displacement, emission, vidrio, coat y recortes con alpha. Cinco etapas, comprobadas paso a paso."
+  },
+  "Principled BSDF · colour spaces · displacement": {
+    "ca": "Principled BSDF · espais de color · displacement",
+    "es": "Principled BSDF · espacios de color · displacement"
+  },
+  "How a surface reacts to light, how the detail of a sculpt becomes images, and how one texture can dress a whole set.": {
+    "ca": "Com reacciona una superfície a la llum, com el detall d'una escultura es converteix en imatges, i com una sola textura pot vestir tot un decorat.",
+    "es": "Cómo reacciona una superficie a la luz, cómo el detalle de una escultura se convierte en imágenes, y cómo una sola textura puede vestir todo un decorado."
+  },
+  "Build a medieval wood and stone trim sheet from scratch and use it: choose the texel density from the platform and the camera, plan the strips, model the high poly at real scale, bake normal and ID maps in Blender, texture it in Substance Painter with ID masks, put UV islands on the strips with G, S and R, round edges with bevel strips and Weighted Normal, and texture many props with one material.": {
+    "ca": "Construeix des de zero un trimsheet medieval de fusta i pedra i fes-lo servir: tria la texel density a partir de la plataforma i la càmera, planifica les franges, modela el high poly a escala real, fes el bake del normal i l'ID a Blender, textura'l a Substance Painter amb màscares d'ID, posa illes UV a les franges amb G, S i R, arrodoneix vores amb franges de bisell i Weighted Normal, i textura molts props amb un sol material.",
+    "es": "Construye desde cero un trimsheet medieval de madera y piedra y úsalo: elige la texel density a partir de la plataforma y la cámara, planifica las franjas, modela el high poly a escala real, haz el bake del normal y el ID en Blender, texturízalo en Substance Painter con máscaras de ID, pon islas UV en las franjas con G, S y R, redondea bordes con franjas de bisel y Weighted Normal, y texturiza muchos props con un solo material."
+  },
+  "Texel density · high poly · bake · Painter · UVs": {
+    "ca": "Texel density · high poly · bake · Painter · UVs",
+    "es": "Texel density · high poly · bake · Painter · UVs"
+  },
+  "STRIPS · U REPEAT": {
+    "ca": "FRANGES · REPETICIÓ EN U",
+    "es": "FRANJAS · REPETICIÓN EN U"
+  },
+  "12 / TEXTURING": {
+    "ca": "12 / TEXTURITZAT",
+    "es": "12 / TEXTURIZADO"
+  },
+  "3 labs": {
+    "ca": "3 labs",
+    "es": "3 labs"
+  },
+  "Stage &amp; scenography": {
+    "ca": "Escenari i escenografia",
+    "es": "Escenario y escenografía"
+  },
+  "Stage & scenography": {
+    "ca": "Escenari i escenografia",
+    "es": "Escenario y escenografía"
+  },
+  "The theatre as a machine: where the scenery waits, how it flies and what the audience must never see.": {
+    "ca": "El teatre com a màquina: on esperen els decorats, com pugen i baixen i què no ha de veure mai el públic.",
+    "es": "El teatro como máquina: dónde esperan los decorados, cómo suben y bajan y qué no debe ver nunca el público."
+  },
+  "1 lab": {
+    "ca": "1 lab",
+    "es": "1 lab"
+  },
+  "An opera house stage cut in half, after the Teatro Real: find the parts of the stage house, balance a counterweight, share loads between bars, move platforms and wagons, mask the wings and the lights from the worst seats and plan a scene change.": {
+    "ca": "L'escenari d'un teatre d'òpera tallat per la meitat, a partir del Teatro Real: troba les parts de la caixa escènica, equilibra un contrapès, reparteix càrregues entre vares, mou plataformes i carros, amaga els laterals i els llums des de les pitjors butaques i planifica un canvi d'escena.",
+    "es": "El escenario de un teatro de ópera cortado por la mitad, a partir del Teatro Real: encuentra las partes de la caja escénica, equilibra un contrapeso, reparte cargas entre varas, mueve plataformas y carros, esconde los hombros y las luces desde las peores butacas y planifica un cambio de escena."
+  },
+  "Fly tower · platforms · sightlines · scene change": {
+    "ca": "Torre escènica · plataformes · visuals · canvi d'escena",
+    "es": "Telar · plataformas · visuales · cambio de escena"
+  },
+  "FLY · MASK · CHANGE": {
+    "ca": "PUJAR · AFORAR · CANVIAR",
+    "es": "VOLAR · AFORAR · CAMBIAR"
+  },
+  "13 / STAGECRAFT": {
+    "ca": "13 / ESCENOTÈCNIA",
+    "es": "13 / ESCENOTECNIA"
+  },
+  "Grouped in the order of a 3D production: model, texture, light, animate, and program the game. And a visit to the theatre and to graphic design.": {
+    "ca": "Agrupats en l'ordre d'una producció 3D: modelar, texturitzar, il·luminar, animar i programar el joc. I una visita al teatre i al disseny gràfic.",
+    "es": "Agrupados en el orden de una producción 3D: modelar, texturizar, iluminar, animar y programar el juego. Y una visita al teatro y al diseño gráfico."
+  },
+  "Graphic design &amp; UI": {
+    "ca": "Disseny gràfic i interfícies",
+    "es": "Diseño gráfico e interfaces"
+  },
+  "Graphic design & UI": {
+    "ca": "Disseny gràfic i interfícies",
+    "es": "Diseño gráfico e interfaces"
+  },
+  "Colour and type for screens and print: what makes a page readable for everybody.": {
+    "ca": "Color i tipografia per a pantalla i impressió: què fa que una pàgina sigui llegible per a tothom.",
+    "es": "Color y tipografía para pantalla e impresión: qué hace que una página sea legible para todo el mundo."
+  },
+  "Design a festival website in a Figma-style editor: mix colours in HSL, pass WCAG contrast, check colour-blind vision, bring colours into the CMYK gamut and set rich black, learn the anatomy of type and readable text, then build a type scale, colour styles and a dark mode.": {
+    "ca": "Dissenya el web d'un festival en un editor a l'estil de Figma: barreja colors en HSL, passa el contrast WCAG, comprova la visió dels daltònics, porta els colors dins la gamma CMYK i fes un negre ric, aprèn l'anatomia de la lletra i el text llegible, i construeix una escala tipogràfica, estils de color i un mode fosc.",
+    "es": "Diseña la web de un festival en un editor al estilo de Figma: mezcla colores en HSL, pasa el contraste WCAG, comprueba la visión de los daltónicos, lleva los colores dentro de la gama CMYK y haz un negro enriquecido, aprende la anatomía de la letra y el texto legible, y construye una escala tipográfica, estilos de color y un modo oscuro."
+  },
+  "HSL · contrast · CMYK · type scale · tokens": {
+    "ca": "HSL · contrast · CMYK · escala tipogràfica · tokens",
+    "es": "HSL · contraste · CMYK · escala tipográfica · tokens"
+  },
+  "HSL · WCAG · CMYK · TYPE": {
+    "ca": "HSL · WCAG · CMYK · TIPOGRAFIA",
+    "es": "HSL · WCAG · CMYK · TIPOGRAFÍA"
+  },
+  "14 / GRAPHIC DESIGN": {
+    "ca": "14 / DISSENY GRÀFIC",
+    "es": "14 / DISEÑO GRÁFICO"
+  },
+  "A small stage and a lighting rig driven like Lightkey: profiles, Fresnels, PCs, LED PARs and a moving head, DMX channels and values, patch and DIP switches, a face lit in lux with key, fill and backlight, colour mixing, pan and tilt, and a cue list with fades and GO.": {
+    "ca": "Un escenari petit i una instal·lació de llums controlada com Lightkey: retalls, Fresnels, PC, PAR LED i un capçal mòbil, canals i valors DMX, patch i interruptors DIP, una cara il·luminada en lux amb llum principal, farciment i contrallum, mescla de colors, pan i tilt, i una llista de memòries amb foses i GO.",
+    "es": "Un escenario pequeño y una instalación de luces controlada como Lightkey: recortes, Fresnels, PC, PAR LED y una cabeza móvil, canales y valores DMX, patch e interruptores DIP, una cara iluminada en lux con luz principal, relleno y contraluz, mezcla de colores, pan y tilt, y una lista de memorias con fundidos y GO."
+  },
+  "Fixtures · DMX · patch · lux · cues": {
+    "ca": "Projectors · DMX · patch · lux · memòries",
+    "es": "Proyectores · DMX · patch · lux · memorias"
+  },
+  "DMX · PATCH · CUES": {
+    "ca": "DMX · PATCH · MEMÒRIES",
+    "es": "DMX · PATCH · MEMORIAS"
+  },
+  "15 / STAGE LIGHTING": {
+    "ca": "15 / IL·LUMINACIÓ ESCÈNICA",
+    "es": "15 / ILUMINACIÓN ESCÉNICA"
+  },
+  "2 labs": {
+    "ca": "2 labs",
+    "es": "2 labs"
+  },
+  "Understand texel density, pixels of texture per metre: see it with a checker map, compute it in px/m, make every prop equally sharp with S, Average Islands Scale, Pack Islands and Set TD, choose the target from the camera and the texture budget, and give hero areas more on purpose.": {
+    "ca": "Entén la texel density, els píxels de textura per metre: mira-la amb un mapa de quadres, calcula-la en px/m, fes que tots els props siguin igual de nítids amb S, Average Islands Scale, Pack Islands i Set TD, tria l'objectiu a partir de la càmera i del pressupost de textures, i dona'n més a les zones protagonistes expressament.",
+    "es": "Entiende la texel density, los píxeles de textura por metro: mírala con un mapa de cuadros, calcúlala en px/m, haz que todos los props sean igual de nítidos con S, Average Islands Scale, Pack Islands y Set TD, elige el objetivo a partir de la cámara y del presupuesto de texturas, y da más a las zonas protagonistas a propósito."
+  },
+  "Checker map · px/m · Set TD · memory": {
+    "ca": "Mapa de quadres · px/m · Set TD · memòria",
+    "es": "Mapa de cuadros · px/m · Set TD · memoria"
+  },
+  "CHECKER · PX/M · SET TD": {
+    "ca": "QUADRES · PX/M · SET TD",
+    "es": "CUADROS · PX/M · SET TD"
+  },
+  "16 / TEXTURING": {
+    "ca": "16 / TEXTURITZAT",
+    "es": "16 / TEXTURIZADO"
+  },
+  "4 labs": {
+    "ca": "4 labs",
+    "es": "4 labs"
+  },
+  "Build PBR materials in a Blender-style Shader Editor with the full Principled BSDF: roughness, metal, colour spaces and masks, bump and real displacement, emission and Glare, glass in EEVEE and Cycles, coat, sheen, subsurface, thin film and brushed metal. Seven stages and a free Studio with presets.": {
+    "ca": "Construeix materials PBR en un Shader Editor com el de Blender amb tot el Principled BSDF: roughness, metall, espais de color i màscares, bump i displacement real, emissió i Glare, vidre a EEVEE i Cycles, coat, sheen, subsurface, thin film i metall raspallat. Set etapes i un Estudi lliure amb presets.",
+    "es": "Construye materiales PBR en un Shader Editor como el de Blender con todo el Principled BSDF: roughness, metal, espacios de color y máscaras, bump y displacement real, emisión y Glare, vidrio en EEVEE y Cycles, coat, sheen, subsurface, thin film y metal cepillado. Siete etapas y un Estudio libre con presets."
+  },
+  "Principled BSDF · EEVEE and Cycles · displacement": {
+    "ca": "Principled BSDF · EEVEE i Cycles · displacement",
+    "es": "Principled BSDF · EEVEE y Cycles · displacement"
+  },
+  "17 / OPTIMIZATION": {
+    "ca": "17 / OPTIMITZACIÓ",
+    "es": "17 / OPTIMIZACIÓN"
+  },
+  "LOD &amp; Mipmaps Lab": {
+    "ca": "LOD &amp; Mipmaps Lab",
+    "es": "LOD &amp; Mipmaps Lab"
+  },
+  "Understand levels of detail: watch a LOD Group switch as a rock gets smaller on screen, set its thresholds from the error in pixels, make the LODs with Decimate, stop a floor from shimmering with mipmaps and filtering, and fit a field of rocks in a triangle budget.": {
+    "ca": "Entén els nivells de detall: mira com canvia un LOD Group quan una roca es fa petita a la pantalla, fixa'n els llindars a partir de l'error en píxels, fes els LOD amb Decimate, evita que un terra parpellegi amb mipmaps i filtratge, i fes cabre un camp de roques en un pressupost de triangles.",
+    "es": "Entiende los niveles de detalle: mira cómo cambia un LOD Group cuando una roca se hace pequeña en pantalla, fija sus umbrales a partir del error en píxeles, haz los LOD con Decimate, evita que un suelo parpadee con mipmaps y filtrado, y haz caber un campo de rocas en un presupuesto de triángulos."
+  },
+  "LOD Group · Decimate · mipmaps · budget": {
+    "ca": "LOD Group · Decimate · mipmaps · pressupost",
+    "es": "LOD Group · Decimate · mipmaps · presupuesto"
+  },
+  "Open LOD &amp; Mipmaps Lab": {
+    "ca": "Obre el LOD &amp; Mipmaps Lab",
+    "es": "Abre el LOD &amp; Mipmaps Lab"
+  },
+  "18 / VIDEO": {
+    "ca": "18 / VÍDEO",
+    "es": "18 / VÍDEO"
+  },
+  "Color Grading Lab": {
+    "ca": "Color Grading Lab",
+    "es": "Color Grading Lab"
+  },
+  "Grade video in a DaVinci Resolve-style Color page: read the Waveform, Parade and Vectorscope, set blacks, whites and white balance with Lift, Gamma and Gain, build a look with serial nodes, a LUT and Curves, key the sky with a Qualifier, light a face with a Power Window and match two cameras.": {
+    "ca": "Etalona vídeo en una pàgina Color com la de DaVinci Resolve: llegeix el Waveform, el Parade i el Vectorscope, fixa negres, blancs i balanç de blancs amb Lift, Gamma i Gain, crea un look amb nodes en sèrie, una LUT i Curves, aïlla el cel amb un Qualifier, il·lumina una cara amb una Power Window i iguala dues càmeres.",
+    "es": "Etalona vídeo en una página Color como la de DaVinci Resolve: lee el Waveform, el Parade y el Vectorscope, fija negros, blancos y balance de blancos con Lift, Gamma y Gain, crea un look con nodos en serie, una LUT y Curves, aísla el cielo con un Qualifier, ilumina una cara con una Power Window e iguala dos cámaras."
+  },
+  "Scopes · color wheels · nodes · matching": {
+    "ca": "Scopes · color wheels · nodes · igualació",
+    "es": "Scopes · color wheels · nodos · igualación"
+  },
+  "19 / GAME ENGINES": {
+    "ca": "19 / MOTORS DE JOC",
+    "es": "19 / MOTORES DE JUEGO"
+  },
+  "23 / GAME ENGINES": {
+    "ca": "23 / MOTORS DE JOC",
+    "es": "23 / MOTORES DE JUEGO"
+  },
+  "Lightmap Lab": {
+    "ca": "Lightmap Lab",
+    "es": "Lightmap Lab"
+  },
+  "Bake light for Unity 6 (URP): make a second UV map with a margin in Blender, export the FBX with the right settings, set Lightmap Resolution, Scale In Lightmap, bounces and the denoiser, choose Baked or Mixed lights and static objects, and light moving objects with Light Probes, Adaptive Probe Volumes and a Reflection Probe.": {
+    "ca": "Fes el bake de la llum per a Unity 6 (URP): crea un segon mapa UV amb marge a Blender, exporta l'FBX amb els ajustos correctes, ajusta Lightmap Resolution, Scale In Lightmap, els rebots i el denoiser, tria llums Baked o Mixed i objectes estàtics, i il·lumina els objectes que es mouen amb Light Probes, Adaptive Probe Volumes i una Reflection Probe.",
+    "es": "Haz el bake de la luz para Unity 6 (URP): crea un segundo mapa UV con margen en Blender, exporta el FBX con los ajustes correctos, ajusta Lightmap Resolution, Scale In Lightmap, los rebotes y el denoiser, elige luces Baked o Mixed y objetos estáticos, e ilumina los objetos que se mueven con Light Probes, Adaptive Probe Volumes y una Reflection Probe."
+  },
+  "UV2 · FBX · Progressive Lightmapper · probes": {
+    "ca": "UV2 · FBX · Progressive Lightmapper · probes",
+    "es": "UV2 · FBX · Progressive Lightmapper · probes"
+  },
+  "Start with the basics of Blender, then follow the order of a 3D production: model, texture, light, animate, and program the game. And a visit to the theatre and to graphic design.": {
+    "ca": "Comença pels fonaments de Blender i després segueix l'ordre d'una producció 3D: modelar, texturitzar, il·luminar, animar i programar el joc. I una visita al teatre i al disseny gràfic.",
+    "es": "Empieza por los fundamentos de Blender y después sigue el orden de una producción 3D: modelar, texturizar, iluminar, animar y programar el juego. Y una visita al teatro y al diseño gráfico."
+  },
+  "Blender basics": {
+    "ca": "Fonaments de Blender",
+    "es": "Fundamentos de Blender"
+  },
+  "The first hours in Blender: move around a scene, move objects, then edit a mesh.": {
+    "ca": "Les primeres hores a Blender: mou-te per una escena, mou objectes i després edita una malla.",
+    "es": "Las primeras horas en Blender: muévete por una escena, mueve objetos y después edita una malla."
+  },
+  "ORBIT · G R S · NUMPAD": {
+    "ca": "ORBITAR · G R S · NUMPAD",
+    "es": "ORBITAR · G R S · NUMPAD"
+  },
+  "20 / BLENDER BASICS": {
+    "ca": "20 / FONAMENTS DE BLENDER",
+    "es": "20 / FUNDAMENTOS DE BLENDER"
+  },
+  "21 / BLENDER BASICS": {
+    "ca": "21 / FONAMENTS DE BLENDER",
+    "es": "21 / FUNDAMENTOS DE BLENDER"
+  },
+  "Viewport Lab": {
+    "ca": "Viewport Lab",
+    "es": "Viewport Lab"
+  },
+  "Edit Mode Lab": {
+    "ca": "Edit Mode Lab",
+    "es": "Edit Mode Lab"
+  },
+  "Your first hour in Blender's 3D Viewport: orbit, pan and zoom, frame objects, use the axis views and Auto Perspective, select with click, Shift, B and A, and move, rotate and scale with G, R and S, axis constraints, typed values, cancel and undo.": {
+    "ca": "La teva primera hora al 3D Viewport de Blender: orbita, desplaça't i fes zoom, enquadra objectes, fes servir les vistes d'eix i l'Auto Perspective, selecciona amb clic, Shift, B i A, i mou, gira i escala amb G, R i S, restriccions d'eix, valors escrits, cancel·lar i desfer.",
+    "es": "Tu primera hora en el 3D Viewport de Blender: orbita, desplázate y haz zoom, encuadra objetos, usa las vistas de eje y la Auto Perspective, selecciona con clic, Shift, B y A, y mueve, gira y escala con G, R y S, restricciones de eje, valores escritos, cancelar y deshacer."
+  },
+  "Navigation · selection · G R S · exact values": {
+    "ca": "Navegació · selecció · G R S · valors exactes",
+    "es": "Navegación · selección · G R S · valores exactos"
+  },
+  "Open Viewport Lab": {
+    "ca": "Obre el Viewport Lab",
+    "es": "Abre el Viewport Lab"
+  },
+  "TAB · E · I · CTRL R · CTRL B": {
+    "ca": "TAB · E · I · CTRL R · CTRL B",
+    "es": "TAB · E · I · CTRL R · CTRL B"
+  },
+  "Press Tab and edit the mesh: vertex, edge and face select modes, X-ray, edge loops, moving parts of a mesh, Extrude, Inset, Loop Cut and Bevel, cleaning a broken mesh with Merge by Distance, Delete and Dissolve, and a stool as the final challenge.": {
+    "ca": "Prem Tab i edita la malla: modes de selecció de vèrtexs, arestes i cares, X-ray, edge loops, moure parts d'una malla, Extrude, Inset, Loop Cut i Bevel, netejar una malla trencada amb Merge by Distance, Delete i Dissolve, i un tamboret com a repte final.",
+    "es": "Pulsa Tab y edita la malla: modos de selección de vértices, aristas y caras, X-ray, edge loops, mover partes de una malla, Extrude, Inset, Loop Cut y Bevel, limpiar una malla rota con Merge by Distance, Delete y Dissolve, y un taburete como reto final."
+  },
+  "Select modes · extrude · loop cut · clean mesh": {
+    "ca": "Modes de selecció · extrude · loop cut · malla neta",
+    "es": "Modos de selección · extrude · loop cut · malla limpia"
+  },
+  "Open Edit Mode Lab": {
+    "ca": "Obre l'Edit Mode Lab",
+    "es": "Abre el Edit Mode Lab"
+  },
+  "Use tileable textures in Blender with Repeat and the Mapping node, lay out UVs for them (outside 0–1, same size, round the corner), make one from a photo in a Photoshop-style workspace (crop, even light, Offset, Clone Stamp, Healing Brush, Pattern Preview), keep PBR maps tiling and aligned, project with Box and break the repetition.": {
+    "ca": "Fes servir textures repetibles a Blender amb Repeat i el node Mapping, prepara'n les UV (fora de 0–1, mateixa mida, girant la cantonada), crea'n una a partir d'una foto en un espai tipus Photoshop (retallar, igualar la llum, Offset, Clone Stamp, Healing Brush, Pattern Preview), fes que els mapes PBR es repeteixin i quedin alineats, projecta amb Box i trenca la repetició.",
+    "es": "Usa texturas repetibles en Blender con Repeat y el nodo Mapping, prepara sus UV (fuera de 0–1, mismo tamaño, girando la esquina), crea una a partir de una foto en un espacio tipo Photoshop (recortar, igualar la luz, Offset, Clone Stamp, Healing Brush, Pattern Preview), haz que los mapas PBR se repitan y queden alineados, proyecta con Box y rompe la repetición."
+  },
+  "Photoshop Offset · UVs · Box projection": {
+    "ca": "Offset de Photoshop · UV · projecció Box",
+    "es": "Offset de Photoshop · UV · proyección Box"
+  },
+  "OFFSET · REPEAT · UV": {
+    "ca": "OFFSET · REPETICIÓ · UV",
+    "es": "OFFSET · REPETICIÓN · UV"
+  },
+  "5 labs": {
+    "ca": "5 labs",
+    "es": "5 labs"
+  },
+  "Open Tileable Texture Lab": {
+    "ca": "Obre el Tileable Texture Lab",
+    "es": "Abre el Tileable Texture Lab"
+  },
+  "Explore areas <span aria-hidden=\"true\">↗</span>": {
+    "ca": "Explora les àrees <span aria-hidden=\"true\">↗</span>",
+    "es": "Explora las áreas <span aria-hidden=\"true\">↗</span>"
+  },
+  "Explore the areas <span aria-hidden=\"true\">↘</span>": {
+    "ca": "Explora les àrees <span aria-hidden=\"true\">↘</span>",
+    "es": "Explora las áreas <span aria-hidden=\"true\">↘</span>"
+  },
+  "LEARNING AREAS": {
+    "ca": "ÀREES D’APRENENTATGE",
+    "es": "ÁREAS DE APRENDIZAJE"
+  },
+  "Choose an area": {
+    "ca": "Tria una àrea",
+    "es": "Elige un área"
+  },
+  "Explore a tool or a subject. Each area has its own labs, and the collection can grow with new specialties.": {
+    "ca": "Explora una eina o una matèria. Cada àrea té els seus labs, i la col·lecció pot créixer amb noves especialitats.",
+    "es": "Explora una herramienta o una materia. Cada área tiene sus propios labs y la colección puede crecer con nuevas especialidades."
+  },
+  "3D SOFTWARE": {
+    "ca": "PROGRAMARI 3D",
+    "es": "SOFTWARE 3D"
+  },
+  "GAME DEVELOPMENT": {
+    "ca": "DESENVOLUPAMENT DE JOCS",
+    "es": "DESARROLLO DE JUEGOS"
+  },
+  "IMAGE &amp; VIDEO": {
+    "ca": "IMATGE I VÍDEO",
+    "es": "IMAGEN Y VÍDEO"
+  },
+  "SCENOGRAPHY": {
+    "ca": "ESCENOGRAFIA",
+    "es": "ESCENOGRAFÍA"
+  },
+  "VISUAL DESIGN": {
+    "ca": "DISSENY VISUAL",
+    "es": "DISEÑO VISUAL"
+  },
+  "Modeling, UVs, materials, lighting, rigging and animation in Blender-style workspaces.": {
+    "ca": "Modelatge, UV, materials, il·luminació, rigging i animació en espais de treball com els de Blender.",
+    "es": "Modelado, UV, materiales, iluminación, rigging y animación en espacios de trabajo como los de Blender."
+  },
+  "The same 3D ideas, taught through 3ds Max controls and workflows.": {
+    "ca": "Els mateixos conceptes 3D, treballats amb els controls i els processos de 3ds Max.",
+    "es": "Los mismos conceptos 3D, trabajados con los controles y procesos de 3ds Max."
+  },
+  "Optimize assets and bake lighting for real-time scenes.": {
+    "ca": "Optimitza recursos i calcula la il·luminació per a escenes en temps real.",
+    "es": "Optimiza recursos y calcula la iluminación para escenas en tiempo real."
+  },
+  "Learn C# through interactive game examples.": {
+    "ca": "Aprèn C# amb exemples interactius de videojocs.",
+    "es": "Aprende C# con ejemplos interactivos de videojuegos."
+  },
+  "Explore color grading with scopes, wheels and nodes.": {
+    "ca": "Explora l'etalatge amb scopes, rodes de color i nodes.",
+    "es": "Explora el etalonaje con scopes, ruedas de color y nodos."
+  },
+  "Understand stage machinery, lighting and live cues.": {
+    "ca": "Entén la maquinària escènica, la il·luminació i els cues en directe.",
+    "es": "Entiende la maquinaria escénica, la iluminación y los cues en directo."
+  },
+  "Work with color, type and accessibility for screens and print.": {
+    "ca": "Treballa el color, la tipografia i l'accessibilitat per a pantalles i impressió.",
+    "es": "Trabaja el color, la tipografía y la accesibilidad para pantallas e impresión."
+  },
+  "14 labs available": {
+    "ca": "14 labs disponibles",
+    "es": "14 labs disponibles"
+  },
+  "9 labs available": {
+    "ca": "9 labs disponibles",
+    "es": "9 labs disponibles"
+  },
+  "6 labs available": {
+    "ca": "6 labs disponibles",
+    "es": "6 labs disponibles"
+  },
+  "5 labs available": {
+    "ca": "5 labs disponibles",
+    "es": "5 labs disponibles"
+  },
+  "4 labs available": {
+    "ca": "4 labs disponibles",
+    "es": "4 labs disponibles"
+  },
+  "3 labs available": {
+    "ca": "3 labs disponibles",
+    "es": "3 labs disponibles"
+  },
+  "3D SOFTWARE · 3 LABS": {
+    "ca": "PROGRAMARI 3D · 3 LABS",
+    "es": "SOFTWARE 3D · 3 LABS"
+  },
+  "Start with the basics of the viewports and the Command Panel, then explore animation principles and practice the Time Slider, Curve Editor and Dope Sheet.": {
+    "ca": "Comença pels fonaments dels visors i el Command Panel, i després explora els principis d’animació i practica el Time Slider, el Curve Editor i el Dope Sheet.",
+    "es": "Empieza por los fundamentos de los visores y el Command Panel, y luego explora los principios de animación y practica el Time Slider, el Curve Editor y el Dope Sheet."
+  },
+  "VIEWPORTS · TRANSFORMS · MODIFIERS": {
+    "ca": "VISORS · TRANSFORMACIONS · MODIFICADORS",
+    "es": "VISORES · TRANSFORMACIONES · MODIFICADORES"
+  },
+  "3DS MAX / BASICS": {
+    "ca": "3DS MAX / FONAMENTS",
+    "es": "3DS MAX / FUNDAMENTOS"
+  },
+  "The first week in 3ds Max 2027: the four viewports, navigation and the ViewCube, selecting and transforming with exact values, the Create and Modify panels, modifiers, Copy, Instance and Reference, Array and groups.": {
+    "ca": "La primera setmana a 3ds Max 2027: els quatre visors, la navegació i el ViewCube, seleccionar i transformar amb valors exactes, els panells Create i Modify, els modificadors, Copy, Instance i Reference, Array i els grups.",
+    "es": "La primera semana en 3ds Max 2027: los cuatro visores, la navegación y el ViewCube, seleccionar y transformar con valores exactos, los paneles Create y Modify, los modificadores, Copy, Instance y Reference, Array y los grupos."
+  },
+  "Navigate · select · create · clone": {
+    "ca": "Navega · selecciona · crea · clona",
+    "es": "Navega · selecciona · crea · clona"
+  },
+  "Open 3ds Max Viewport Lab": {
+    "ca": "Obre el lab de visors de 3ds Max",
+    "es": "Abrir el lab de visores de 3ds Max"
+  },
+  "2 labs available": {
+    "ca": "2 labs disponibles",
+    "es": "2 labs disponibles"
+  },
+  "1 lab available": {
+    "ca": "1 lab disponible",
+    "es": "1 lab disponible"
+  },
+  "Coming later": {
+    "ca": "Més endavant",
+    "es": "Más adelante"
+  },
+  "3D SOFTWARE · 14 LABS": {
+    "ca": "PROGRAMARI 3D · 14 LABS",
+    "es": "SOFTWARE 3D · 14 LABS"
+  },
+  "Start with the interface, then follow a 3D production from modeling to animation. These labs use Blender tools and Blender-style workspaces.": {
+    "ca": "Comença per la interfície i segueix una producció 3D, del modelatge a l'animació. Aquests labs fan servir eines i espais de treball com els de Blender.",
+    "es": "Empieza por la interfaz y sigue una producción 3D, del modelado a la animación. Estos labs utilizan herramientas y espacios de trabajo como los de Blender."
+  },
+  "Light &amp; camera": {
+    "ca": "Llum i càmera",
+    "es": "Luz y cámara"
+  },
+  "3D SOFTWARE · COMING LATER": {
+    "ca": "PROGRAMARI 3D · MÉS ENDAVANT",
+    "es": "SOFTWARE 3D · MÁS ADELANTE"
+  },
+  "The next 3D track will teach familiar concepts through its own interface.": {
+    "ca": "El proper itinerari 3D ensenyarà conceptes coneguts amb la seva pròpia interfície.",
+    "es": "El próximo itinerario 3D enseñará conceptos conocidos con su propia interfaz."
+  },
+  "3D SOFTWARE · 1 LAB": {
+    "ca": "PROGRAMARI 3D · 1 LAB",
+    "es": "SOFTWARE 3D · 1 LAB"
+  },
+  "3D SOFTWARE · 2 LABS": {
+    "ca": "PROGRAMARI 3D · 2 LABS",
+    "es": "SOFTWARE 3D · 2 LABS"
+  },
+  "Explore animation principles, then practice the Time Slider, Curve Editor and Dope Sheet.": {
+    "ca": "Explora els principis d’animació i després practica el Time Slider, el Curve Editor i el Dope Sheet.",
+    "es": "Explora los principios de animación y después practica el Time Slider, el Curve Editor y el Dope Sheet."
+  },
+  "Explore the same animation principles with the viewport, Time Slider and Track View of 3ds Max 2027.": {
+    "ca": "Explora els mateixos principis d’animació amb el visor, el Time Slider i el Track View de 3ds Max 2027.",
+    "es": "Explora los mismos principios de animación con el visor, el Time Slider y Track View de 3ds Max 2027."
+  },
+  "3DS MAX / ANIMATION": {
+    "ca": "3DS MAX / ANIMACIÓ",
+    "es": "3DS MAX / ANIMACIÓN"
+  },
+  "Animate a bouncing ball in the order used in class: keys every 10 frames, timing, travel, rotation, and squash and stretch, with weight as an extra. Work with helpers, Auto Key, Set Keys, the Track Bar and Track View – Curve Editor in a 3ds Max 2027 workspace.": {
+    "ca": "Anima una pilota que bota en l’ordre de classe: claus cada 10 fotogrames, timing, desplaçament, rotació i squash and stretch, amb el pes com a extra. Treballa amb helpers, Auto Key, Set Keys, el Track Bar i el Track View – Curve Editor en un espai de 3ds Max 2027.",
+    "es": "Anima una pelota que bota en el orden de clase: claves cada 10 fotogramas, timing, desplazamiento, rotación y squash and stretch, con el peso como extra. Trabaja con helpers, Auto Key, Set Keys, el Track Bar y Track View – Curve Editor en un espacio de 3ds Max 2027."
+  },
+  "Keys · tangents · animation principles": {
+    "ca": "Claus · tangents · principis d’animació",
+    "es": "Claves · tangentes · principios de animación"
+  },
+  "Open 3ds Max Animation Lab": {
+    "ca": "Obre el lab d’animació de 3ds Max",
+    "es": "Abrir el lab de animación de 3ds Max"
+  },
+  "3DS MAX / TRACK VIEW": {
+    "ca": "3DS MAX / TRACK VIEW",
+    "es": "3DS MAX / TRACK VIEW"
+  },
+  "Track View Lab": {
+    "ca": "Lab de Track View",
+    "es": "Lab de Track View"
+  },
+  "Practice keyframes, timing, tangents and animation tracks in a workspace laid out like 3ds Max 2027, with its hotkeys. Move and copy keys, compare tangent types, and make cycles and loops.": {
+    "ca": "Practica fotogrames clau, timing, tangents i pistes d’animació en un espai organitzat com 3ds Max 2027, amb les seves dreceres. Mou i copia claus, compara tipus de tangent i fes cicles i loops.",
+    "es": "Practica fotogramas clave, timing, tangentes y pistas de animación en un espacio organizado como 3ds Max 2027, con sus atajos. Mueve y copia claves, compara tipos de tangente y haz ciclos y loops."
+  },
+  "Timeline · curves · Dope Sheet": {
+    "ca": "Timeline · corbes · Dope Sheet",
+    "es": "Timeline · curvas · Dope Sheet"
+  },
+  "Open 3ds Max Track View Lab": {
+    "ca": "Obre el lab de Track View de 3ds Max",
+    "es": "Abrir el lab de Track View de 3ds Max"
+  },
+  "IN PREPARATION": {
+    "ca": "EN PREPARACIÓ",
+    "es": "EN PREPARACIÓN"
+  },
+  "3ds Max labs": {
+    "ca": "Labs de 3ds Max",
+    "es": "Labs de 3ds Max"
+  },
+  "Modeling, UVs, materials and animation will build on the same learning goals, with 3ds Max tools, controls and examples. No 3ds Max labs are published yet.": {
+    "ca": "El modelatge, les UV, els materials i l'animació partiran dels mateixos objectius d'aprenentatge, amb eines, controls i exemples de 3ds Max. Encara no hi ha labs de 3ds Max publicats.",
+    "es": "El modelado, las UV, los materiales y la animación partirán de los mismos objetivos de aprendizaje, con herramientas, controles y ejemplos de 3ds Max. Todavía no hay labs de 3ds Max publicados."
+  },
+  "Modeling": {
+    "ca": "Modelatge",
+    "es": "Modelado"
+  },
+  "Materials": {
+    "ca": "Materials",
+    "es": "Materiales"
+  },
+  "Animation": {
+    "ca": "Animació",
+    "es": "Animación"
+  },
+  "GAME DEVELOPMENT · 2 LABS": {
+    "ca": "DESENVOLUPAMENT DE JOCS · 2 LABS",
+    "es": "DESARROLLO DE JUEGOS · 2 LABS"
+  },
+  "Game engines": {
+    "ca": "Motors de joc",
+    "es": "Motores de juego"
+  },
+  "Optimize 3D assets and light real-time scenes in Unity.": {
+    "ca": "Optimitza recursos 3D i il·lumina escenes en temps real a Unity.",
+    "es": "Optimiza recursos 3D e ilumina escenas en tiempo real en Unity."
+  },
+  "Programming": {
+    "ca": "Programació",
+    "es": "Programación"
+  },
+  "IMAGE &amp; VIDEO · 1 LAB": {
+    "ca": "IMATGE I VÍDEO · 1 LAB",
+    "es": "IMAGEN Y VÍDEO · 1 LAB"
+  },
+  "Video": {
+    "ca": "Vídeo",
+    "es": "Vídeo"
+  },
+  "Color correction and grading in a DaVinci Resolve-style workspace.": {
+    "ca": "Correcció de color i etalatge en un espai de treball com el de DaVinci Resolve.",
+    "es": "Corrección de color y etalonaje en un espacio de trabajo como el de DaVinci Resolve."
+  },
+  "SCENOGRAPHY · 2 LABS": {
+    "ca": "ESCENOGRAFIA · 2 LABS",
+    "es": "ESCENOGRAFÍA · 2 LABS"
+  },
+  "VISUAL DESIGN · 1 LAB": {
+    "ca": "DISSENY VISUAL · 1 LAB",
+    "es": "DISEÑO VISUAL · 1 LAB"
+  },
+  "Graphic design": {
+    "ca": "Disseny gràfic",
+    "es": "Diseño gráfico"
+  },
+  "GENERATIVE IMAGE": {
+    "ca": "IMATGE GENERATIVA",
+    "es": "IMAGEN GENERATIVA"
+  },
+  "Learn how node connections turn a model, prompts and latent data into an image workflow.": {
+    "ca": "Aprèn com les connexions entre nodes converteixen un model, prompts i dades latents en un flux d’imatge.",
+    "es": "Aprende cómo las conexiones entre nodos convierten un modelo, prompts y datos latentes en un flujo de imagen."
+  },
+  "GENERATIVE IMAGE · 1 LAB": {
+    "ca": "IMATGE GENERATIVA · 1 LAB",
+    "es": "IMAGEN GENERATIVA · 1 LAB"
+  },
+  "Start with the nodes and data flow of a basic text-to-image workflow. Practice in the browser before opening the real app.": {
+    "ca": "Comença pels nodes i el flux de dades d’un procés bàsic de text a imatge. Practica al navegador abans d’obrir l’aplicació real.",
+    "es": "Empieza por los nodos y el flujo de datos de un proceso básico de texto a imagen. Practica en el navegador antes de abrir la aplicación real."
+  },
+  "01 / COMFYUI BASICS": {
+    "ca": "01 / FONAMENTS DE COMFYUI",
+    "es": "01 / FUNDAMENTOS DE COMFYUI"
+  },
+  "Flow Lab": {
+    "ca": "Lab de flux",
+    "es": "Lab de flujo"
+  },
+  "Inspect the seven nodes of a basic text-to-image graph, connect compatible sockets, repair a broken workflow and trace what runs when you queue it. Browser simulation; no model or GPU needed.": {
+    "ca": "Inspecciona els set nodes d’un graf bàsic de text a imatge, connecta ports compatibles, repara un flux trencat i segueix què s’executa quan el poses a la cua. Simulació al navegador; no cal model ni GPU.",
+    "es": "Inspecciona los siete nodos de un grafo básico de texto a imagen, conecta puertos compatibles, repara un flujo roto y sigue lo que se ejecuta al ponerlo en cola. Simulación en el navegador; no hace falta modelo ni GPU."
+  },
+  "Nodes · types · connections · execution": {
+    "ca": "Nodes · tipus · connexions · execució",
+    "es": "Nodos · tipos · conexiones · ejecución"
+  },
+  "Open ComfyUI Flow Lab": {
+    "ca": "Obre el lab de flux de ComfyUI",
+    "es": "Abrir el lab de flujo de ComfyUI"
+  },
+  "Understand what each node does and how LoRA and ControlNet change generation.": {
+    "ca": "Entén què fa cada node i com LoRA i ControlNet canvien la generació.",
+    "es": "Entiende qué hace cada nodo y cómo LoRA y ControlNet cambian la generación."
+  },
+  "GENERATIVE IMAGE · 2 LABS": {
+    "ca": "IMATGE GENERATIVA · 2 LABS",
+    "es": "IMAGEN GENERATIVA · 2 LABS"
+  },
+  "Understand what each node receives, changes and outputs. Explore LoRA and ControlNet before practising the graph.": {
+    "ca": "Entén què rep, canvia i produeix cada node. Explora LoRA i ControlNet abans de practicar el graf.",
+    "es": "Entiende qué recibe, cambia y produce cada nodo. Explora LoRA y ControlNet antes de practicar el grafo."
+  },
+  "01 / COMFYUI CONCEPTS": {
+    "ca": "01 / CONCEPTES DE COMFYUI",
+    "es": "01 / CONCEPTOS DE COMFYUI"
+  },
+  "Concept Lab": {
+    "ca": "Lab de conceptes",
+    "es": "Lab de conceptos"
+  },
+  "Inspect what each core node does, compare LoRA with ControlNet, and test your understanding through short diagnostic cases. No model or GPU needed.": {
+    "ca": "Inspecciona què fa cada node principal, compara LoRA amb ControlNet i comprova què has entès amb casos breus. No cal model ni GPU.",
+    "es": "Inspecciona qué hace cada nodo principal, compara LoRA con ControlNet y comprueba lo que has entendido con casos breves. No hace falta modelo ni GPU."
+  },
+  "Node roles · LoRA · ControlNet": {
+    "ca": "Funció dels nodes · LoRA · ControlNet",
+    "es": "Función de los nodos · LoRA · ControlNet"
+  },
+  "Open ComfyUI Concept Lab": {
+    "ca": "Obre el lab de conceptes de ComfyUI",
+    "es": "Abrir el lab de conceptos de ComfyUI"
+  },
+  "UNDERSTAND THE NODES": {
+    "ca": "ENTÉN ELS NODES",
+    "es": "ENTIENDE LOS NODOS"
+  },
+  "WEIGHT ADJUSTMENTS": {
+    "ca": "AJUSTOS DE PESOS",
+    "es": "AJUSTES DE PESOS"
+  },
+  "STRUCTURE GUIDE": {
+    "ca": "GUIA ESTRUCTURAL",
+    "es": "GUÍA ESTRUCTURAL"
+  },
+  "02 / OPTIONAL PRACTICE": {
+    "ca": "02 / PRÀCTICA OPCIONAL",
+    "es": "02 / PRÁCTICA OPCIONAL"
+  },
+  "Practise connecting compatible sockets, repairing a broken workflow and tracing execution. This follow-up is optional.": {
+    "ca": "Practica la connexió de ports compatibles, la reparació d’un flux trencat i el seguiment de l’execució. Aquest pas és opcional.",
+    "es": "Practica la conexión de puertos compatibles, la reparación de un flujo roto y el seguimiento de la ejecución. Este paso es opcional."
+  },
+  "Connections · execution": {
+    "ca": "Connexions · execució",
+    "es": "Conexiones · ejecución"
+  },
+  "Modeling, UVs, materials, lighting, rigging, animation and Geometry Nodes in Blender-style workspaces.": {
+    "ca": "Modelatge, UV, materials, il·luminació, rigging, animació i Geometry Nodes en espais de treball com els de Blender.",
+    "es": "Modelado, UV, materiales, iluminación, rigging, animación y Geometry Nodes en espacios de trabajo como los de Blender."
+  },
+  "18 labs available": {
+    "ca": "18 labs disponibles",
+    "es": "18 labs disponibles"
+  },
+  "3D SOFTWARE · 18 LABS": {
+    "ca": "PROGRAMARI 3D · 18 LABS",
+    "es": "SOFTWARE 3D · 18 LABS"
+  },
+  "Geometry Nodes": {
+    "ca": "Geometry Nodes",
+    "es": "Geometry Nodes"
+  },
+  "Procedural modeling with a working node editor: geometry flow, fields, scatter and curves.": {
+    "ca": "Modelatge procedural amb un editor de nodes que funciona: flux de geometria, camps, scatter i corbes.",
+    "es": "Modelado procedural con un editor de nodos que funciona: flujo de geometría, campos, scatter y curvas."
+  },
+  "A Blender-style Geometry Nodes workspace with Spreadsheet, Viewport, Node Editor and modifier panel. Connect Group Input and Group Output, transform and join primitives into a table, look inside with the Viewer and expose a control in the modifier.": {
+    "ca": "Un espai Geometry Nodes com el de Blender, amb Spreadsheet, Viewport, Node Editor i panell del modificador. Connecta Group Input i Group Output, transforma i uneix primitives fins a fer una taula, mira per dins amb el Viewer i exposa un control al modificador.",
+    "es": "Un espacio Geometry Nodes como el de Blender, con Spreadsheet, Viewport, Node Editor y panel del modificador. Conecta Group Input y Group Output, transforma y une primitivas hasta hacer una mesa, mira por dentro con el Viewer y expón un control en el modificador."
+  },
+  "Group Input · Join Geometry · Viewer · modifier inputs": {
+    "ca": "Group Input · Join Geometry · Viewer · entrades del modificador",
+    "es": "Group Input · Join Geometry · Viewer · entradas del modificador"
+  },
+  "What a field is and why its sockets are diamonds: read attributes in the Spreadsheet, see Index with the Viewer, and use Position, Normal, Math and Set Position to turn a grid into a terrain with a height control.": {
+    "ca": "Què és un camp i per què els seus sockets són rombes: llegeix atributs al Spreadsheet, mira Index amb el Viewer i fes servir Position, Normal, Math i Set Position per convertir un Grid en un terreny amb control d'altura.",
+    "es": "Qué es un campo y por qué sus sockets son rombos: lee atributos en el Spreadsheet, mira Index con el Viewer y usa Position, Normal, Math y Set Position para convertir un Grid en un terreno con control de altura."
+  },
+  "Fields · Spreadsheet · Set Position · terrain": {
+    "ca": "Camps · Spreadsheet · Set Position · terreny",
+    "es": "Campos · Spreadsheet · Set Position · terreno"
+  },
+  "Scatter rocks on your GN 02 terrain: Distribute Points on Faces, Collection Info with Separate Children, Reset Children and Pick Instance, random scale and rotation, a selection mask, and instances versus Realize Instances.": {
+    "ca": "Escampa pedres pel teu terreny del GN 02: Distribute Points on Faces, Collection Info amb Separate Children, Reset Children i Pick Instance, escala i rotació aleatòries, una màscara de selecció, i instàncies contra Realize Instances.",
+    "es": "Esparce rocas por tu terreno de GN 02: Distribute Points on Faces, Collection Info con Separate Children, Reset Children y Pick Instance, escala y rotación aleatorias, una máscara de selección, e instancias frente a Realize Instances."
+  },
+  "Instances · Pick Instance · Random Value · mask": {
+    "ca": "Instàncies · Pick Instance · Random Value · màscara",
+    "es": "Instancias · Pick Instance · Random Value · máscara"
+  },
+  "Build a procedural fence: Curve Line and Curve Circle into Curve to Mesh, posts with Curve to Points and Instance on Points, bend it with a Quadratic Bézier and deliver it with three modifier controls.": {
+    "ca": "Construeix una tanca procedural: Curve Line i Curve Circle cap a Curve to Mesh, pals amb Curve to Points i Instance on Points, doblega-la amb una Quadratic Bézier i lliura-la amb tres controls al modificador.",
+    "es": "Construye una valla procedural: Curve Line y Curve Circle hacia Curve to Mesh, postes con Curve to Points e Instance on Points, dóblala con una Quadratic Bézier y entrégala con tres controles en el modificador."
+  },
+  "Curve to Mesh · Curve to Points · reusable asset": {
+    "ca": "Curve to Mesh · Curve to Points · asset reutilitzable",
+    "es": "Curve to Mesh · Curve to Points · asset reutilizable"
+  },
+  "Learn the interface and the shortcuts, what each node does, and how LoRA and ControlNet change a generation.": {
+    "ca": "Aprèn la interfície i les dreceres, què fa cada node i com canvien una generació la LoRA i la ControlNet.",
+    "es": "Aprende la interfaz y los atajos, qué hace cada nodo y cómo cambian una generación la LoRA y la ControlNet."
+  },
+  "Learn the interface, the shortcuts, LoRA and ControlNet in a ComfyUI-style workspace.": {
+    "ca": "Aprèn la interfície, les dreceres, la LoRA i la ControlNet en un espai com el de ComfyUI.",
+    "es": "Aprende la interfaz, los atajos, la LoRA y la ControlNet en un espacio como el de ComfyUI."
+  },
+  "01 / COMFYUI": {
+    "ca": "01 / COMFYUI",
+    "es": "01 / COMFYUI"
+  },
+  "ComfyUI Lab": {
+    "ca": "Lab de ComfyUI",
+    "es": "Lab de ComfyUI"
+  },
+  "Learn ComfyUI in a copy of its interface, with the real shortcuts: canvas, node search, Run and Queue, the seven nodes of text-to-image, seed, steps, CFG and samplers, image to image, what a LoRA is and what a ControlNet is, bypass, groups and workflows saved in the image. A simulator draws the pictures: no model or GPU needed.": {
+    "ca": "Aprèn ComfyUI en una còpia de la seva interfície, amb les dreceres reals: llenç, cerca de nodes, Run i Queue, els set nodes del text a imatge, seed, steps, CFG i samplers, imatge a imatge, què és una LoRA i què és una ControlNet, bypass, grups i workflows desats dins la imatge. Un simulador dibuixa les imatges: no cal cap model ni GPU.",
+    "es": "Aprende ComfyUI en una copia de su interfaz, con los atajos reales: lienzo, búsqueda de nodos, Run y Queue, los siete nodos del texto a imagen, seed, steps, CFG y samplers, imagen a imagen, qué es una LoRA y qué es una ControlNet, bypass, grupos y workflows guardados dentro de la imagen. Un simulador dibuja las imágenes: no hace falta ningún modelo ni GPU."
+  },
+  "Interface · KSampler · LoRA · ControlNet · shortcuts": {
+    "ca": "Interfície · KSampler · LoRA · ControlNet · dreceres",
+    "es": "Interfaz · KSampler · LoRA · ControlNet · atajos"
+  },
+  "Open ComfyUI Lab": {
+    "ca": "Obre el lab de ComfyUI",
+    "es": "Abre el lab de ComfyUI"
+  },
+  "Learn the interface, inpainting, upscaling to 4K, Flux, and control with ControlNet and IPAdapter, in a ComfyUI-style workspace.": {
+    "ca": "Aprèn la interfície, l’inpainting, l’upscale fins a 4K, Flux i el control amb ControlNet i IPAdapter, en un espai com el de ComfyUI.",
+    "es": "Aprende la interfaz, el inpainting, el upscale hasta 4K, Flux y el control con ControlNet e IPAdapter, en un espacio como el de ComfyUI."
+  },
+  "Learn the interface and the shortcuts, what each node does, how LoRA and ControlNet change a generation, how to change only part of a picture, how to take it to 4K, how modern models like Flux work, how to steer a picture with other pictures, and how to make it move or turn it into a 3D model.": {
+    "ca": "Aprèn la interfície i les dreceres, què fa cada node, com canvien una generació la LoRA i la ControlNet, com canviar només una part d’una imatge, com portar-la a 4K, com funcionen els models moderns com Flux com guiar una imatge amb altres imatges, i com fer-la moure o convertir-la en un model 3D.",
+    "es": "Aprende la interfaz y los atajos, qué hace cada nodo, cómo cambian una generación la LoRA y la ControlNet, cómo cambiar solo una parte de una imagen, cómo llevarla a 4K, cómo funcionan los modelos modernos como Flux cómo guiar una imagen con otras imágenes, y cómo hacer que se mueva o convertirla en un modelo 3D."
+  },
+  "GENERATIVE IMAGE · 5 LABS": {
+    "ca": "IMATGE GENERATIVA · 5 LABS",
+    "es": "IMAGEN GENERATIVA · 5 LABS"
+  },
+  "05 / COMFYUI": {
+    "ca": "05 / COMFYUI",
+    "es": "05 / COMFYUI"
+  },
+  "Control &amp; Injection Lab": {
+    "ca": "Lab de control i injecció",
+    "es": "Lab de control e inyección"
+  },
+  "Steer with pictures, not only words: preprocessors and control maps, the right ControlNet for each map, stacking ControlNets, regional prompts with areas and masks, IPAdapter style, content and composition, FaceID identity and two faces with attention masks.": {
+    "ca": "Guia amb imatges, no només amb paraules: preprocessadors i mapes de control, la ControlNet bona per a cada mapa, apilar ControlNets, prompts regionals amb àrees i màscares, estil, contingut i composició amb IPAdapter, identitat amb FaceID i dues cares amb màscares d’atenció.",
+    "es": "Guía con imágenes, no solo con palabras: preprocesadores y mapas de control, la ControlNet buena para cada mapa, apilar ControlNets, prompts regionales con áreas y máscaras, estilo, contenido y composición con IPAdapter, identidad con FaceID y dos caras con máscaras de atención."
+  },
+  "ControlNet · regions · IPAdapter · FaceID": {
+    "ca": "ControlNet · regions · IPAdapter · FaceID",
+    "es": "ControlNet · regiones · IPAdapter · FaceID"
+  },
+  "GENERATIVE IMAGE · 6 LABS": {
+    "ca": "IMATGE GENERATIVA · 6 LABS",
+    "es": "IMAGEN GENERATIVA · 6 LABS"
+  },
+  "06 / COMFYUI": {
+    "ca": "06 / COMFYUI",
+    "es": "06 / COMFYUI"
+  },
+  "Sampling &amp; Prompting Lab": {
+    "ca": "Lab de sampling i prompts",
+    "es": "Lab de sampling y prompts"
+  },
+  "Make better choices with the same graph: workflows with missing models, negative embeddings, samplers that converge and samplers that never settle, schedulers and enough steps, two samplers sharing the steps, prompts on a timetable, weights, dynamic prompts, long prompts, and how to explore and keep a seed.": {
+    "ca": "Pren millors decisions amb el mateix graf: workflows amb models que falten, embeddings negatius, samplers que convergeixen i samplers que no s’aturen mai, schedulers i prou steps, dos samplers que es reparteixen els steps, prompts amb horari, pesos, prompts dinàmics, prompts llargs, i com explorar i conservar un seed.",
+    "es": "Toma mejores decisiones con el mismo grafo: workflows con modelos que faltan, embeddings negativos, samplers que convergen y samplers que nunca se paran, schedulers y suficientes steps, dos samplers que se reparten los steps, prompts con horario, pesos, prompts dinámicos, prompts largos, y cómo explorar y conservar un seed."
+  },
+  "Samplers · KSampler Advanced · prompts · seeds": {
+    "ca": "Samplers · KSampler Advanced · prompts · seeds",
+    "es": "Samplers · KSampler Advanced · prompts · seeds"
+  },
+  "GENERATIVE IMAGE · 9 LABS": {
+    "ca": "IMATGE GENERATIVA · 9 LABS",
+    "es": "IMAGEN GENERATIVA · 9 LABS"
+  },
+  "07 / COMFYUI": {
+    "ca": "07 / COMFYUI",
+    "es": "07 / COMFYUI"
+  },
+  "LoRA Lab": {
+    "ca": "Lab de LoRA",
+    "es": "Lab de LoRA"
+  },
+  "Use LoRAs well and make your own: model and clip strength, trigger words and stacking, a dataset with variety, captions that say the right things, training with ComfyUI’s training nodes, underfitting and overfitting, learning rate and rank, and testing and picking the best file. With Pip, our own mascot.": {
+    "ca": "Fes servir bé les LoRAs i fes-ne de teves: força del model i del clip, paraules clau i apilar-les, un dataset variat, captions que diguin el que cal, entrenar amb els nodes d’entrenament de ComfyUI, infraentrenar i sobreentrenar, learning rate i rank, i provar i triar el millor fitxer. Amb la Pip, la nostra mascota.",
+    "es": "Usa bien las LoRAs y haz las tuyas: fuerza del modelo y del clip, palabras clave y apilarlas, un dataset variado, captions que digan lo que toca, entrenar con los nodos de entrenamiento de ComfyUI, infraentrenar y sobreentrenar, learning rate y rank, y probar y elegir el mejor archivo. Con Pip, nuestra mascota."
+  },
+  "Strength · datasets · captions · training": {
+    "ca": "Força · datasets · captions · entrenament",
+    "es": "Fuerza · datasets · captions · entrenamiento"
+  },
+  "Open LoRA Lab": {
+    "ca": "Obre el lab de LoRA",
+    "es": "Abre el lab de LoRA"
+  },
+  "Video &amp; 3D Lab": {
+    "ca": "Lab de vídeo i 3D",
+    "es": "Lab de vídeo y 3D"
+  },
+  "Video & 3D Lab": {
+    "ca": "Lab de vídeo i 3D",
+    "es": "Lab de vídeo y 3D"
+  },
+  "Make pictures move and give them a back: video latents with frames, fps and duration, prompts that describe motion and camera, image to video and first and last frame, video memory and length, the two experts of Wan 2.2, and from one picture to a 3D mesh with a clean input and the right resolution.": {
+    "ca": "Fes que les imatges es moguin i dona’ls una esquena: latents de vídeo amb frames, fps i durada, prompts que descriuen moviment i càmera, imatge a vídeo i primer i últim frame, la memòria i la llargada del vídeo, els dos experts de Wan 2.2, i d’una imatge a una malla 3D amb una entrada neta i la resolució bona.",
+    "es": "Haz que las imágenes se muevan y dales una espalda: latentes de vídeo con frames, fps y duración, prompts que describen movimiento y cámara, imagen a vídeo y primer y último frame, la memoria y la duración del vídeo, los dos expertos de Wan 2.2, y de una imagen a una malla 3D con una entrada limpia y la resolución buena."
+  },
+  "Wan · frames · image to video · mesh": {
+    "ca": "Wan · frames · imatge a vídeo · malla",
+    "es": "Wan · frames · imagen a vídeo · malla"
+  },
+  "Open Video and 3D Lab": {
+    "ca": "Obre el lab de vídeo i 3D",
+    "es": "Abre el lab de vídeo y 3D"
+  },
+  "Workflow Lab": {
+    "ca": "Lab de workflows",
+    "es": "Lab de workflows"
+  },
+  "Everything around the nodes: open a workflow from someone else and install its missing custom nodes and models with the Manager, tidy links with reroutes, drive several widgets from one Int or String node, pack nodes into reusable subgraphs, and compare settings with XY grids.": {
+    "ca": "Tot el que envolta els nodes: obre el workflow d’una altra persona i instal·la els custom nodes i els models que li falten amb el Manager, endreça els enllaços amb reroutes, governa diversos widgets des d’un sol node Int o String, empaqueta nodes en subgraphs reutilitzables i compara paràmetres amb graelles XY.",
+    "es": "Todo lo que rodea a los nodos: abre el workflow de otra persona e instala los custom nodes y los modelos que le faltan con el Manager, ordena los enlaces con reroutes, gobierna varios widgets desde un solo nodo Int o String, empaqueta nodos en subgraphs reutilizables y compara parámetros con rejillas XY."
+  },
+  "Manager · reroutes · primitives · subgraphs · XY": {
+    "ca": "Manager · reroutes · primitives · subgraphs · XY",
+    "es": "Manager · reroutes · primitivas · subgraphs · XY"
+  },
+  "Open Workflow Lab": {
+    "ca": "Obre el lab de workflows",
+    "es": "Abre el lab de workflows"
+  },
+  "Open Sampling and Prompting Lab": {
+    "ca": "Obre el lab de sampling i prompts",
+    "es": "Abre el lab de sampling y prompts"
+  },
+  "Open Control and Injection Lab": {
+    "ca": "Obre el lab de control i injecció",
+    "es": "Abre el lab de control e inyección"
+  },
+  "GENERATIVE IMAGE · 4 LABS": {
+    "ca": "IMATGE GENERATIVA · 4 LABS",
+    "es": "IMAGEN GENERATIVA · 4 LABS"
+  },
+  "04 / COMFYUI": {
+    "ca": "04 / COMFYUI",
+    "es": "04 / COMFYUI"
+  },
+  "Flux Lab": {
+    "ca": "Lab de Flux",
+    "es": "Lab de Flux"
+  },
+  "Work with a modern model: load Flux in three parts, make it fit in memory (fp8, GGUF), sample at CFG 1 with Flux Guidance, live without a negative prompt, choose dev or schnell, prompt with sentences and text in quotes, pick the right size, and use Flux Fill, Kontext editing and Flux LoRAs.": {
+    "ca": "Treballa amb un model modern: carrega Flux en tres parts, fes-lo cabre a la memòria (fp8, GGUF), mostreja amb CFG 1 i Flux Guidance, viu sense prompt negatiu, tria entre dev i schnell, escriu prompts amb frases i text entre cometes, tria la mida bona i fes servir Flux Fill, l’edició amb Kontext i les LoRAs de Flux.",
+    "es": "Trabaja con un modelo moderno: carga Flux en tres partes, hazlo caber en la memoria (fp8, GGUF), muestrea con CFG 1 y Flux Guidance, vive sin prompt negativo, elige entre dev y schnell, escribe prompts con frases y texto entre comillas, elige el tamaño bueno y usa Flux Fill, la edición con Kontext y las LoRAs de Flux."
+  },
+  "Models in parts · guidance · T5 · Fill · Kontext": {
+    "ca": "Models per parts · guidance · T5 · Fill · Kontext",
+    "es": "Modelos por partes · guidance · T5 · Fill · Kontext"
+  },
+  "Open Flux Lab": {
+    "ca": "Obre el lab de Flux",
+    "es": "Abre el lab de Flux"
+  },
+  "GENERATIVE IMAGE · 3 LABS": {
+    "ca": "IMATGE GENERATIVA · 3 LABS",
+    "es": "IMAGEN GENERATIVA · 3 LABS"
+  },
+  "03 / COMFYUI": {
+    "ca": "03 / COMFYUI",
+    "es": "03 / COMFYUI"
+  },
+  "Upscale &amp; Detail Lab": {
+    "ca": "Lab d’upscale i detall",
+    "es": "Lab de upscale y detalle"
+  },
+  "Make big pictures that hold up at 100%: why models draw well only at their own size, resize vs upscale models, the hires fix and its denoise window, running out of memory, tiled upscaling without seams or ghosts, ControlNet Tile, face detailers and a full pipeline to 4K. Every result shows a zoom with the real pixels.": {
+    "ca": "Fes imatges grans que aguantin al 100%: per què els models només dibuixen bé a la seva mida, redimensionar vs models d’upscale, el hires fix i la seva finestra de denoise, quedar-se sense memòria, upscale per tiles sense costures ni fantasmes, ControlNet Tile, detailers de cares i un pipeline complet fins a 4K. Cada resultat mostra un zoom amb els píxels reals.",
+    "es": "Haz imágenes grandes que aguanten al 100%: por qué los modelos solo dibujan bien a su tamaño, redimensionar vs modelos de upscale, el hires fix y su ventana de denoise, quedarse sin memoria, upscale por tiles sin costuras ni fantasmas, ControlNet Tile, detailers de caras y un pipeline completo hasta 4K. Cada resultado muestra un zoom con los píxeles reales."
+  },
+  "Upscale models · hires fix · tiles · detailers · 4K": {
+    "ca": "Models d’upscale · hires fix · tiles · detailers · 4K",
+    "es": "Modelos de upscale · hires fix · tiles · detailers · 4K"
+  },
+  "Open Upscale and Detail Lab": {
+    "ca": "Obre el lab d’upscale i detall",
+    "es": "Abre el lab de upscale y detalle"
+  },
+  "02 / COMFYUI": {
+    "ca": "02 / COMFYUI",
+    "es": "02 / COMFYUI"
+  },
+  "Inpainting Lab": {
+    "ca": "Lab d’inpainting",
+    "es": "Lab de inpainting"
+  },
+  "Change one part of a picture and keep the rest: paint and grow masks, compare the four inpainting routes (VAE Encode for Inpainting, Set Latent Noise Mask, InpaintModelConditioning, Differential Diffusion), finish without seams, inpaint small details with crop and stitch, outpaint beyond the frame and make clean plates.": {
+    "ca": "Canvia una part d’una imatge i conserva la resta: pinta i fes créixer màscares, compara les quatre vies d’inpainting (VAE Encode for Inpainting, Set Latent Noise Mask, InpaintModelConditioning, Differential Diffusion), acaba sense costures, pinta detalls petits amb crop and stitch, fes outpainting més enllà del marc i crea cleanplates.",
+    "es": "Cambia una parte de una imagen y conserva el resto: pinta y haz crecer máscaras, compara las cuatro vías de inpainting (VAE Encode for Inpainting, Set Latent Noise Mask, InpaintModelConditioning, Differential Diffusion), acaba sin costuras, pinta detalles pequeños con crop and stitch, haz outpainting más allá del marco y crea cleanplates."
+  },
+  "Masks · inpainting models · outpainting · clean plates": {
+    "ca": "Màscares · models d’inpainting · outpainting · cleanplates",
+    "es": "Máscaras · modelos de inpainting · outpainting · cleanplates"
+  },
+  "Open Inpainting Lab": {
+    "ca": "Obre el lab d’inpainting",
+    "es": "Abre el lab de inpainting"
+  },
+  "3D SOFTWARE · 5 LABS": {
+    "ca": "PROGRAMARI 3D · 5 LABS",
+    "es": "SOFTWARE 3D · 5 LABS"
+  },
+  "Learn the 3ds Max interface and animation tools, then build, skin and animate a CAT character.": {
+    "ca": "Aprèn la interfície i les eines d’animació de 3ds Max; després construeix, aplica Skin i anima un personatge CAT.",
+    "es": "Aprende la interfaz y las herramientas de animación de 3ds Max; después construye, aplica Skin y anima un personaje CAT."
+  },
+  "CAT Rig Lab": {
+    "ca": "Lab de CAT Rig",
+    "es": "Lab de CAT Rig"
+  },
+  "Build a CAT character from CATParent and hubs, place the bones, bind a character with Skin, paint and test vertex weights, and explore CAT's rig tools. Use your own model or a free CC0 example.": {
+    "ca": "Construeix un personatge CAT amb CATParent i hubs, col·loca els ossos, vincula la malla amb Skin, pinta i prova els pesos i explora les eines del rig. Fes servir un model propi o un exemple CC0 gratuït.",
+    "es": "Construye un personaje CAT con CATParent y hubs, coloca los huesos, vincula la malla con Skin, pinta y prueba los pesos y explora las herramientas del rig. Usa un modelo propio o un ejemplo CC0 gratuito."
+  },
+  "Skeleton · Skin · weights · CAT tools": {
+    "ca": "Esquelet · Skin · pesos · eines CAT",
+    "es": "Esqueleto · Skin · pesos · herramientas CAT"
+  },
+  "Open CAT Rig Lab": {
+    "ca": "Obre el lab de CAT Rig",
+    "es": "Abrir el lab de CAT Rig"
+  },
+  "CAT Animation Lab": {
+    "ca": "Lab d’animació CAT",
+    "es": "Lab de animación CAT"
+  },
+  "Animate the rig on an Absolute layer, key poses, keep a foot planted with the FootPlatform, add Relative Local corrections, and blend a CATMotion walk cycle.": {
+    "ca": "Anima el rig en una capa Absolute, crea poses clau, planta un peu amb la FootPlatform, afegeix correccions Relative Local i barreja un cicle de caminar de CATMotion.",
+    "es": "Anima el rig en una capa Absolute, crea poses clave, planta un pie con FootPlatform, añade correcciones Relative Local y mezcla un ciclo de caminar de CATMotion."
+  },
+  "Keyframes · IK · layers · walk cycle": {
+    "ca": "Claus · IK · capes · cicle de caminar",
+    "es": "Claves · IK · capas · ciclo de caminar"
+  },
+  "Open CAT Animation Lab": {
+    "ca": "Obre el lab d’animació CAT",
+    "es": "Abrir el lab de animación CAT"
+  },
+  "Optimize assets, bake lighting and export from Blender to Unity.": {
+    "ca": "Optimitza recursos, calcula la il·luminació i exporta de Blender a Unity.",
+    "es": "Optimiza recursos, calcula la iluminación y exporta de Blender a Unity."
+  },
+  "Grade an image and direct a live multicamera production.": {
+    "ca": "Etalona una imatge i realitza una producció multicàmera en directe.",
+    "es": "Etalona una imagen y realiza una producción multicámara en directo."
+  },
+  "Work with color grading and decide what viewers see during a live show.": {
+    "ca": "Treballa l’etalatge i decideix què veu el públic durant una producció en directe.",
+    "es": "Trabaja el etalonaje y decide qué ve el público durante una producción en directo."
+  },
+  "Work with image selection, masks, color and readable type.": {
+    "ca": "Treballa seleccions, màscares, color i tipografia llegible.",
+    "es": "Trabaja selecciones, máscaras, color y tipografía legible."
+  },
+  "24 / BLENDER BASICS": {
+    "ca": "24 / FONAMENTS DE BLENDER",
+    "es": "24 / FUNDAMENTOS DE BLENDER"
+  },
+  "Outliner Lab": {
+    "ca": "Outliner Lab",
+    "es": "Outliner Lab"
+  },
+  "Put a game level in order with the Outliner: collections inside collections, objects linked to two collections, collection instances, exclude, hide, disable in renders and selectable, isolate, search and filters, Object Contents, and the Blender File and Unused Data modes to remap and purge data-blocks.": {
+    "ca": "Posa ordre en un nivell de joc amb l'Outliner: collections dins de collections, objectes enllaçats a dues collections, collection instances, exclude, amagar, desactivar als renders i selectable, aïllar, cerca i filtres, Object Contents, i els modes Blender File i Unused Data per remapejar i purgar data-blocks.",
+    "es": "Pon orden en un nivel de juego con el Outliner: collections dentro de collections, objetos enlazados a dos collections, collection instances, exclude, ocultar, desactivar en los renders y selectable, aislar, búsqueda y filtros, Object Contents, y los modos Blender File y Unused Data para remapear y purgar data-blocks."
+  },
+  "Collections · visibility · filters · data-blocks": {
+    "ca": "Collections · visibilitat · filtres · data-blocks",
+    "es": "Collections · visibilidad · filtros · data-blocks"
+  },
+  "Open Outliner Lab": {
+    "ca": "Obre l'Outliner Lab",
+    "es": "Abre el Outliner Lab"
+  },
+  "M · SHIFT M · CTRL F · PURGE": {
+    "ca": "M · SHIFT M · CTRL F · PURGE",
+    "es": "M · SHIFT M · CTRL F · PURGE"
+  },
+  "Blender and Unity side by side: fix the FBX export options and Unity's import settings until a model arrives standing up, at real size, with its pivot in place, its textures, a clean skeleton, looping clips and custom colliders.": {
+    "ca": "Blender i Unity de costat: arregla les opcions d'exportació FBX i la configuració d'importació d'Unity fins que un model arribi dret, a mida real, amb el pivot al seu lloc, les textures, un esquelet net, clips en bucle i colliders personalitzats.",
+    "es": "Blender y Unity lado a lado: arregla las opciones de exportación FBX y la configuración de importación de Unity hasta que un modelo llegue de pie, a tamaño real, con el pivote en su sitio, las texturas, un esqueleto limpio, clips en bucle y colliders personalizados."
+  },
+  "FBX · axes · pivot · rig · colliders": {
+    "ca": "FBX · eixos · pivot · rig · colliders",
+    "es": "FBX · ejes · pivote · rig · colliders"
+  },
+  "Colour, type and image editing for screens and print.": {
+    "ca": "Color, tipografia i edició d’imatge per a pantalles i impressió.",
+    "es": "Color, tipografía y edición de imagen para pantallas e impresión."
+  },
+  "25 / IMAGE EDITING": {
+    "ca": "25 / EDICIÓ D’IMATGE",
+    "es": "25 / EDICIÓN DE IMAGEN"
+  },
+  "Photoshop Selection & Mask Lab": {
+    "ca": "Lab de seleccions i màscares de Photoshop",
+    "es": "Lab de selecciones y máscaras de Photoshop"
+  },
+  "Practise rectangular, elliptical, lasso, object and quick selections. Turn a selection into a layer mask, then use black and white brush strokes to refine it without changing the original photo.": {
+    "ca": "Practica seleccions rectangulars, el·líptiques, amb llaç, d’objectes i ràpides. Converteix una selecció en màscara de capa i després afina-la amb pinzellades negres i blanques sense canviar la foto original.",
+    "es": "Practica selecciones rectangulares, elípticas, con lazo, de objetos y rápidas. Convierte una selección en máscara de capa y después afínala con pinceladas negras y blancas sin cambiar la foto original."
+  },
+  "Selections · layer masks · black and white": {
+    "ca": "Seleccions · màscares de capa · blanc i negre",
+    "es": "Selecciones · máscaras de capa · blanco y negro"
+  },
+  "Open Photoshop Selection & Mask Lab": {
+    "ca": "Obre el lab de seleccions i màscares de Photoshop",
+    "es": "Abre el lab de selecciones y máscaras de Photoshop"
+  },
+  "SELECT · MASK · BRUSH": {
+    "ca": "SELECCIÓ · MÀSCARA · PINZELL",
+    "es": "SELECCIÓN · MÁSCARA · PINCEL"
+  },
+  "26 / LIVE VIDEO": {
+    "ca": "26 / VÍDEO EN DIRECTE",
+    "es": "26 / VÍDEO EN DIRECTO"
+  },
+  "Runway Live Lab": {
+    "ca": "Lab de realització de passarel·la",
+    "es": "Lab de realización de pasarela"
+  },
+  "Direct a five-camera fashion show on a T-shaped runway. Assign the cameras, keep one on the presenter, prepare each shot in preview, cut it to program and make a feet-to-head vertical tilt.": {
+    "ca": "Realitza una desfilada amb cinc càmeres i una passarel·la en T. Assigna les càmeres, mantén-ne una amb el presentador, prepara cada pla en previ, passa’l a programa i fes un moviment vertical dels peus al cap.",
+    "es": "Realiza un desfile con cinco cámaras y una pasarela en T. Asigna las cámaras, mantén una con el presentador, prepara cada plano en previo, pásalo a programa y haz un movimiento vertical de los pies a la cabeza."
+  },
+  "Five cameras · T route · preview/program · tilt": {
+    "ca": "Cinc càmeres · recorregut en T · previ/programa · moviment vertical",
+    "es": "Cinco cámaras · recorrido en T · previo/programa · movimiento vertical"
+  },
+  "Open Runway Live Lab": {
+    "ca": "Obre el lab de realització de passarel·la",
+    "es": "Abre el lab de realización de pasarela"
+  },
+  "PREVIEW · CUT · LIVE": {
+    "ca": "PREVI · TALL · DIRECTE",
+    "es": "PREVIO · CORTE · DIRECTO"
+  },
+  "3D SOFTWARE · 19 LABS": {
+    "ca": "PROGRAMARI 3D · 19 LABS",
+    "es": "SOFTWARE 3D · 19 LABS"
+  },
+  "19 labs available": {
+    "ca": "19 labs disponibles",
+    "es": "19 labs disponibles"
+  },
+  "GAME DEVELOPMENT · 3 LABS": {
+    "ca": "DESENVOLUPAMENT DE JOCS · 3 LABS",
+    "es": "DESARROLLO DE JUEGOS · 3 LABS"
+  },
+  "IMAGE &amp; VIDEO · 2 LABS": {
+    "ca": "IMATGE I VÍDEO · 2 LABS",
+    "es": "IMAGEN Y VÍDEO · 2 LABS"
+  },
+  "IMAGE & VIDEO · 2 LABS": {
+    "ca": "IMATGE I VÍDEO · 2 LABS",
+    "es": "IMAGEN Y VÍDEO · 2 LABS"
+  },
+  "VISUAL DESIGN · 2 LABS": {
+    "ca": "DISSENY VISUAL · 2 LABS",
+    "es": "DISEÑO VISUAL · 2 LABS"
+  },
+  "Learn Blender's NLA Editor with a walking mannequin: push actions down into strips, sequence them, layer a wave over a walk, fix an action in Tweak Mode, use Extrapolation, Blending and Influence, repeat and scale cycles, and bake the mix for Unity.": {
+    "ca": "Aprèn el NLA Editor de Blender amb un maniquí que camina: converteix accions en strips amb Push Down, posa-les en seqüència, afegeix una salutació sobre el caminar, corregeix una acció en Tweak Mode, fes servir Extrapolation, Blending i Influence, repeteix i escala cicles i fes el bake de la mescla per a Unity.",
+    "es": "Aprende el NLA Editor de Blender con un maniquí que camina: convierte acciones en strips con Push Down, ponlas en secuencia, añade un saludo sobre el caminar, corrige una acción en Tweak Mode, usa Extrapolation, Blending e Influence, repite y escala ciclos y haz el bake de la mezcla para Unity."
+  },
+  "Actions · strips · tracks · blending": {
+    "ca": "Accions · strips · tracks · blending",
+    "es": "Acciones · strips · tracks · blending"
+  },
+  "3D SOFTWARE · 20 LABS": {
+    "ca": "PROGRAMARI 3D · 20 LABS",
+    "es": "SOFTWARE 3D · 20 LABS"
+  },
+  "20 labs available": {
+    "ca": "20 labs disponibles",
+    "es": "20 labs disponibles"
+  },
+  "Explore areas": {
+    "ca": "Explora les àrees",
+    "es": "Explora las áreas"
+  },
+  "Explore the areas": {
+    "ca": "Explora les àrees",
+    "es": "Explora las áreas"
+  },
+  "Explore a tool or a subject. Each area has its own labs, from Blender and game development to live production and design.": {
+    "ca": "Explora una eina o una matèria. Cada àrea té els seus labs: de Blender i els videojocs a la realització en directe i el disseny.",
+    "es": "Explora una herramienta o una materia. Cada área tiene sus labs: de Blender y los videojuegos a la realización en directo y el diseño."
+  },
+  "Learning areas": {
+    "ca": "Àrees d’aprenentatge",
+    "es": "Áreas de aprendizaje"
+  },
+  "Modeling, Geometry Nodes, materials, lighting, rigging and animation.": {
+    "ca": "Modelatge, Geometry Nodes, materials, il·luminació, rigging i animació.",
+    "es": "Modelado, Geometry Nodes, materiales, iluminación, rigging y animación."
+  },
+  "Start with the interface, then follow a 3D production from modeling to animation. Geometry Nodes has its own four-part path.": {
+    "ca": "Comença per la interfície i segueix una producció 3D del modelatge a l’animació. Geometry Nodes té un recorregut propi de quatre labs.",
+    "es": "Empieza por la interfaz y sigue una producción 3D del modelado a la animación. Geometry Nodes tiene un recorrido propio de cuatro labs."
+  },
+  "Prepare assets, detail and lighting for real-time scenes.": {
+    "ca": "Prepara els recursos, el detall i la llum per a escenes en temps real.",
+    "es": "Prepara los recursos, el detalle y la luz para escenas en tiempo real."
+  },
+  "Learn C# with visible code execution and game examples.": {
+    "ca": "Aprèn C# veient com s’executa el codi amb exemples de videojocs.",
+    "es": "Aprende C# viendo cómo se ejecuta el código con ejemplos de videojuegos."
+  },
+  "Learn C# step by step, then build objects and simulate a Unity-style Update loop.": {
+    "ca": "Aprèn C# pas a pas, crea objectes i simula un bucle Update com el d’Unity.",
+    "es": "Aprende C# paso a paso, crea objetos y simula un bucle Update como el de Unity."
+  },
+  "Explore stage machinery, sightlines, DMX and lighting cues.": {
+    "ca": "Explora la maquinària escènica, la visibilitat, el DMX i les memòries de llum.",
+    "es": "Explora la maquinaria escénica, la visibilidad, el DMX y las memorias de luz."
+  },
+  "Build and light the stage, then control the scenery and lighting cues.": {
+    "ca": "Construeix i il·lumina l’escenari; després controla l’escenografia i les memòries de llum.",
+    "es": "Construye e ilumina el escenario; después controla la escenografía y las memorias de luz."
+  },
+  "Four linked labs with a working node editor: from geometry flow to fields, scatter and a procedural fence.": {
+    "ca": "Quatre labs encadenats amb un editor de nodes funcional: del flux de geometria als camps, l’scatter i una tanca procedural.",
+    "es": "Cuatro labs encadenados con un editor de nodos funcional: del flujo de geometría a los campos, el scatter y una valla procedural."
+  },
+  "Geometry flow": {
+    "ca": "El flux de la geometria",
+    "es": "El flujo de la geometría"
+  },
+  "Connect Group Input and Group Output, transform and join primitives, then expose a control to build a procedural table.": {
+    "ca": "Connecta Group Input i Group Output, transforma i uneix primitives, i exposa un control per construir una taula procedural.",
+    "es": "Conecta Group Input y Group Output, transforma y une primitivas, y expón un control para construir una mesa procedural."
+  },
+  "Geometry · primitives · modifier inputs": {
+    "ca": "Geometria · primitives · entrades del modificador",
+    "es": "Geometría · primitivas · entradas del modificador"
+  },
+  "Fields and attributes": {
+    "ca": "Camps i atributs",
+    "es": "Campos y atributos"
+  },
+  "See how Position, Index and Normal evaluate at each point. Use Math, Vector Math and Set Position to turn a Grid into terrain.": {
+    "ca": "Observa com Position, Index i Normal s’avaluen a cada punt. Fes servir Math, Vector Math i Set Position per convertir un Grid en terreny.",
+    "es": "Observa cómo Position, Index y Normal se evalúan en cada punto. Usa Math, Vector Math y Set Position para convertir un Grid en terreno."
+  },
+  "Fields · Spreadsheet · terrain": {
+    "ca": "Camps · Spreadsheet · terreny",
+    "es": "Campos · Spreadsheet · terreno"
+  },
+  "Instances and scatter": {
+    "ca": "Instàncies i scatter",
+    "es": "Instancias y scatter"
+  },
+  "Scatter rocks on the terrain from GN 02 with Distribute Points on Faces, Instance on Points, Random Value and a field mask.": {
+    "ca": "Escampa pedres sobre el terreny del GN 02 amb Distribute Points on Faces, Instance on Points, Random Value i una màscara de camp.",
+    "es": "Esparce rocas sobre el terreno de GN 02 con Distribute Points on Faces, Instance on Points, Random Value y una máscara de campo."
+  },
+  "Scatter · random scale and rotation · selection": {
+    "ca": "Scatter · escala i rotació aleatòries · selecció",
+    "es": "Scatter · escala y rotación aleatorias · selección"
+  },
+  "Curves and final project": {
+    "ca": "Corbes i projecte final",
+    "es": "Curvas y proyecto final"
+  },
+  "Use Curve Line, Curve Circle, Resample Curve, Curve to Mesh and Curve to Points to build a reusable procedural fence.": {
+    "ca": "Fes servir Curve Line, Curve Circle, Resample Curve, Curve to Mesh i Curve to Points per construir una tanca procedural reutilitzable.",
+    "es": "Usa Curve Line, Curve Circle, Resample Curve, Curve to Mesh y Curve to Points para construir una valla procedural reutilizable."
+  },
+  "Curves · posts · exposed controls": {
+    "ca": "Corbes · pals · controls exposats",
+    "es": "Curvas · postes · controles expuestos"
+  },
+  "Small interactive labs to explore what happens when you change a material, a texture, a connection or a line of code. Open one, experiment, and bring the result back to class.": {
+    "ca": "Petits labs interactius per descobrir què passa quan canvies un material, una textura, una connexió o una línia de codi. Obre'n un, experimenta i porta el resultat a classe.",
+    "es": "Pequeños labs interactivos para descubrir qué pasa cuando cambias un material, una textura, una conexión o una línea de código. Abre uno, experimenta y lleva el resultado a clase."
+  },
+  "Read a UV map, mark seams and unwrap a cube and a cylinder, see why a closed object will not unwrap, project from view, cylinder and sphere, and finish with Smart UV Project, Pack Islands and Average Islands Scale.": {
+    "ca": "Llegeix un mapa UV, marca costures i desplega un cub i un cilindre, entén per què un objecte tancat no es desplega, projecta des de la vista, en cilindre i en esfera, i acaba amb Smart UV Project, Pack Islands i Average Islands Scale.",
+    "es": "Lee un mapa UV, marca costuras y despliega un cubo y un cilindro, entiende por qué un objeto cerrado no se despliega, proyecta desde la vista, en cilindro y en esfera, y termina con Smart UV Project, Pack Islands y Average Islands Scale."
+  },
+  "Seams · Unwrap · projections · Pack": {
+    "ca": "Costures · Unwrap · projeccions · Pack",
+    "es": "Costuras · Unwrap · proyecciones · Pack"
+  },
+  "The collection can grow with future Carrot Revolt lessons. Each lab has its own page and keeps its own experiments.": {
+    "ca": "La col·lecció pot créixer amb futures lliçons del Carrot Revolt. Cada lab té la seva pàgina i els seus experiments.",
+    "es": "La colección puede crecer con futuras lecciones del Carrot Revolt. Cada lab tiene su propia página y sus propios experimentos."
+  },
+  "Light a plaster bust with Point, Sun, Spot and Area lights, a bounce card and HDRIs. Measure it with a light meter: inverse square law, hard and soft light, three-point and portrait setups, colour temperature, Exposure, AgX and False Color. Then shape the beam with Spread, gobos, IES profiles and Light Linking, and play with falloff and light you can see in the fog.": {
+    "ca": "Il·lumina un bust de guix amb llums Point, Sun, Spot i Area, un panell de rebot i HDRI. Mesura-ho amb un fotòmetre: la llei de l'invers del quadrat, llum dura i suau, esquemes de tres punts i de retrat, temperatura de color, Exposure, AgX i False Color. Després dona forma al feix amb Spread, gobos, perfils IES i Light Linking, i juga amb la caiguda de la llum i la llum que es veu a la boira.",
+    "es": "Ilumina un busto de yeso con luces Point, Sun, Spot y Area, un panel de rebote y HDRI. Mídelo con un fotómetro: la ley del inverso del cuadrado, luz dura y suave, esquemas de tres puntos y de retrato, temperatura de color, Exposure, AgX y False Color. Después da forma al haz con Spread, gobos, perfiles IES y Light Linking, y juega con la caída de la luz y la luz que se ve en la niebla."
+  },
+  "Light types · ratios · HDRI · gobos · IES · fog": {
+    "ca": "Tipus de llum · ràtios · HDRI · gobos · IES · boira",
+    "es": "Tipos de luz · ratios · HDRI · gobos · IES · niebla"
+  },
+  "Understand trim sheets with a medieval wood and stone sheet: read its strips, plan one by texel density and padding, put UV islands on the strips with G, S and R in a Blender-style UV Editor, round edges with a bevel strip and Weighted Normal, and texture many props with one material.": {
+    "ca": "Entén els trimsheets amb un full medieval de fusta i pedra: llegeix-ne les franges, planifica'n un per texel density i padding, posa illes UV a les franges amb G, S i R en un UV Editor com el de Blender, arrodoneix vores amb una franja de bisell i Weighted Normal, i textura molts props amb un sol material.",
+    "es": "Entiende los trimsheets con una hoja medieval de madera y piedra: lee sus franjas, planifica una por texel density y padding, pon islas UV en las franjas con G, S y R en un UV Editor como el de Blender, redondea bordes con una franja de bisel y Weighted Normal, y texturiza muchos props con un solo material."
+  },
+  "UV Editor · texel density · Follow Active Quads": {
+    "ca": "UV Editor · texel density · Follow Active Quads",
+    "es": "UV Editor · texel density · Follow Active Quads"
+  },
+  "The first hours in Blender: move around a scene, move objects, edit a mesh and keep the scene in order.": {
+    "ca": "Les primeres hores a Blender: mou-te per una escena, mou objectes, edita una malla i mantén l'escena en ordre.",
+    "es": "Las primeras horas en Blender: muévete por una escena, mueve objetos, edita una malla y mantén la escena en orden."
+  },
+  "C# for Unity: from the first loop to objects and an Update loop, and models that arrive in Unity ready to use.": {
+    "ca": "C# per a Unity: del primer bucle als objectes i a un bucle Update, i models que arriben a Unity a punt per fer servir.",
+    "es": "C# para Unity: del primer bucle a los objetos y a un bucle Update, y modelos que llegan a Unity listos para usar."
+  },
+  "Stage & live production": {
+    "ca": "Escenari i realització en directe",
+    "es": "Escenario y realización en directo"
+  },
+  "Build and light the stage, then direct what the audience sees on screen.": {
+    "ca": "Construeix i il·lumina l’escenari i després decideix què veu el públic a la pantalla.",
+    "es": "Construye e ilumina el escenario y después decide qué ve el público en la pantalla."
+  },
+  "WHAT'S NEXT": {
+    "ca": "PROPERS LABS",
+    "es": "PRÓXIMOS LABS"
+  },
+  "Roadmap": {
+    "ca": "Full de ruta",
+    "es": "Hoja de ruta"
+  },
+  "Topics planned for future Carrot Revolt labs. These labs are not available yet, and the list has no fixed release order.": {
+    "ca": "Temes previstos per a futurs labs del Carrot Revolt. Encara no estan disponibles i la llista no té un ordre de publicació fixat.",
+    "es": "Temas previstos para futuros labs del Carrot Revolt. Todavía no están disponibles y la lista no tiene un orden de publicación fijado."
+  },
+  "01 / GAME ENGINES": {
+    "ca": "01 / MOTORS DE JOC",
+    "es": "01 / MOTORES DE JUEGO"
+  },
+  "02 / ANIMATION": {
+    "ca": "02 / ANIMACIÓ",
+    "es": "02 / ANIMACIÓN"
+  },
+  "03 / RENDERING": {
+    "ca": "03 / RENDERITZACIÓ",
+    "es": "03 / RENDERIZADO"
+  },
+  "04 / SIMULATION": {
+    "ca": "04 / SIMULACIÓ",
+    "es": "04 / SIMULACIÓN"
+  },
+  "Unreal for architecture": {
+    "ca": "Unreal per a arquitectura",
+    "es": "Unreal para arquitectura"
+  },
+  "Rigging in Unreal": {
+    "ca": "Rigging dins d’Unreal",
+    "es": "Rigging en Unreal"
+  },
+  "Walk cycle": {
+    "ca": "Cicle de caminar",
+    "es": "Ciclo de caminar"
+  },
+  "Rendering &amp; compositing": {
+    "ca": "Renderització i composició",
+    "es": "Renderizado y composición"
+  },
+  "Compositing a render in Blender": {
+    "ca": "Composició d’un render a Blender",
+    "es": "Composición de un render en Blender"
+  },
+  "Render passes": {
+    "ca": "Passades de render",
+    "es": "Pases de render"
+  },
+  "Render layers": {
+    "ca": "Capes de render",
+    "es": "Capas de render"
+  },
+  "Light groups": {
+    "ca": "Grups de llums",
+    "es": "Grupos de luces"
+  },
+  "Simulation": {
+    "ca": "Simulació",
+    "es": "Simulación"
+  },
+  "Rigid and soft bodies": {
+    "ca": "Cossos rígids i tous",
+    "es": "Cuerpos rígidos y blandos"
+  }
 };

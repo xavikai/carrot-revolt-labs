@@ -5,12 +5,15 @@
 import * as THREE from 'three';
 import { fromMax } from './max-gizmo.js';
 
-export function createMaxViewport({ host, canvas, onChange = () => {}, background = 0x383838 }) {
+export function createMaxViewport({ host, canvas, onChange = () => {}, background = 0x383838, orthoViews = false }) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
   renderer.setClearColor(background, 1);
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(40, 1, .05, 500);
+  const perspCamera = new THREE.PerspectiveCamera(40, 1, .05, 500);
+  // Optional (opt-in): Front/Left/Top... use an orthographic camera, as the fixed views of 3ds Max do.
+  const orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, -500, 500);
+  let camera = perspCamera;
   scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.6));
   const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(-4, 9, 6); scene.add(sun);
 
@@ -25,8 +28,15 @@ export function createMaxViewport({ host, canvas, onChange = () => {}, backgroun
   grid.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(axisPts(0, 1)), new THREE.LineBasicMaterial({ color: 0x3a8a3f })));
 
   // Orbit camera around a pivot (target). Max's Z is up.
-  const view = { target: new THREE.Vector3(0, 1, 0), dist: 10, az: -.75, el: .42 };
+  const view = { target: new THREE.Vector3(0, 1, 0), dist: 10, az: -.75, el: .42, ortho: false };
   function place() {
+    camera = orthoViews && view.ortho ? orthoCamera : perspCamera;
+    if (camera === orthoCamera) {
+      const r = host.getBoundingClientRect(), aspect = r.width && r.height ? r.width / r.height : 1;
+      const h = view.dist * Math.tan(perspCamera.fov * Math.PI / 360);
+      Object.assign(orthoCamera, { top: h, bottom: -h, left: -h * aspect, right: h * aspect });
+      orthoCamera.updateProjectionMatrix();
+    }
     const ce = Math.cos(view.el);
     camera.position.set(view.target.x + view.dist * ce * Math.sin(view.az), view.target.y + view.dist * Math.sin(view.el), view.target.z + view.dist * ce * Math.cos(view.az));
     camera.lookAt(view.target); camera.updateMatrixWorld();
@@ -79,9 +89,11 @@ export function createMaxViewport({ host, canvas, onChange = () => {}, backgroun
   }
   const cubeFaceAt = e => { const r = cube.canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top; const hit = visibleFaces().reverse().find(v => inQuad(v.q, x, y)); return hit?.f.name || null; };
   const api = {
-    renderer, scene, camera, grid, view,
+    renderer, scene, grid, view,
+    get camera() { return camera; },
+    isOrtho: () => camera === orthoCamera,
     render() { renderer.render(scene, camera); },
-    resize() { const r = host.getBoundingClientRect(); if (!r.width || !r.height) return; renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix(); onChange(); },
+    resize() { const r = host.getBoundingClientRect(); if (!r.width || !r.height) return; renderer.setSize(r.width, r.height, false); perspCamera.aspect = r.width / r.height; perspCamera.updateProjectionMatrix(); place(); onChange(); },
     // Look at a point (Max coordinates) from a distance; name: 'perspective' | 'front' | 'left' | 'top'.
     setView(name, maxTarget = null, dist = null) {
       if (maxTarget) view.target.copy(fromMax(maxTarget.x, maxTarget.y, maxTarget.z));
@@ -93,16 +105,17 @@ export function createMaxViewport({ host, canvas, onChange = () => {}, backgroun
       else if (name === 'top') { view.az = 0; view.el = Math.PI / 2 - .001; }
       else if (name === 'bottom') { view.az = 0; view.el = -Math.PI / 2 + .001; }
       else if (name === 'perspective') { view.az = -.75; view.el = .42; }
+      view.ortho = name !== 'perspective';
       place(); onChange();
     },
     // Zoom Extents: fit a box given in Max coordinates.
     frame(minMax, maxMax) {
       const a = fromMax(minMax.x, minMax.y, minMax.z), b = fromMax(maxMax.x, maxMax.y, maxMax.z);
       const box = new THREE.Box3().setFromPoints([a, b]), c = box.getCenter(new THREE.Vector3()), r = Math.max(.5, box.getSize(new THREE.Vector3()).length() / 2);
-      view.target.copy(c); view.dist = r / Math.sin(camera.fov * Math.PI / 360) * 1.05; place(); onChange();
+      view.target.copy(c); view.dist = r / Math.sin(perspCamera.fov * Math.PI / 360) * 1.05; place(); onChange();
     },
     pan(dx, dy) {
-      const r = host.getBoundingClientRect(), k = 2 * view.dist * Math.tan(camera.fov * Math.PI / 360) / Math.max(1, r.height);
+      const r = host.getBoundingClientRect(), k = 2 * view.dist * Math.tan(perspCamera.fov * Math.PI / 360) / Math.max(1, r.height);
       const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0), up = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
       view.target.addScaledVector(right, -dx * k).addScaledVector(up, dy * k); place(); onChange();
     },

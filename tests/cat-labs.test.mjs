@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {initialJoints,targetJoints,mirrorJoint,alignmentScore,paintWeight,solveLegIK} from '../labs/3ds-max-cat-rig/core.js';
 import {sampleKeys,blendPose,walkPose,composedPose} from '../labs/3ds-max-cat-animation/core.js';
 import * as THREE from '../vendor/three.module.js';
-import {maxAxes,partFrame,partSegment,parentMatrix,gizmoFrame,worldMoveToRig,worldAxisToRig,axisDragPlane,rotatePartFrames,jointPosition,moveSetupJoints,pinFootTarget,addArmFromSetup} from '../labs/3ds-max-cat-rig/transform-frame.js';
+import {targetVector,maxAxes,partFrame,partSegment,parentMatrix,gizmoFrame,worldMoveToRig,worldAxisToRig,axisDragPlane,rotatePartFrames,jointPosition,moveSetupJoints,pinFootTarget,addArmFromSetup,addLegFromSetup,removeLeg,legSidesOf,ankleTip,FOOT_PIVOT,spineChain,bendSpine,rotateSpineSegment} from '../labs/3ds-max-cat-rig/transform-frame.js';
 import {legObjects,rotateHierarchyFrames} from '../labs/3ds-max-cat-rig/rig-hierarchy.js';
 
 const frameState=()=>({joints:structuredClone(initialJoints),jointDepths:{},depthOffsets:{},pelvisDepth:0,footTargets:{},footRotations:{},partRotations:{},parentTransform:{position:[.4,-.2,.3],rotation:[.3,-.7,.2],scale:[1.8,.7,1.2]},catScale:1.3,coord:'World',view:'Perspective',lengthAxis:'X'});
@@ -167,7 +167,7 @@ test('adjusting a leg clears the old IK setup and keeps its FootPlatform attache
   const delta=new THREE.Vector3(.1,.03,.22);
   moveSetupJoints(state,['kneeL','ankleL'],delta);
   assert.equal(state.legIKLengths.L,undefined);assert.equal(state.legIKRest.L,undefined);assert.equal(state.footTargets.L,undefined);
-  const footPivot=partFrame(state,'footL').pivot,expected=jointPosition(state,'ankleL');expected.y-=.05;expected.z+=.07;
+  const footPivot=partFrame(state,'footL').pivot,expected=jointPosition(state,'ankleL').add(new THREE.Vector3(...FOOT_PIVOT));
   closeVector(footPivot,expected);
   closeVector(renderedBoneEnds(state,'thighL')[1],renderedBoneEnds(state,'shinL')[0]);
 });
@@ -186,7 +186,7 @@ test('pinning a leg bone creates a fixed FootPlatform target before the bone mov
   pinFootTarget(state,'L');
   moveSetupJoints(state,['kneeL'],new THREE.Vector3(.18,-.06,.2));
   closeVector(partFrame(state,'footL').pivot,before);
-  assert.deepEqual(state.footTargets.L,[...state.joints.ankleL.slice(0,2),state.jointDepths.ankleL??.11]);
+  assert.deepEqual(state.footTargets.L,[...state.joints.ankleL.slice(0,2),state.jointDepths.ankleL??0]);
 });
 
 test('a pinned target survives moving the ankle itself while IK still owns the platform',()=>{
@@ -279,14 +279,145 @@ test('rotating the ankle or its ancestors keeps the independent FootPlatform fra
       for(const name of ['x','y','z'])closeVector(afterGizmo.axes[name],gizmo.axes[name]);
       for(const field of ['footTargets','footRotations','footScales','legIKLengths','legIKRest'])assert.deepEqual(state[field],before[field]);
     }
-    assert.ok(partFrame(state,`ankle${side}`).rotation.angleTo(ankle)>.01);
+    assert.ok(partFrame(state,`ankle${side}`).rotation.angleTo(ankle)<1e-7,'the Ankle frame follows its platform and its own Ankle rotation only');
   }
 });
 
-test('FootPlatform rotation remains selectable independently of the ankle',()=>{
-  const state=frameState(),objects=legObjects('L'),ankle=partFrame(state,'ankleL').rotation.clone();
+test('FootPlatform rotation remains selectable and does not move the ankle joint',()=>{
+  const state=frameState(),objects=legObjects('L'),ankle=jointPosition(state,'ankleL');
   state.coord='Local';
   rotateHierarchyFrames(state,objects,'footL',new THREE.Vector3(0,1,0),.6);
   closeVector(maxAxes().x.applyQuaternion(partFrame(state,'footL').rotation),new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0),.6));
-  assert.ok(partFrame(state,'ankleL').rotation.angleTo(ankle)<1e-7);
+  closeVector(jointPosition(state,'ankleL'),ankle);
+});
+
+// ── CAT Rig lab: geometry and controls ──
+import {handDigits,footBones,chainBones,gizmoAnchor,transformable,limbIsIK} from '../labs/3ds-max-cat-rig/rig-geometry.js';
+import {targetJoints as catTargets,targetDepths as catDepths} from '../labs/3ds-max-cat-rig/core.js';
+const rigState=()=>{const state=frameState();Object.assign(state,{parentTransform:{position:[0,0,0],rotation:[0,0,0],scale:[1,1,1]},catScale:1,root:true,pelvis:true,legs:2,spine:true,spineBones:3,arms:0,head:true,headBones:2,handDigits:5,digitBoneCounts:[3,3,3,3,3],footDigits:1,footDigitBones:1,segmentsById:{forearmL:3,shinL:2},mode:'Setup'});for(const [name,point] of Object.entries(catTargets)){state.joints[name]=[...point];state.jointDepths[name]=catDepths[name];}addArmFromSetup(state,{keepJoints:true});addArmFromSetup(state);return state;};
+
+test('Curl closes the fingers of both hands towards the palm, mirrored left and right',()=>{
+  const state=rigState(),tip=side=>handDigits(state,side).filter(item=>item.digit===2).at(-1).b;
+  const open={L:tip('L'),R:tip('R')};
+  closeVector(open.R,new THREE.Vector3(-open.L.x,open.L.y,open.L.z));
+  state.digitPoses={L:{2:{curl:60}},R:{2:{curl:60}}};
+  for(const side of ['L','R'])assert.ok(tip(side).y<open[side].y-.05,`${side} middle finger must curl down (palm down T-pose)`);
+  closeVector(tip('R'),new THREE.Vector3(-tip('L').x,tip('L').y,tip('L').z));
+  const thumb=handDigits(state,'L').find(item=>item.digit===0);assert.ok(thumb.b.z>thumb.a.z,'the thumb points to the front');
+});
+
+test('the ankle points forward to the ball of the foot and segments split a bone without moving its joints',()=>{
+  const state=rigState(),[ankle,toe]=footBones(state,'L');
+  assert.ok(ankle.b.z>ankle.a.z+.08&&ankle.b.y<ankle.a.y);assert.ok(toe.b.z>toe.a.z);
+  const fore=chainBones(state).filter(item=>item.base==='forearmL');
+  assert.equal(fore.length,3);closeVector(fore[0].a,jointPosition(state,'elbowL'));closeVector(fore[2].b,jointPosition(state,'wristL'));
+  assert.equal(chainBones(state).filter(item=>item.base==='shinL').length,2);
+  assert.equal(chainBones(state).filter(item=>item.base==='forearmR').length,3,'Add Arm copies the Segments of the first arm');
+});
+
+test('gizmos attach to any CAT bone and Animation Mode only allows rotating bones',()=>{
+  const state=rigState();
+  for(const id of ['pelvis','ribcage','head','neck~2','forearmL~2','shinL','handDigitL1~2','ankleR'])assert.ok(gizmoAnchor(state,id),id);
+  assert.equal(transformable(state,'thighL','move'),true);
+  state.mode='Animation';state.ikfk={legL:1};
+  assert.equal(transformable(state,'thighL','move'),false);assert.equal(transformable(state,'thighL','rotate'),true);
+  assert.equal(transformable(state,'pelvis','move'),true);assert.equal(transformable(state,'gizmo:forearmL','rotate'),true);
+  assert.equal(transformable(state,'footL','move'),true);
+});
+
+test('an Up Node behind the elbow makes the IK arm bend backwards',()=>{
+  const state=rigState(),px=name=>[...state.joints[name],state.jointDepths[name]*225];
+  const shoulder=px('shoulderL'),elbow=px('elbowL'),wrist=px('wristL');
+  const lengths=[Math.hypot(...elbow.map((v,i)=>v-shoulder[i])),Math.hypot(...wrist.map((v,i)=>v-elbow[i]))];
+  const target=[shoulder[0]+60,shoulder[1]+20,shoulder[2]];
+  for(const [pole,sign] of [[[elbow[0],elbow[1],elbow[2]-100],-1],[[elbow[0],elbow[1],elbow[2]+100],1]]){
+    const solved=solveLegIK(shoulder,pole,target,...lengths);
+    assert.ok(Math.sign(solved.knee[2]-shoulder[2])===sign);
+    assert.ok(Math.abs(Math.hypot(...solved.knee.map((v,i)=>v-shoulder[i]))-lengths[0])<1e-6);
+  }
+});
+
+test('rotating the Ankle turns the foot bone while its platform rotation stays separate',()=>{
+  const state=rigState(),[before]=footBones(state,'L');
+  state.ankleRotations={L:[.5,0,0]};
+  const [after]=footBones(state,'L');
+  closeVector(after.a,before.a);assert.ok(after.b.distanceTo(before.b)>.03);
+  assert.deepEqual(state.footRotations,{});
+});
+
+test('the Ankle gizmo sits on the ankle joint and its Local X runs along the bone',()=>{
+  const state=rigState();state.ankleRotations={L:[.4,0,0]};state.footRotations={L:[0,.3,0]};
+  const frame=partFrame(state,'ankleL'),[ankle]=footBones(state,'L');
+  closeVector(frame.pivot,ankle.a);
+  closeVector(new THREE.Vector3(1,0,0).applyQuaternion(frame.rotation),ankle.b.clone().sub(ankle.a).normalize());
+});
+
+test('Add Leg hangs the first leg down to the ground and mirrors it for the second one',()=>{
+  const state=frameState();Object.assign(state,{parentTransform:{position:[0,0,0],rotation:[0,0,0],scale:[1,1,1]},catScale:1,legs:0});
+  addLegFromSetup(state);
+  assert.equal(state.legs,1);assert.ok(Math.abs(partFrame(state,'footL').pivot.y)<1e-9,'the platform sits at the base of the rig');
+  state.joints.kneeL=[340,380];state.jointDepths.kneeL=.05;state.footTargets={L:[...state.joints.ankleL,0]};state.footRotations={L:[0,.4,0]};state.ankleRotations={L:[.3,.2,0]};state.segmentsById={shinL:2};state.upNodes={legL:[340,380,.5]};
+  addLegFromSetup(state);
+  assert.equal(state.legs,2);assert.equal(addLegFromSetup(state),false);
+  const centre=jointPosition(state,'pelvis');
+  for(const j of ['hip','knee','ankle']){const l=jointPosition(state,j+'L'),r=jointPosition(state,j+'R');closeVector(r,new THREE.Vector3(2*centre.x-l.x,l.y,l.z));}
+  assert.equal(state.segmentsById.shinR,2);
+  const tl=ankleTip(state,'L'),tr=ankleTip(state,'R');closeVector(tr,new THREE.Vector3(2*centre.x-tl.x,tl.y,tl.z));
+  closeVector(targetVector(state.upNodes.legR),new THREE.Vector3(2*centre.x-targetVector(state.upNodes.legL).x,targetVector(state.upNodes.legL).y,targetVector(state.upNodes.legL).z));
+});
+
+test('IK legs only translate the thigh and shin; FK lets the three leg joints rotate',()=>{
+  const state=rigState();
+  for(const id of ['thighL','shinL'])assert.equal(transformable(state,id,'rotate'),false),assert.equal(transformable(state,id,'rotate',true),true),assert.equal(transformable(state,id,'move'),true);
+  assert.equal(transformable(state,'ankleL','rotate'),true);
+  state.ikfk={legL:1};
+  for(const id of ['thighL','shinL','ankleL'])assert.equal(transformable(state,id,'rotate'),true);
+  assert.equal(limbIsIK(state,'thighL'),false);assert.equal(limbIsIK(state,'thighR'),true);
+});
+
+test('a leg can be deleted and Add Leg rebuilds it as the mirror of the remaining one',()=>{
+  const state=frameState();Object.assign(state,{parentTransform:{position:[0,0,0],rotation:[0,0,0],scale:[1,1,1]},catScale:1,legs:0,root:true,pelvis:true});
+  addLegFromSetup(state);addLegFromSetup(state);
+  state.joints.kneeR=[262,380];state.jointDepths.kneeR=.07;state.segmentsById={shinL:2};state.gizmos=new Set(['thighL','pelvis']);
+  assert.equal(removeLeg(state,'L'),true);
+  assert.deepEqual(legSidesOf(state),['R']);assert.equal(state.legs,1);assert.ok(!state.gizmos.has('thighL')&&state.gizmos.has('pelvis'));assert.equal(state.segmentsById.shinL,undefined);
+  assert.equal(chainBones(state).some(b=>b.base==='thighL'),false);
+  addLegFromSetup(state);
+  assert.deepEqual(legSidesOf(state),['L','R']);
+  const c=jointPosition(state,'pelvis'),r=jointPosition(state,'kneeR');closeVector(jointPosition(state,'kneeL'),new THREE.Vector3(2*c.x-r.x,r.y,r.z));
+});
+
+test('foot digits sit at the tip of the foot and can be rotated and moved',()=>{
+  const state=rigState();state.footDigits=2;state.footDigitBones=1;
+  const toes=footBones(state,'L').filter(b=>b.id.startsWith('footDigit'));
+  assert.deepEqual(toes.map(t=>t.id),['footDigitL0','footDigitL1']);
+  const before=toes[0].b.clone();
+  state.footDigitRotations={L0:[.6,0,0]};state.footDigitOffsets={L1:[0,.02,0]};
+  const after=footBones(state,'L').filter(b=>b.id.startsWith('footDigit'));
+  closeVector(after[0].a,toes[0].a);assert.ok(after[0].b.distanceTo(before)>.02);
+  closeVector(after[1].a,toes[1].a.clone().add(new THREE.Vector3(0,.02,0)));
+  closeVector(partFrame(state,'footDigitL0').pivot,after[0].a);
+  assert.equal(transformable(state,'footDigitL0','rotate'),true);assert.equal(transformable(state,'footDigitL0','move'),true);
+});
+
+test('rotating the Chest hub bends the spine with a fixed length; a spine bone turns from its base',()=>{
+  const state=rigState(),len=c=>c.points.slice(1).reduce((s,p,i)=>s+p.distanceTo(c.points[i]),0);
+  const before=spineChain(state,'spine'),L=len(before);
+  bendSpine(state,'spine',new THREE.Vector3(1,0,0),.9);
+  const bent=spineChain(state,'spine');
+  assert.ok(Math.abs(len(bent)-L)<1e-9);closeVector(bent.points[0],before.points[0]);
+  closeVector(bent.points.at(-1),jointPosition(state,'chest'));assert.ok(jointPosition(state,'chest').z>.05,'the chest moves along the curve');
+  const p0=bent.points[1].clone();
+  rotateSpineSegment(state,'spine',1,new THREE.Vector3(0,0,1),.4);
+  const after=spineChain(state,'spine');
+  closeVector(after.points[1],p0);closeVector(after.points[0],before.points[0]);assert.ok(Math.abs(len(after)-L)<1e-9);
+  closeVector(partFrame(state,'spine~2').pivot,p0);
+});
+
+test('Add Arm builds the first arm hanging down from a sideways collarbone',()=>{
+  const state=rigState();state.arms=0;
+  addArmFromSetup(state);
+  const s=jointPosition(state,'shoulderL'),e=jointPosition(state,'elbowL'),w=jointPosition(state,'wristL');
+  assert.ok(s.x>jointPosition(state,'chest').x+.1,'the collarbone goes out to the side');
+  assert.ok(Math.abs(e.x-s.x)<1e-6&&e.y<s.y-.2&&w.y<e.y-.2,'the arm hangs straight down');
 });
