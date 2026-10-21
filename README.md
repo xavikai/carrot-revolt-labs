@@ -4,6 +4,10 @@ Interactive browser labs for learning by experimenting. This independent collect
 
 **Live collection:** https://carrotrevoltstudio.com (Netlify). The repository is public.
 
+## Automatic CIFOG mirror
+
+Make all future changes in this repository. CIFOG checks `main` every five minutes, tests the mirrored content and publishes it automatically. See [operation and retirement](docs/automatic-mirror.md).
+
 ## Learning areas
 
 The home page groups labs by their **main teaching interface**. Blender has its own track (20 labs) with basics, modeling and UVs, materials, light and camera, rigging and animation, and Geometry Nodes. 3ds Max has its own track: a Viewport Lab for the basics, a bouncing-ball Animation Lab and a Track View Lab. Unity-focused work sits under Game engines; C#, video grading, scenography and graphic design have separate areas. All 22 original lab URLs remain unchanged.
