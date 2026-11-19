@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { displayByte, hexToLinear, mathValue, mixColor } from '../labs/_procedural/core.js';
 import { groups as mathGroups, recipes as mathRecipes } from '../labs/blender-math/content.js';
 import { groups as mixGroups, recipes as mixRecipes } from '../labs/blender-mix-color/content.js';
-import { defaults, maskBounds, materialSampler, surfaceHeight, wearMask } from '../labs/blender-worn-paint/material.js';
+import { defaults, grayscaleSampler, imageMask, maskBounds, materialSampler, surfaceHeight, wearMask } from '../labs/blender-worn-paint/material.js';
 import { shaderGraph } from '../labs/blender-worn-paint/recipe.js';
 
 test('Math covers every selectable operation and recipe', () => {
@@ -106,4 +107,41 @@ test('a continuous mask exposes the lower primer while bump only affects lightin
   const flat = { ...defaults, relief: false };
   assert.deepEqual(materialSampler(defaults, 4, 'color')(0.3, 0.5), materialSampler(flat, 4, 'color')(0.3, 0.5));
   assert.notDeepEqual(materialSampler(defaults, 4, 'material')(0.3, 0.5), materialSampler(flat, 4, 'material')(0.3, 0.5));
+});
+
+test('alternative sources rewire only the intended layer or signal', () => {
+  function links(variant) {
+    return new Map(shaderGraph(5, defaults, variant).edges.map(([from, to]) => [to, from]));
+  }
+  assert.equal(links('image').get('noise.vector'), 'coord.uv');
+  assert.equal(links('image').get('limit.noise'), 'noise.color');
+  assert.equal(links('voronoi').get('limit.noise'), 'noise.distance');
+  assert.equal(links('ramp').get('limit.noise'), 'noise.fac');
+  assert.equal(links('ramp').get('ramp.fac'), 'pigment.fac');
+  assert.equal(links('ramp').get('mix.paint'), 'ramp.color');
+  assert.equal(links('ramp').get('mix.factor'), 'limit.mask');
+  for (const variant of ['noise', 'image', 'voronoi', 'ramp']) {
+    assert.equal(links(variant).get('bsdf.normal'), 'bump.normal');
+    assert.equal(links(variant).get('bsdf.rough'), 'rough.result');
+  }
+});
+
+test('the image supplies the grayscale mask and the ramp changes only the pigment', () => {
+  const sample = grayscaleSampler(Uint8Array.from([0, 0, 0, 255, 255, 255, 255, 255]), 2, 1);
+  assert.equal(sample(0.5, 0.5), 0.5);
+  assert.equal(sample(2, 0.5), 1);
+  const u = 0.38, v = 0.31;
+  const value = wearMask(imageMask(u, v), defaults, true);
+  assert.deepEqual(materialSampler(defaults, 5, 'mask', 'image')(u, v), [value, value, value]);
+  assert.deepEqual(materialSampler(defaults, 5, 'mask', 'ramp')(u, v), materialSampler(defaults, 5, 'mask')(u, v));
+  assert.notDeepEqual(materialSampler(defaults, 5, 'color', 'ramp')(u, v), materialSampler(defaults, 5, 'color')(u, v));
+});
+
+test('the downloadable project and the mask are shipped as binary assets', () => {
+  const asset = name => readFileSync(new URL('../labs/blender-worn-paint/assets/' + name, import.meta.url));
+  const project = asset('worn-paint.blend');
+  const mask = asset('wear-mask.png');
+  assert.ok(project.length > 50000);
+  assert.equal(project.subarray(0, 4).toString('hex'), '28b52ffd'); // Blender compressed the project with Zstandard.
+  assert.equal(mask.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
 });

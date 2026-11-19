@@ -81,4 +81,8 @@ export const stages = [
       'Haz que la pintura brille más manteniendo su color y su altura. ¿Qué entrada controla el cambio?'],
     view: 'material',
   },
+  {
+    title: ['Try other inputs', 'Prova altres entrades', 'Prueba otras entradas'],
+    view: 'material',
+  },
 ];

@@ -1,8 +1,11 @@
 import { initI18n, onLangChange } from '../../i18n.js';
 import { $, format, number, paint, say, schedule, text } from '../_procedural/ui.js';
-import { defaults, materialSampler } from './material.js';
+import { defaults, grayscaleSampler, materialSampler } from './material.js';
 import { shaderGraph } from './recipe.js';
 import { stages } from './lesson.js';
+import { variants } from './variants.js';
+
+const variantsStage = stages.length - 1;
 
 const copy = {
   title: ['Worn Paint Lab', 'Lab de pintura desgastada', 'Lab de pintura desgastada'],
@@ -26,6 +29,12 @@ const copy = {
     'La vista previa usa ruido generado en el navegador y una luz móvil. El ruido y la iluminación de Blender darán un patrón y acabado distintos.'],
   controls: ['Material settings', 'Ajustos del material', 'Ajustes del material'],
   reset: ['Reset values', 'Restableix els valors', 'Restablece los valores'],
+  download: ['Download the Blender file', 'Descarrega el fitxer de Blender', 'Descarga el archivo de Blender'],
+  downloadNote: ['Blender 5.3 · Four wired materials. Select a sample in Shading and press Home to frame its nodes. The wear image is packed.',
+    'Blender 5.3 · Quatre materials connectats. A Shading, selecciona una mostra i prem Home per enquadrar-ne els nodes. La imatge de desgast és dins del fitxer.',
+    'Blender 5.3 · Cuatro materiales conectados. En Shading, selecciona una muestra y pulsa Inicio para encuadrar sus nodos. La imagen de desgaste está dentro del archivo.'],
+  inputExample: ['Input examples', 'Exemples d’entrades', 'Ejemplos de entradas'],
+  downloadMask: ['Download the grayscale mask', 'Descarrega la màscara en grisos', 'Descarga la máscara de grises'],
   relief: ['Preview bump', 'Mostra el relleu', 'Muestra el relieve'],
   docs: ['Blender manual · Bump', 'Manual de Blender · Bump', 'Manual de Blender · Bump'],
 };
@@ -50,7 +59,9 @@ const controls = [
   ['light', 1, 0, 360, 1, ['Light angle', 'Angle de la llum', 'Ángulo de la luz']],
 ];
 
-const state = { stage: 0, view: stages[0].view, edge: null, zoom: null, settings: { ...defaults } };
+const state = { stage: 0, view: stages[0].view, variant: 'noise', edge: null, zoom: null, settings: { ...defaults } };
+const activeVariant = () => state.stage === variantsStage ? state.variant : 'noise';
+const currentGraph = () => shaderGraph(state.stage, state.settings, activeVariant());
 const wireColors = { float: '#b8c2cc', vector: '#a89afc', shader: '#8cdda1', color: '#f6ca68' };
 const nodeRoles = {
   noise: ['wear', 'desgast', 'desgaste'],
@@ -59,6 +70,7 @@ const nodeRoles = {
   depth: ['layer height', 'alçada de capa', 'altura de capa'],
   grain: ['grain', 'gra', 'grano'],
   sum: ['combined height', 'alçada combinada', 'altura combinada'],
+  pigment: ['pigment', 'pigment', 'pigmento'],
 };
 const nodeWidth = 162;
 const headerHeight = 32;
@@ -70,14 +82,22 @@ $('lab').innerHTML = `
     <p class="eyebrow">Blender 4.5 LTS · Shader Editor</p>
     <h1 id="title"></h1>
     <p id="intro"></p>
+    <div class="download-panel">
+      <a class="download-blend" id="download" href="./assets/worn-paint.blend" download></a>
+      <p id="download-note"></p>
+    </div>
   </section>
   <nav id="stage-nav" class="lesson-nav">
     ${stages.map((_, i) => `<button type="button" data-stage="${i}"></button>`).join('')}
   </nav>
   <section class="lesson-guide" aria-labelledby="stage-title">
     <h2 id="stage-title"></h2>
+    <div id="variant-list" class="channel-list" role="group" hidden>
+      ${Object.keys(variants).map(id => `<button type="button" data-variant="${id}"></button>`).join('')}
+    </div>
     <ol id="instructions"></ol>
     <p id="task"></p>
+    <p id="mask-file" hidden><a id="download-mask" href="./assets/wear-mask.png" download></a></p>
     <div class="navigation">
       <button type="button" id="previous"></button>
       <button type="button" id="next"></button>
@@ -128,6 +148,16 @@ $('lab').innerHTML = `
     <a href="../blender-math/">Math Lab</a><a href="../blender-mix-color/">Mix Color Lab</a>
   </footer>`;
 
+function renderOption(option) {
+  if (option.image) return '<div class="node-option node-image"><span></span>Wear Mask.png</div>';
+  if (option.ramp) {
+    const [[left, start], [right, end]] = option.ramp;
+    return `<div class="node-option ramp-option"><div class="node-ramp" style="--ramp-left:${left};--ramp-right:${right};--ramp-start:${start * 100}%;--ramp-end:${end * 100}%">
+      <i></i><i></i></div></div>`;
+  }
+  return `<div class="node-option"><span>${option}</span><span class="node-chevron" aria-hidden="true"></span></div>`;
+}
+
 function graphDetails({ nodes, edges }) {
   const linked = new Set(edges.map(([, to]) => to));
   const ports = new Map();
@@ -145,12 +175,13 @@ function graphDetails({ nodes, edges }) {
       const display = showValue ? type === 'color'
         ? `<span class="swatch" style="--swatch:${value}">${value}</span>`
         : `<span class="socket-value">${value}</span>` : '';
-      return `<div class="socket ${output ? 'socket-out' : 'socket-in'}" style="--socket:${wireColors[type]}"><i></i><span>${label}</span>${display}</div>`;
+      return `<div class="socket ${output ? 'socket-out' : 'socket-in'}" style="--socket:${wireColors[type]}"><i></i>
+        <div class="socket-content${showValue ? ' socket-field' : ''}"><span>${label}</span>${display}</div></div>`;
     }).join('');
     return `<div class="shader-node family-${node.family}${endpoints.includes(node.id) ? ' node-highlight' : ''}" title="${title}" style="left:${node.x}px;top:${node.y}px">
-      <div class="node-title">${node.title}</div>
+      <div class="node-title"><span class="node-disclosure" aria-hidden="true"></span>${node.title}</div>
       ${sockets(node.outputs, true)}
-      ${node.options.map(option => `<div class="node-option">${option}</div>`).join('')}
+      ${node.options.map(renderOption).join('')}
       ${sockets(node.inputs, false)}
     </div>`;
   }).join('');
@@ -160,7 +191,7 @@ function graphDetails({ nodes, edges }) {
 function wirePath(a, b, to) {
   if (to === 'depth.mask') {
     // Loop through the space between the two Math columns.
-    const right = a.x + 21, left = b.x - 18, lane = 378;
+    const right = a.x + 21, left = b.x - 18, lane = activeVariant() === 'ramp' ? 530 : 378;
     return `M${a.x} ${a.y} C${right} ${a.y} ${right} ${a.y} ${right} ${a.y + 18} V${lane - 12} Q${right} ${lane} ${right - 12} ${lane} H${left + 12} Q${left} ${lane} ${left} ${lane + 12} V${b.y - 12} Q${left} ${b.y} ${b.x} ${b.y}`;
   }
   const handle = Math.min(106, Math.max(18, (b.x - a.x) * 0.54));
@@ -175,14 +206,14 @@ function updateZoom(modelWidth) {
 }
 
 function renderGraph() {
-  const graph = shaderGraph(state.stage, state.settings);
+  const graph = currentGraph();
   const { html, ports } = graphDetails(graph);
   const wires = graph.edges.map(([from, to, stage], index) => {
     const a = ports.get(from), b = ports.get(to);
     const active = state.edge === index;
     const dim = state.edge !== null && !active;
     return `<path d="${wirePath(a, b, to)}" fill="none" stroke="${active ? '#ffaf63' : wireColors[a.type]}"
-      stroke-width="${active ? 4 : 2.6}" opacity="${dim ? 0.16 : stage === state.stage || state.stage === 4 ? 0.95 : 0.55}"></path>`;
+      stroke-width="${active ? 4 : 2.6}" opacity="${dim ? 0.16 : stage === state.stage || state.stage >= 4 ? 0.95 : 0.55}"></path>`;
   });
   $('graph').style.width = graph.width + 'px';
   $('graph').style.height = graph.height + 'px';
@@ -191,10 +222,10 @@ function renderGraph() {
 }
 
 function renderConnections() {
-  const graph = shaderGraph(state.stage, state.settings);
+  const graph = currentGraph();
   const { ports } = graphDetails(graph);
   $('connections').innerHTML = graph.edges.map(([from, to, phase], index) => {
-    if (state.stage !== 4 && phase !== state.stage) return '';
+    if (state.stage < 4 && phase !== state.stage) return '';
     return `<button data-edge="${index}" type="button" aria-pressed="${state.edge === index}">
       ${ports.get(from).label} <span aria-hidden="true">→</span> ${ports.get(to).label}
     </button>`;
@@ -204,7 +235,7 @@ function renderConnections() {
 function renderControls() {
   for (const [id, phase, , , , label] of controls) {
     const angle = id === 'light';
-    $(id + '-field').hidden = phase > state.stage;
+    $(id + '-field').hidden = phase > state.stage || (id === 'scale' && activeVariant() === 'image');
     text(id + '-label', say(label) + ' · ' + format(state.settings[id]) + (angle ? '°' : ''));
   }
   $('relief-field').hidden = state.stage < 3;
@@ -221,17 +252,46 @@ function renderControls() {
   }
 }
 
-const redraw = schedule(() => paint($('sample'), materialSampler(state.settings, state.stage, state.view)));
+let imageSource;
+const redraw = schedule(() => paint($('sample'), materialSampler(state.settings, state.stage, state.view, activeVariant(), imageSource)));
+
+async function loadMaskImage() {
+  const image = new Image();
+  image.src = './assets/wear-mask.png';
+  try {
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(image, 0, 0);
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    imageSource = grayscaleSampler(data, canvas.width, canvas.height);
+    if (activeVariant() === 'image') redraw();
+  } catch {
+    // The procedural source used to generate the grayscale asset also serves as a fallback.
+  }
+}
 
 function renderLesson() {
   const lesson = stages[state.stage];
+  const exploring = state.stage === variantsStage;
+  const demo = exploring ? variants[state.variant] : lesson;
   for (const [id, key] of [['title', 'title'], ['intro', 'intro'], ['previous', 'previous'], ['next', 'next'], ['wire-help', 'focus'],
     ['preview-title', 'view'], ['note', 'note'], ['settings-title', 'controls'], ['reset', 'reset'], ['relief-label', 'relief'],
-    ['docs', 'docs'], ['fit', 'fit']]) text(id, say(copy[key]));
-  text('link-title', say(state.stage === 4 ? copy.fullLinks : copy.newLinks));
+    ['docs', 'docs'], ['fit', 'fit'], ['download', 'download'], ['download-note', 'downloadNote'],
+    ['download-mask', 'downloadMask']]) text(id, say(copy[key]));
+  $('variant-list').hidden = !exploring;
+  $('variant-list').setAttribute('aria-label', say(copy.inputExample));
+  $('mask-file').hidden = activeVariant() !== 'image';
+  document.querySelectorAll('[data-variant]').forEach(button => {
+    button.textContent = say(variants[button.dataset.variant].name);
+    button.setAttribute('aria-pressed', String(button.dataset.variant === state.variant));
+  });
+  text('link-title', say(state.stage >= 4 ? copy.fullLinks : copy.newLinks));
   text('stage-title', say(lesson.title));
-  text('task', say(lesson.task));
-  $('instructions').innerHTML = lesson.steps.map(step => '<li>' + say(step) + '</li>').join('');
+  text('task', say(demo.task));
+  $('instructions').innerHTML = demo.steps.map(step => '<li>' + say(step) + '</li>').join('');
   document.querySelectorAll('[data-stage]').forEach((button, index) => {
     button.textContent = (index + 1) + ' · ' + say(stages[index].title);
     if (index === state.stage) button.setAttribute('aria-current', 'step');
@@ -260,6 +320,15 @@ $('stage-nav').addEventListener('click', event => {
 });
 $('previous').addEventListener('click', () => changeStage(state.stage - 1));
 $('next').addEventListener('click', () => changeStage(state.stage + 1));
+$('variant-list').addEventListener('click', event => {
+  const button = event.target.closest('[data-variant]');
+  if (!button) return;
+  state.variant = button.dataset.variant;
+  state.edge = null;
+  state.zoom = null;
+  renderLesson();
+  $('graph-scroll').scrollTo(0, 0);
+});
 $('channel-list').addEventListener('click', event => {
   const button = event.target.closest('[data-view]');
   if (!button) return;
@@ -275,7 +344,7 @@ $('connections').addEventListener('click', event => {
   renderGraph();
   for (const item of $('connections').children) item.setAttribute('aria-pressed', String(Number(item.dataset.edge) === state.edge));
   if (state.edge !== null) {
-    const graph = shaderGraph(state.stage, state.settings);
+    const graph = currentGraph();
     const { ports } = graphDetails(graph);
     const [from, to] = graph.edges[index];
     const zoom = Number($('graph').style.zoom);
@@ -306,7 +375,7 @@ $('reset').addEventListener('click', () => {
 
 function changeZoom(delta) {
   const current = Number($('graph').style.zoom);
-  const width = shaderGraph(state.stage, state.settings).width;
+  const width = currentGraph().width;
   state.zoom = delta ? Math.max(0.28, Math.min(1.35, current + delta))
     : Math.min(1, ($('graph-scroll').clientWidth - 8) / width);
   updateZoom(width);
@@ -314,8 +383,9 @@ function changeZoom(delta) {
 $('fit').addEventListener('click', () => changeZoom(0));
 $('zoom-in').addEventListener('click', () => changeZoom(0.1));
 $('zoom-out').addEventListener('click', () => changeZoom(-0.1));
-new ResizeObserver(() => updateZoom(shaderGraph(state.stage, state.settings).width)).observe($('graph-scroll'));
+new ResizeObserver(() => updateZoom(currentGraph().width)).observe($('graph-scroll'));
 
 onLangChange(renderLesson);
 initI18n({ mount: '#language' });
 renderLesson();
+loadMaskImage();

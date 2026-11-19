@@ -8,6 +8,49 @@ export const defaults = {
 
 const paint = hexToLinear(colors.paint), primer = hexToLinear(colors.primer);
 const gray = n => [n, n, n];
+export const rampStops = [['#143f49', 0.22], ['#5eacaa', 0.78]];
+const rampColors = rampStops.map(([hex]) => hexToLinear(hex));
+
+export function grayscaleSampler(data, width, height) {
+  const sample = (x, y) => data[4 * (y * width + x)] / 255;
+  return (u, v) => {
+    const x = clamp(u * width - 0.5, 0, width - 1);
+    const y = clamp((1 - v) * height - 0.5, 0, height - 1);
+    const x0 = Math.floor(x), y0 = Math.floor(y);
+    const x1 = Math.min(x0 + 1, width - 1), y1 = Math.min(y0 + 1, height - 1);
+    const dx = x - x0, dy = y - y0;
+    const top = sample(x0, y0) * (1 - dx) + sample(x1, y0) * dx;
+    const bottom = sample(x0, y1) * (1 - dx) + sample(x1, y1) * dx;
+    return top * (1 - dy) + bottom * dy;
+  };
+}
+
+export function imageMask(u, v) {
+  const mottling = fields.Noise(u, v, 5);
+  const streak = Math.abs(Math.sin(21 * (v - 0.37 * u) + 0.8 * Math.sin(u * 11)));
+  return clamp(0.17 + 0.65 * mottling + 0.32 * Math.exp(-26 * streak ** 2));
+}
+
+const cell = Array.from({ length: 29 * 29 }, (_, i) => {
+  const random = factor => {
+    const x = Math.sin((i + 1) * factor) * 4381.751;
+    return 0.12 + 0.76 * (x - Math.floor(x));
+  };
+  return [random(12.173), random(89.321)];
+});
+
+function voronoi(u, v, scale) {
+  const x = u * scale, y = v * scale;
+  const ix = Math.floor(x), iy = Math.floor(y);
+  let distance = Infinity;
+  for (let j = iy - 1; j <= iy + 1; j++) {
+    for (let i = ix - 1; i <= ix + 1; i++) {
+      const [dx, dy] = cell[((i + 29) % 29) + 29 * ((j + 29) % 29)];
+      distance = Math.min(distance, (x - i - dx) ** 2 + (y - j - dy) ** 2);
+    }
+  }
+  return Math.sqrt(distance);
+}
 
 export function maskBounds({ threshold, transition }) {
   return [clamp(threshold - transition / 2), clamp(threshold + transition / 2)];
@@ -26,10 +69,16 @@ export function surfaceHeight(mask, detail, grain) {
   return mathValue('Multiply Add', detail, grain, layer);
 }
 
-export function materialSampler(settings, stage, view) {
+export function materialSampler(settings, stage, view, variant = 'noise', imageSource = imageMask) {
   const soft = stage >= 2;
   const hasBump = stage >= 3 && settings.relief;
-  const maskAt = (u, v) => wearMask(fields.Noise(u, v, settings.scale), settings, soft);
+  const source = variant === 'image' ? imageSource : variant === 'voronoi' ? voronoi : fields.Noise;
+  const maskAt = (u, v) => wearMask(source(u, v, settings.scale), settings, soft);
+  const paintAt = variant === 'ramp' ? (u, v) => {
+    const value = fields.Noise(u, v, 18);
+    const factor = clamp((value - rampStops[0][1]) / (rampStops[1][1] - rampStops[0][1]));
+    return mixColor('Mix', ...rampColors, factor, true, false);
+  } : () => paint;
   const heightAt = (u, v, mask = maskAt(u, v)) => surfaceHeight(mask, fields.Noise(u, v, 65), settings.grain);
   const direction = settings.light * Math.PI / 180;
   const lx = Math.cos(direction) * 0.72, ly = Math.sin(direction) * 0.72;
@@ -40,7 +89,7 @@ export function materialSampler(settings, stage, view) {
   return (u, v) => {
     const mask = maskAt(u, v);
     if (view === 'mask') return gray(mask);
-    const rgb = mixColor('Mix', paint, primer, mask, true, false);
+    const rgb = mixColor('Mix', paintAt(u, v), primer, mask, true, false);
     if (view === 'color') return rgb;
     const roughness = settings.paintRoughness + mask * (settings.primerRoughness - settings.paintRoughness);
     if (view === 'roughness') return gray(roughness);
