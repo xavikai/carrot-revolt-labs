@@ -60,7 +60,7 @@ export function coordinates() {
   </fieldset>`;
 }
 
-export function shell({ title, intro, controls, visuals, readout, next, docs }) {
+export function shell({ title, intro, controls, visuals, readout, next, docs, followUp = false }) {
   $('lab').innerHTML = `
     <section class="lead">
       <p class="eyebrow" id="eyebrow"></p>
@@ -82,7 +82,7 @@ export function shell({ title, intro, controls, visuals, readout, next, docs }) 
       </section>
       <section class="explanation">
         <div><h2 id="formula-title"></h2><code id="formula"></code><p id="use"></p></div>
-        <div><h2 id="rebuild-title"></h2><code id="chain"></code><p id="task"></p></div>
+        <div><h2 id="rebuild-title"></h2><code id="chain"></code><p id="task"></p>${followUp ? `<a id="follow-up" class="follow-up" href="../blender-worn-paint/" hidden></a>` : ''}</div>
       </section>
     </form>
     <footer data-no-i18n><a id="docs" href="${docs}"></a><a id="next" href="../${next[0]}/">${next[1]}</a></footer>`;
@@ -95,6 +95,7 @@ export function shell({ title, intro, controls, visuals, readout, next, docs }) 
     text('rebuild-title', say(labels.rebuild));
     text('probe-title', say(labels.probe));
     text('docs', say(labels.docs));
+    if (followUp) text('follow-up', say(['Build the full worn paint material', 'Construeix el material complet de pintura desgastada', 'Construye el material completo de pintura desgastada']));
   };
   onLangChange(refresh);
   refresh();

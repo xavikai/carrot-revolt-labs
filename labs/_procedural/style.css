@@ -137,7 +137,8 @@ output, code { color: #ffbd85; font: 0.93rem/1.5 ui-monospace, Consolas, monospa
 }
 .explanation code { display: block; margin-top: 0.4rem; overflow-wrap: anywhere; }
 footer { display: flex; flex-wrap: wrap; gap: 1.2rem; padding-block: 1.6rem; }
-footer a { color: var(--lab-accent); text-underline-offset: 0.18em; }
+.follow-up { display: inline-block; margin-top: 0.65rem; }
+footer a, .follow-up { color: var(--lab-accent); text-underline-offset: 0.18em; }
 @media (max-width: 54rem) {
   .workspace { grid-template-columns: minmax(14rem, 1fr) minmax(0, 1.25fr); }
   .math-views, .experiment { grid-template-columns: minmax(0, 1fr); }

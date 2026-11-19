@@ -75,6 +75,7 @@ shell({
   readout: '<output id="value" for="mode a b layerA layerB mask threshold factor u v clamp-factor clamp-result"></output><p id="note"></p>',
   docs: 'https://docs.blender.org/manual/en/4.5/render/shader_nodes/color/mix.html',
   next: ['blender-math', 'Math Lab'],
+  followUp: true,
 });
 
 function refreshLanguage() {
@@ -161,6 +162,7 @@ function draw() {
   const recipe = recipes[Number($('recipe').value)];
   text('chain', recipe.chain);
   text('task', say(recipe.task));
+  $('follow-up').hidden = recipe.mode !== 'Mix';
 }
 
 const redraw = schedule(draw);

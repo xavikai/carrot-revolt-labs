@@ -62,6 +62,7 @@ shell({
   readout: '<output id="value" for="mode source manual gain offset b c u v clamp-result"></output><p id="note"></p>',
   docs: 'https://docs.blender.org/manual/en/5.4/render/shader_nodes/utilities/math/math.html',
   next: ['blender-mix-color', 'Mix Color Lab'],
+  followUp: true,
 });
 
 function refreshLanguage() {
@@ -196,6 +197,7 @@ function draw() {
   const recipe = recipes[Number($('recipe').value)];
   text('chain', recipe.chain);
   text('task', say(recipe.task));
+  $('follow-up').hidden = recipe.mode !== 'Greater Than';
 }
 
 const redraw = schedule(draw);

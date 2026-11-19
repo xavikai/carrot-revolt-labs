@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { displayByte, hexToLinear, mathValue, mixColor } from '../labs/_procedural/core.js';
 import { groups as mathGroups, recipes as mathRecipes } from '../labs/blender-math/content.js';
 import { groups as mixGroups, recipes as mixRecipes } from '../labs/blender-mix-color/content.js';
+import { defaults, maskBounds, materialSampler, surfaceHeight, wearMask } from '../labs/blender-worn-paint/material.js';
+import { shaderGraph } from '../labs/blender-worn-paint/recipe.js';
 
 test('Math covers every selectable operation and recipe', () => {
   const modes = Object.keys(Object.assign({}, ...Object.values(mathGroups)));
@@ -59,4 +61,49 @@ test('HSV component transfers and sRGB conversion use linear channel values', ()
   assert.deepEqual(mixColor('Saturation', [0.5, 0.5, 0.5], [1, 0, 0], 1, true, false), [0.5, 0.5, 0.5]);
   assert.equal(displayByte(0.5), 188);
   assert.ok(Math.abs(hexToLinear('#808080')[0] - 0.21586) < 0.00001);
+});
+
+test('every stage connects existing output sockets to unique, compatible inputs', () => {
+  for (let stage = 0; stage < 5; stage++) {
+    const { nodes, edges } = shaderGraph(stage, defaults);
+    const index = direction => new Map(nodes.flatMap(node =>
+      node[direction].map(([id, , type]) => [node.id + '.' + id, type])));
+    const inputs = index('inputs');
+    const outputs = index('outputs');
+    assert.equal(new Set(edges.map(([, to]) => to)).size, edges.length);
+    for (const [from, to, phase] of edges) {
+      assert.ok(phase <= stage);
+      assert.ok(outputs.has(from), from);
+      assert.ok(inputs.has(to), to);
+      const maskPreview = stage === 0 && from === 'limit.mask' && to === 'bsdf.color';
+      assert.ok(maskPreview || outputs.get(from) === inputs.get(to), from + ' → ' + to);
+    }
+  }
+});
+
+test('the final material fans one mask out to color, roughness and height', () => {
+  const links = new Map(shaderGraph(4, defaults).edges.map(([from, to]) => [to, from]));
+  assert.equal(links.get('mix.factor'), 'limit.mask');
+  assert.equal(links.get('rough.factor'), 'limit.mask');
+  assert.equal(links.get('depth.mask'), 'limit.mask');
+  assert.equal(links.get('sum.grain'), 'grain.fac');
+  assert.equal(links.get('sum.layer'), 'depth.height');
+  assert.equal(links.get('bump.height'), 'sum.height');
+  assert.equal(links.get('bsdf.normal'), 'bump.normal');
+  assert.equal(links.get('bsdf.rough'), 'rough.result');
+  assert.equal(links.get('bsdf.color'), 'mix.result');
+  assert.equal(links.get('output.surface'), 'bsdf.bsdf');
+});
+
+test('a continuous mask exposes the lower primer while bump only affects lighting', () => {
+  const [min, max] = maskBounds(defaults);
+  assert.equal(wearMask(min, defaults, true), 0);
+  assert.equal(wearMask(max, defaults, true), 1);
+  assert.ok(Math.abs(wearMask(defaults.threshold, defaults, true) - 0.5) < 1e-12);
+  assert.equal(wearMask(defaults.threshold, defaults, false), 0);
+  assert.ok(Math.abs(surfaceHeight(1, 0, defaults.grain) - 0.10) < 1e-12);
+  assert.equal(surfaceHeight(0, 0, defaults.grain), 0.65);
+  const flat = { ...defaults, relief: false };
+  assert.deepEqual(materialSampler(defaults, 4, 'color')(0.3, 0.5), materialSampler(flat, 4, 'color')(0.3, 0.5));
+  assert.notDeepEqual(materialSampler(defaults, 4, 'material')(0.3, 0.5), materialSampler(flat, 4, 'material')(0.3, 0.5));
 });

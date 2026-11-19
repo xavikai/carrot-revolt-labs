@@ -1,5 +1,25 @@
 // Shared catalog translations, including the Carrot Revolt roadmap.
 export default {
+  "Build worn paint step by step. Trace one procedural mask through Mix Color, roughness and bump in a wired Shader Editor diagram.": {
+    "ca": "Construeix pintura desgastada pas a pas. Segueix una màscara procedural fins a Mix Color, la rugositat i el relleu al diagrama del Shader Editor.",
+    "es": "Construye pintura desgastada paso a paso. Sigue una máscara procedural hasta Mix Color, la rugosidad y el relieve en el diagrama del Shader Editor."
+  },
+  "Worn Paint Lab": {
+    "ca": "Lab de pintura desgastada",
+    "es": "Lab de pintura desgastada"
+  },
+  "Open Worn Paint Lab": {
+    "ca": "Obre el lab de pintura desgastada",
+    "es": "Abre el laboratorio de pintura desgastada"
+  },
+  "Color · Roughness · Bump": {
+    "ca": "Color · Rugositat · Relleu",
+    "es": "Color · Rugosidad · Relieve"
+  },
+  "22 labs available": {
+    "ca": "22 labs disponibles",
+    "es": "22 labs disponibles"
+  },
   "Build repeating bands, masks and stepped heights. Explore each Math operation with a live curve, texture preview and numeric sample.": {
     "ca": "Crea bandes repetides, màscares i alçades esglaonades. Explora cada operació de Math amb una corba, una textura i una lectura numèrica en directe.",
     "es": "Crea bandas repetidas, máscaras y alturas escalonadas. Explora cada operación de Math con una curva, una textura y una lectura numérica en directo."
