@@ -1,5 +1,37 @@
 // Shared catalog translations, including the Carrot Revolt roadmap.
 export default {
+  "Build repeating bands, masks and stepped heights. Explore each Math operation with a live curve, texture preview and numeric sample.": {
+    "ca": "Crea bandes repetides, màscares i alçades esglaonades. Explora cada operació de Math amb una corba, una textura i una lectura numèrica en directe.",
+    "es": "Crea bandas repetidas, máscaras y alturas escalonadas. Explora cada operación de Math con una curva, una textura y una lectura numérica en directo."
+  },
+  "Curves · repetition · masks": {
+    "ca": "Corbes · repetició · màscares",
+    "es": "Curvas · repetición · máscaras"
+  },
+  "Open Math Lab": {
+    "ca": "Obre el Math Lab",
+    "es": "Abre el Math Lab"
+  },
+  "Layer procedural colors with blend modes and masks. Compare the inputs, effective factor and linear RGB result at a point you choose.": {
+    "ca": "Superposa colors procedurals amb modes de mescla i màscares. Compara les entrades, el factor aplicat i el resultat RGB lineal en un punt que triïs.",
+    "es": "Superpone colores procedurales con modos de mezcla y máscaras. Compara las entradas, el factor aplicado y el resultado RGB lineal en un punto que elijas."
+  },
+  "Blend modes · linear RGB · HSV": {
+    "ca": "Modes de mescla · RGB lineal · HSV",
+    "es": "Modos de mezcla · RGB lineal · HSV"
+  },
+  "Open Mix Color Lab": {
+    "ca": "Obre el Mix Color Lab",
+    "es": "Abre el Mix Color Lab"
+  },
+  "21 labs available": {
+    "ca": "21 labs disponibles",
+    "es": "21 labs disponibles"
+  },
+  "7 labs": {
+    "ca": "7 labs",
+    "es": "7 labs"
+  },
   "INTERACTIVE LEARNING": {
     "ca": "APRENENTATGE INTERACTIU",
     "es": "APRENDIZAJE INTERACTIVO"
