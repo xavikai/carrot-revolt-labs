@@ -1,4 +1,4 @@
-import { replaceWire } from './editor-model.js';
+import { replaceWire } from './node-links.js';
 
 export function enableWiring(viewport, graph, { layout, links, model, apply, message, path }) {
   let gesture = null;

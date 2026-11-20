@@ -1,15 +1,72 @@
-#mix-diagram { grid-column: 1 / -1; min-width: 0; }
-#mix-diagram h2 { margin-bottom: 0.45rem; }
-#mix-diagram p { margin: 0.55rem 0 0; color: var(--muted); font-size: 0.9rem; }
-#mix-graph {
-  overflow-x: auto;
-  border: 1px solid #3d4952;
-  border-radius: 0.55rem;
-  background: radial-gradient(#43515d 1px, transparent 1px) #1a2025;
-  background-size: 18px 18px;
+#workspace.mix-workspace {
+  grid-template-columns: minmax(0, 1.7fr) minmax(17rem, 1fr);
+  grid-template-rows: min-content minmax(min-content, 1fr) auto;
+  align-items: start;
 }
-#mix-graph:focus-visible { outline-offset: -3px; }
-#mix-graph svg { display: block; min-width: 850px; max-width: 100%; height: auto; }
-#mix-graph text { font: 13px system-ui, sans-serif; fill: #f1f2f4; }
-#mix-graph .mix-graph-title { font-weight: 700; font-size: 14px; }
-#mix-graph .mix-graph-value { font-family: ui-monospace, Consolas, monospace; }
+.mix-workspace .control-panel { grid-column: 1; grid-row: 1; }
+.mix-workspace .results {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  position: sticky;
+  top: 0.5rem;
+}
+.mix-sources {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 0.65rem;
+  margin-top: 0.7rem;
+}
+.mix-workspace #mix-diagram {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--panel);
+}
+.mix-editor-bar {
+  padding: 0.6rem 0.8rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.55rem;
+  border-bottom: 1px solid var(--line);
+}
+.mix-zoom { display: flex; align-items: center; gap: 0.35rem; }
+.mix-zoom button { min-height: 2rem; min-width: 2rem; }
+#mix-zoom-level { min-width: 2.5rem; text-align: center; }
+#mix-graph-scroll { max-height: 62vh; }
+.mix-mobile-preview { display: none; }
+#mix-graph-note, #mix-wire-status {
+  margin: 0;
+  padding: 0.5rem 0.8rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+#mix-wire-status { min-height: 2.2rem; color: #a5dccc; }
+#mix-surface-status { color: #ffbd85; }
+.mode-option { padding: 0; }
+.mode-option select {
+  min-height: 0;
+  height: 20px;
+  padding: 0 3px;
+  border: 0;
+  background: #393d43;
+  font-size: 12px;
+}
+.mix-workspace .experiment { grid-template-columns: minmax(0, 1fr) auto; }
+@media (max-width: 54rem) {
+  .mix-sources { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 44rem) {
+  #workspace.mix-workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .mix-workspace .control-panel { grid-row: 1; }
+  .mix-workspace .results { grid-column: 1; grid-row: 3; position: static; }
+  .mix-workspace #mix-diagram { grid-column: 1; grid-row: 2; }
+  #mix-graph-scroll { max-height: 50vh; }
+  .mix-mobile-preview { display: block; padding: 0.25rem 0.8rem 0.55rem; }
+  .mix-mobile-preview canvas { width: 115px; }
+}

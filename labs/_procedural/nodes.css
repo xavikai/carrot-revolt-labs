@@ -1,0 +1,155 @@
+.graph-scroll {
+  overflow: auto;
+  background-color: #1a2025;
+  background-image: radial-gradient(#465461 1px, transparent 1px);
+  background-size: 19px 19px;
+  scrollbar-color: #6e838b #1b2227;
+  scrollbar-width: auto;
+}
+.graph-scroll:focus-visible { outline-offset: -2px; }
+.shader-graph { position: relative; min-width: 0; user-select: none; }
+.shader-graph input { user-select: text; }
+.wires { position: absolute; inset: 0; pointer-events: none; }
+.shader-node {
+  position: absolute;
+  width: 162px;
+  border-radius: 7px;
+  background: #282b30;
+  box-shadow: 0 0 0 1px #101418, 0 4px 12px #0b0e12ad;
+  color: #f1f2f3;
+  font-size: 14px;
+  padding-bottom: 4px;
+}
+.node-highlight { outline: 2px solid var(--lab-accent); }
+.node-title {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-inline: 8px;
+  line-height: 32px;
+  font-weight: 700;
+  background: #614449;
+  border-radius: 7px 7px 0 0;
+}
+.family-input .node-title { background: #784358; }
+.family-texture .node-title { background: #805132; }
+.family-math .node-title { background: #49547d; }
+.family-color .node-title { background: #765a29; }
+.family-vector .node-title { background: #514783; }
+.family-shader .node-title { background: #365d4b; }
+.node-disclosure {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border: solid currentColor;
+  border-width: 0 1.5px 1.5px 0;
+  transform: translateY(-2px) rotate(45deg);
+}
+.node-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 24px;
+  margin: 0 7px;
+  padding-inline: 5px;
+  background: #393d43;
+  background-clip: padding-box;
+  border-block: 2px solid transparent;
+  border-radius: 3px;
+  color: #f0f1f4;
+  font-size: 12px;
+}
+.ramp-option { background: #22252b; padding-inline: 2px; }
+.node-ramp {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--ramp-left) var(--ramp-start), var(--ramp-right) var(--ramp-end));
+}
+.node-ramp i {
+  position: absolute;
+  left: var(--ramp-start);
+  top: -2px;
+  width: 6px;
+  height: 16px;
+  border: 1px solid #f1f1f1;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px #16191a;
+}
+.node-ramp i + i { left: var(--ramp-end); }
+.socket {
+  position: relative;
+  height: 26px;
+  display: flex;
+  gap: 4px;
+  padding-inline: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+.socket-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  width: 100%;
+}
+.socket-out .socket-content { justify-content: end; }
+.socket-field {
+  background: #41454d;
+  border: 1px solid #22262c;
+  border-radius: 3px;
+  padding-inline: 4px;
+  min-height: 21px;
+  font-size: 12px;
+}
+.socket .port {
+  position: absolute;
+  z-index: 1;
+  left: -12px;
+  width: 24px;
+  height: 24px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: crosshair;
+  touch-action: none;
+}
+.socket-out .port { left: auto; right: -12px; }
+.port::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid #182029;
+  background: var(--socket);
+}
+.port:hover::before, .port-active::before, .port-drop::before {
+  outline: 2px solid var(--lab-accent);
+}
+.socket-field { padding-right: 0; overflow: hidden; }
+.socket-content .socket-number, .ramp-fields .socket-number {
+  width: 61px;
+  height: 21px;
+  min-height: 0;
+  border: 0;
+  color: var(--ink);
+  font: 12px ui-monospace, Consolas, monospace;
+  text-align: right;
+  padding: 0 2px;
+}
+.socket-content .socket-color, .ramp-fields .socket-color {
+  width: 56px;
+  height: 21px;
+  min-height: 0;
+  padding: 0 2px;
+  border: 0;
+  cursor: pointer;
+}
+.socket-field :focus-visible, .node-option :focus-visible { outline-offset: -2px; }
+.invert-option { cursor: pointer; }

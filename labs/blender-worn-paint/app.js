@@ -2,9 +2,10 @@ import { initI18n, onLangChange } from '../../i18n.js';
 import { $, format, number, paint, say, schedule, text } from '../_procedural/ui.js';
 import { clamp } from '../_procedural/core.js';
 import { defaults, grayscaleSampler, rampStops } from './material.js';
-import { compileStudy, fieldBounds, graphPorts } from './editor-model.js';
+import { compileStudy, fieldBounds } from './editor-model.js';
 import { paintMesh } from './mesh.js';
-import { enableWiring } from './wire-ui.js';
+import { graphPorts } from '../_procedural/node-links.js';
+import { enableWiring } from '../_procedural/wire-ui.js';
 import { shaderGraph } from './recipe.js';
 import { stages } from './lesson.js';
 import { variants } from './variants.js';
@@ -139,7 +140,7 @@ $('lab').innerHTML = `
     </div>
     <p class="wire-help" id="wire-help"></p>
     <div id="graph-scroll" class="graph-scroll" tabindex="0" aria-labelledby="editor-title">
-      <div id="graph"></div>
+      <div id="graph" class="shader-graph"></div>
     </div>
     <p id="wire-status" class="wire-status" role="status"></p>
     <div class="link-guide">

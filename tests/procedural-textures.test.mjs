@@ -6,8 +6,9 @@ import { groups as mathGroups, recipes as mathRecipes } from '../labs/blender-ma
 import { groups as mixGroups, recipes as mixRecipes } from '../labs/blender-mix-color/content.js';
 import { defaults, grayscaleSampler, imageMask, maskBounds, materialSampler, surfaceHeight, wearMask } from '../labs/blender-worn-paint/material.js';
 import { shaderGraph } from '../labs/blender-worn-paint/recipe.js';
-import { compileStudy, graphPorts, replaceWire } from '../labs/blender-worn-paint/editor-model.js';
-import { mixDiagram } from '../labs/blender-mix-color/diagram.js';
+import { compileStudy } from '../labs/blender-worn-paint/editor-model.js';
+import { graphPorts, replaceWire } from '../labs/_procedural/node-links.js';
+import { mixDiagram, compileMix } from '../labs/blender-mix-color/diagram.js';
 
 test('Math covers every selectable operation and recipe', () => {
   const modes = Object.keys(Object.assign({}, ...Object.values(mathGroups)));
@@ -208,5 +209,26 @@ test('the Mix Color diagram follows the displayed layer, mask and factor setting
   assert.equal(wires.get('bsdf.base'), 'mix.result');
   const constant = mixDiagram({ ...options, mask: 'Constant', layerB: 'Solid' });
   assert.equal(constant.edges.some(([, to]) => to === 'mix.factor' || to === 'mix.b'), false);
-  assert.equal(constant.nodes.find(node => node.id === 'mix').inputs[0].value, '1.3');
+  assert.equal(constant.nodes.find(node => node.id === 'mix').inputs[0][3], 1.3);
+});
+
+test('Mix Color reevaluates rewired sockets, preserves fallbacks and follows Material Output', () => {
+  const graph = mixDiagram({
+    mode: 'Mix', mask: 'U', amount: 1, threshold: 0.58,
+    layerA: 'Solid', layerB: 'Bands', a: '#000000', b: '#ffffff',
+    clipFactor: true, clipResult: false,
+  });
+  const values = new Map([['mix.factor', 0.2], ['mix.a', '#ff0000']]);
+  const links = new Map(graph.edges.map(([from, to]) => [to, from]));
+  const preview = compileMix(graph, links, values);
+  assert.equal(preview.factor(0.7, 0.3), 0.7);
+  assert.deepEqual(preview.a(0.7, 0.3), [1, 0, 0]);
+  assert.deepEqual(preview.surface(0.7, 0.3), preview.result(0.7, 0.3));
+  const rewire = replaceWire(graphPorts(graph), links, 'mask.y', 'mix.factor');
+  assert.equal(compileMix(graph, rewire, values).factor(0.7, 0.3), 0.3);
+  rewire.delete('mix.factor');
+  assert.equal(compileMix(graph, rewire, values).factor(0.7, 0.3), 0.2);
+  rewire.delete('out.surface');
+  const detached = compileMix(graph, rewire, values);
+  assert.notDeepEqual(detached.surface(0.7, 0.3), detached.result(0.7, 0.3));
 });
