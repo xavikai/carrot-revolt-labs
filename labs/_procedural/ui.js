@@ -15,7 +15,7 @@ export const labels = {
   rebuild: ['Rebuild in Blender', 'Reprodueix-ho a Blender', 'Reprodúcelo en Blender'],
   probe: ['Sample a point', 'Mostreja un punt', 'Muestrea un punto'],
   docs: ['Blender manual', 'Manual de Blender', 'Manual de Blender'],
-  edition: ['Shader Editor · Blender 4.5 LTS', 'Shader Editor · Blender 4.5 LTS', 'Shader Editor · Blender 4.5 LTS'],
+  edition: ['Blender · Shader Editor', 'Blender · Shader Editor', 'Blender · Shader Editor'],
   topic: ['Procedural texturing', 'Textures procedurals', 'Texturas procedurales'],
 };
 
@@ -60,7 +60,7 @@ export function coordinates() {
   </fieldset>`;
 }
 
-export function shell({ title, intro, controls, visuals, readout, next, docs, followUp = false }) {
+export function shell({ title, intro, controls, visuals, readout, next, docs, followUp = false, diagram = '' }) {
   $('lab').innerHTML = `
     <section class="lead">
       <p class="eyebrow" id="eyebrow"></p>
@@ -80,6 +80,7 @@ export function shell({ title, intro, controls, visuals, readout, next, docs, fo
         ${coordinates()}
         <div class="readout">${readout}</div>
       </section>
+      ${diagram}
       <section class="explanation">
         <div><h2 id="formula-title"></h2><code id="formula"></code><p id="use"></p></div>
         <div><h2 id="rebuild-title"></h2><code id="chain"></code><p id="task"></p>${followUp ? `<a id="follow-up" class="follow-up" href="../blender-worn-paint/" hidden></a>` : ''}</div>

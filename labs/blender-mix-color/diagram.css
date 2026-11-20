@@ -1,0 +1,15 @@
+#mix-diagram { grid-column: 1 / -1; min-width: 0; }
+#mix-diagram h2 { margin-bottom: 0.45rem; }
+#mix-diagram p { margin: 0.55rem 0 0; color: var(--muted); font-size: 0.9rem; }
+#mix-graph {
+  overflow-x: auto;
+  border: 1px solid #3d4952;
+  border-radius: 0.55rem;
+  background: radial-gradient(#43515d 1px, transparent 1px) #1a2025;
+  background-size: 18px 18px;
+}
+#mix-graph:focus-visible { outline-offset: -3px; }
+#mix-graph svg { display: block; min-width: 850px; max-width: 100%; height: auto; }
+#mix-graph text { font: 13px system-ui, sans-serif; fill: #f1f2f4; }
+#mix-graph .mix-graph-title { font-weight: 700; font-size: 14px; }
+#mix-graph .mix-graph-value { font-family: ui-monospace, Consolas, monospace; }

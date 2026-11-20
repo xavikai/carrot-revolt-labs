@@ -131,7 +131,7 @@ export function displayByte(linear) {
 }
 
 const hash = (x, y) => fract(Math.sin(x * 121.7 + y * 289.1) * 43758.5453);
-function noise(x, y) {
+export function noise(x, y) {
   const ix = Math.floor(x), iy = Math.floor(y);
   const u = fract(x), v = fract(y);
   const sx = u * u * (3 - 2 * u), sy = v * v * (3 - 2 * v);

@@ -39,14 +39,18 @@ const cell = Array.from({ length: 29 * 29 }, (_, i) => {
   return [random(12.173), random(89.321)];
 });
 
-function voronoi(u, v, scale) {
+const wrapCell = value => ((value % 29) + 29) % 29;
+
+export function voronoi(u, v, scale, randomness = 1) {
   const x = u * scale, y = v * scale;
   const ix = Math.floor(x), iy = Math.floor(y);
   let distance = Infinity;
   for (let j = iy - 1; j <= iy + 1; j++) {
     for (let i = ix - 1; i <= ix + 1; i++) {
-      const [dx, dy] = cell[((i + 29) % 29) + 29 * ((j + 29) % 29)];
-      distance = Math.min(distance, (x - i - dx) ** 2 + (y - j - dy) ** 2);
+      const [dx, dy] = cell[wrapCell(i) + 29 * wrapCell(j)];
+      const px = i + 0.5 + randomness * (dx - 0.5);
+      const py = j + 0.5 + randomness * (dy - 0.5);
+      distance = Math.min(distance, (x - px) ** 2 + (y - py) ** 2);
     }
   }
   return Math.sqrt(distance);
@@ -69,6 +73,23 @@ export function surfaceHeight(mask, detail, grain) {
   return mathValue('Multiply Add', detail, grain, layer);
 }
 
+export function surfaceLighting(light) {
+  const direction = light * Math.PI / 180;
+  const lx = Math.cos(direction) * 0.72, ly = Math.sin(direction) * 0.72;
+  const lz = Math.sqrt(1 - lx ** 2 - ly ** 2);
+  const halfLength = Math.hypot(lx, ly, lz + 1);
+  return (rgb, roughness, metallic, [nx, ny, nz]) => {
+    const length = Math.hypot(nx, ny, nz) || 1;
+    const diffuse = Math.max(0, (nx * lx + ny * ly + nz * lz) / length);
+    const alignment = Math.max(0, (nx * lx + ny * ly + nz * (lz + 1)) / (length * halfLength));
+    const rough = clamp(roughness);
+    const metal = clamp(metallic);
+    const specular = alignment ** (4 + (1 - rough) ** 3 * 105) * (0.06 + (1 - rough) * 0.28);
+    return rgb.map(channel => channel * (0.36 + 0.64 * diffuse) * (1 - 0.65 * metal)
+      + specular * (1 - metal + channel * metal));
+  };
+}
+
 export function materialSampler(settings, stage, view, variant = 'noise', imageSource = imageMask) {
   const soft = stage >= 2;
   const hasBump = stage >= 3 && settings.relief;
@@ -80,10 +101,7 @@ export function materialSampler(settings, stage, view, variant = 'noise', imageS
     return mixColor('Mix', ...rampColors, factor, true, false);
   } : () => paint;
   const heightAt = (u, v, mask = maskAt(u, v)) => surfaceHeight(mask, fields.Noise(u, v, 65), settings.grain);
-  const direction = settings.light * Math.PI / 180;
-  const lx = Math.cos(direction) * 0.72, ly = Math.sin(direction) * 0.72;
-  const lz = Math.sqrt(1 - lx ** 2 - ly ** 2);
-  const halfLength = Math.hypot(lx, ly, lz + 1);
+  const shade = surfaceLighting(settings.light);
   const sampleStep = 1 / 320;
 
   return (u, v) => {
@@ -99,12 +117,6 @@ export function materialSampler(settings, stage, view, variant = 'noise', imageS
     const bump = hasBump ? settings.strength * settings.distance / (2 * sampleStep) : 0;
     const nx = bump ? -bump * (heightAt(u + sampleStep, v) - heightAt(u - sampleStep, v)) : 0;
     const ny = bump ? -bump * (heightAt(u, v + sampleStep) - heightAt(u, v - sampleStep)) : 0;
-    const length = Math.hypot(nx, ny, 1);
-    const diffuse = Math.max(0, (nx * lx + ny * ly + lz) / length);
-    const alignment = Math.max(0, (nx * lx + ny * ly + lz + 1) / (length * halfLength));
-    const rough = stage >= 2 ? roughness : 0.45;
-    // A local preview to compare highlight width and normal response under a grazing light.
-    const specular = alignment ** (4 + (1 - rough) ** 3 * 105) * (0.06 + (1 - rough) * 0.28);
-    return rgb.map(channel => channel * (0.36 + 0.64 * diffuse) + specular);
+    return shade(rgb, stage >= 2 ? roughness : 0.45, 0, [nx, ny, 1]);
   };
 }

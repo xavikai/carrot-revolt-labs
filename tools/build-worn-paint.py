@@ -161,6 +161,57 @@ def add_light(name, location, energy, size, color):
     point_at(light, (0, 0, 0))
 
 
+def make_displacement_scene(studio, source):
+    scene = bpy.data.scenes.new("Displacement | Cycles")
+    scene.world = studio.world
+    scene.render.engine = "CYCLES"
+    scene.cycles.samples = 32
+    scene.cycles.use_denoising = True
+    scene.render.resolution_x = 960
+    scene.render.resolution_y = 720
+    scene.render.resolution_percentage = 100
+
+    sample = source.copy()
+    sample.data = source.data.copy()
+    sample.name = "Displacement | subdivided plane"
+    sample.location = (0, 0, 0)
+    sample.modifiers.clear()
+    scene.collection.objects.link(sample)
+    subdivisions = sample.modifiers.new("Simple subdivisions for displacement", "SUBSURF")
+    subdivisions.subdivision_type = "SIMPLE"
+    subdivisions.levels = 6
+    subdivisions.render_levels = 7
+
+    material = source.active_material.copy()
+    material.name = "Worn Paint | True Displacement"
+    material.displacement_method = "DISPLACEMENT"
+    sample.active_material = material
+    tree = material.node_tree
+    displacement = tree.nodes.new("ShaderNodeDisplacement")
+    displacement.name = "True Displacement"
+    displacement.label = "True Displacement | Object Space"
+    displacement.location = (70, -890)
+    displacement.width = 220
+    displacement.inputs["Midlevel"].default_value = 0.5
+    displacement.inputs["Scale"].default_value = 0.32
+    tree.links.new(tree.nodes["Combined Height"].outputs["Value"], displacement.inputs["Height"])
+    tree.links.new(displacement.outputs["Displacement"], tree.nodes["Material Output"].inputs["Displacement"])
+
+    for obj in studio.objects:
+        if obj.type == "LIGHT":
+            scene.collection.objects.link(obj)
+    camera = studio.camera.copy()
+    camera.data = studio.camera.data.copy()
+    camera.name = "Displacement | camera"
+    camera.data.ortho_scale = 3.25
+    scene.collection.objects.link(camera)
+    scene.camera = camera
+    layer = scene.view_layers[0]
+    layer.update()
+    layer.objects.active = sample
+    sample.select_set(True, view_layer=layer)
+
+
 def build():
     bpy.ops.wm.read_factory_settings(use_empty=False)
     for obj in list(bpy.data.objects):
@@ -199,6 +250,7 @@ def build():
     scene.render.resolution_x = 1040
     scene.render.resolution_y = 900
     scene.render.resolution_percentage = 100
+    make_displacement_scene(scene, samples[0])
 
     selected = samples[0]
     bpy.ops.object.select_all(action="DESELECT")

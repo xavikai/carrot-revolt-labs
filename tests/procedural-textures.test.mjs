@@ -6,6 +6,8 @@ import { groups as mathGroups, recipes as mathRecipes } from '../labs/blender-ma
 import { groups as mixGroups, recipes as mixRecipes } from '../labs/blender-mix-color/content.js';
 import { defaults, grayscaleSampler, imageMask, maskBounds, materialSampler, surfaceHeight, wearMask } from '../labs/blender-worn-paint/material.js';
 import { shaderGraph } from '../labs/blender-worn-paint/recipe.js';
+import { compileStudy, graphPorts, replaceWire } from '../labs/blender-worn-paint/editor-model.js';
+import { mixDiagram } from '../labs/blender-mix-color/diagram.js';
 
 test('Math covers every selectable operation and recipe', () => {
   const modes = Object.keys(Object.assign({}, ...Object.values(mathGroups)));
@@ -65,7 +67,7 @@ test('HSV component transfers and sRGB conversion use linear channel values', ()
 });
 
 test('every stage connects existing output sockets to unique, compatible inputs', () => {
-  for (let stage = 0; stage < 5; stage++) {
+  for (let stage = 0; stage <= 6; stage++) {
     const { nodes, edges } = shaderGraph(stage, defaults);
     const index = direction => new Map(nodes.flatMap(node =>
       node[direction].map(([id, , type]) => [node.id + '.' + id, type])));
@@ -144,4 +146,67 @@ test('the downloadable project and the mask are shipped as binary assets', () =>
   assert.ok(project.length > 50000);
   assert.equal(project.subarray(0, 4).toString('hex'), '28b52ffd'); // Blender compressed the project with Zstandard.
   assert.equal(mask.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+});
+
+function study(stage = 6, variant = 'noise') {
+  const graph = shaderGraph(stage, defaults, variant);
+  const links = new Map(graph.edges.map(([from, to]) => [to, from]));
+  return { graph, links, ports: graphPorts(graph) };
+}
+
+test('rewiring rejects cycles, self links and incompatible sockets without removing existing wires', () => {
+  const { links, ports } = study();
+  assert.equal(replaceWire(ports, links, 'sum.height', 'depth.mask', 'bump.height'), null);
+  assert.equal(replaceWire(ports, links, 'coord.generated', 'mix.factor'), null);
+  assert.equal(replaceWire(ports, links, 'rough.result', 'rough.factor'), null);
+  assert.equal(links.get('bump.height'), 'sum.height');
+  const next = replaceWire(ports, links, 'sum.height', 'mix.factor', 'bump.height');
+  assert.equal(next.get('mix.factor'), 'sum.height');
+  assert.equal(next.has('bump.height'), false);
+  assert.equal(links.get('mix.factor'), 'limit.mask');
+  assert.ok(replaceWire(ports, links, 'mix.result', 'rough.factor'));
+});
+
+test('the live evaluator follows links and retains edited socket defaults when unplugged', () => {
+  const { graph, links, ports } = study();
+  const values = new Map([['bsdf.color', '#ff0000'], ['bsdf.rough', 0.13]]);
+  const connected = compileStudy(graph, links, values);
+  const unplugged = new Map(links);
+  unplugged.delete('bsdf.color');
+  unplugged.delete('bsdf.rough');
+  const edited = compileStudy(graph, unplugged, values);
+  assert.deepEqual(edited.color(0.2, 0.8), [1, 0, 0]);
+  assert.deepEqual(edited.roughness(0.2, 0.8), [0.13, 0.13, 0.13]);
+  assert.notDeepEqual(edited.color(0.2, 0.8), connected.color(0.2, 0.8));
+  const rerouted = replaceWire(ports, links, 'limit.mask', 'bsdf.color');
+  assert.deepEqual(compileStudy(graph, rerouted, values).color(0.2, 0.8), connected.mask(0.2, 0.8));
+});
+
+test('true displacement interprets black as down, midpoint as neutral and white as up', () => {
+  const { graph, links } = study();
+  links.delete('displacement.height');
+  for (const [height, expected] of [[0, -0.16], [0.5, 0], [1, 0.16]]) {
+    const values = new Map([['displacement.height', height]]);
+    assert.equal(compileStudy(graph, links, values).displacement(0.2, 0.5)[2], expected);
+  }
+  links.delete('output.displacement');
+  assert.deepEqual(compileStudy(graph, links, new Map()).displacement(0, 0), [0, 0, 0]);
+});
+
+test('the Mix Color diagram follows the displayed layer, mask and factor settings', () => {
+  const options = {
+    mode: 'Multiply', mask: 'Hard Noise', threshold: 0.58, amount: 1.3,
+    layerA: 'Solid', layerB: 'Bands', a: '#2c8294', b: '#ad6638',
+    clipFactor: true, clipResult: false,
+  };
+  const linked = mixDiagram(options);
+  const wires = new Map(linked.edges.map(([from, to]) => [to, from]));
+  assert.equal(wires.get('mix.factor'), 'multiply.value');
+  assert.equal(wires.get('multiply.input'), 'mask.fac');
+  assert.equal(wires.get('mix.b'), 'rampb.color');
+  assert.equal(wires.get('rampb.fac'), 'layerb.fac');
+  assert.equal(wires.get('bsdf.base'), 'mix.result');
+  const constant = mixDiagram({ ...options, mask: 'Constant', layerB: 'Solid' });
+  assert.equal(constant.edges.some(([, to]) => to === 'mix.factor' || to === 'mix.b'), false);
+  assert.equal(constant.nodes.find(node => node.id === 'mix').inputs[0].value, '1.3');
 });

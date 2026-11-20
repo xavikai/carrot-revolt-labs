@@ -1,11 +1,16 @@
 import { initI18n, onLangChange } from '../../i18n.js';
 import { $, format, number, paint, say, schedule, text } from '../_procedural/ui.js';
-import { defaults, grayscaleSampler, materialSampler } from './material.js';
+import { clamp } from '../_procedural/core.js';
+import { defaults, grayscaleSampler, rampStops } from './material.js';
+import { compileStudy, fieldBounds, graphPorts } from './editor-model.js';
+import { paintMesh } from './mesh.js';
+import { enableWiring } from './wire-ui.js';
 import { shaderGraph } from './recipe.js';
 import { stages } from './lesson.js';
 import { variants } from './variants.js';
 
-const variantsStage = stages.length - 1;
+const variantsStage = stages.findIndex(stage => stage.variants);
+const meshStage = stages.length - 1;
 
 const copy = {
   title: ['Worn Paint Lab', 'Lab de pintura desgastada', 'Lab de pintura desgastada'],
@@ -15,9 +20,18 @@ const copy = {
   steps: ['Lesson steps', 'Passos del lab', 'Pasos del lab'],
   previous: ['Previous', 'Anterior', 'Anterior'],
   next: ['Next', 'Següent', 'Siguiente'],
-  focus: ['Select a connection to highlight its cable. Scroll sideways or use Fit to see the whole graph.',
-    'Selecciona una connexió per ressaltar-ne el cable. Desplaça’t lateralment o fes servir Enquadra per veure tots els nodes.',
-    'Selecciona una conexión para resaltar su cable. Desplázate lateralmente o usa Encuadrar para ver todos los nodos.'],
+  focus: ['Drag a cable between sockets. Pull a connected input into empty space to disconnect it. You can also select two sockets with Enter or remove a link with Delete.',
+    'Arrossega un cable entre connectors. Arrossega una entrada connectada a un espai buit per desconnectar-la. També pots seleccionar dos connectors amb Retorn o eliminar un cable amb Supr.',
+    'Arrastra un cable entre conectores. Arrastra una entrada conectada a un espacio vacío para desconectarla. También puedes seleccionar dos conectores con Intro o eliminar un cable con Supr.'],
+  chooseSocket: ['Select the other socket.', 'Selecciona l’altre connector.', 'Selecciona el otro conector.'],
+  invalidWire: ['These sockets cannot be connected.', 'Aquests connectors no es poden unir.', 'Estos conectores no se pueden unir.'],
+  connected: ['Cable connected.', 'Cable connectat.', 'Cable conectado.'],
+  disconnected: ['Cable disconnected.', 'Cable desconnectat.', 'Cable desconectado.'],
+  divisions: ['Subdivisions per side', 'Subdivisions per costat', 'Subdivisiones por lado'],
+  grid: ['Show mesh edges', 'Mostra les arestes', 'Muestra las aristas'],
+  noSurface: ['Connect the shader to Material Output Surface to see the surface.',
+    'Connecta el shader a Surface de Material Output per veure la superfície.',
+    'Conecta el shader a Surface de Material Output para ver la superficie.'],
   fit: ['Fit', 'Enquadra', 'Encuadrar'],
   zoomOut: ['Zoom out', 'Allunya', 'Alejar'],
   zoomIn: ['Zoom in', 'Apropa', 'Acercar'],
@@ -27,15 +41,15 @@ const copy = {
   note: ['The preview uses browser-generated noise and a moving light. Blender’s noise and lighting will give a different pattern and finish.',
     'La previsualització fa servir soroll generat al navegador i una llum mòbil. El soroll i la il·luminació de Blender donaran un patró i un acabat diferents.',
     'La vista previa usa ruido generado en el navegador y una luz móvil. El ruido y la iluminación de Blender darán un patrón y acabado distintos.'],
-  controls: ['Material settings', 'Ajustos del material', 'Ajustes del material'],
-  reset: ['Reset values', 'Restableix els valors', 'Restablece los valores'],
+  light: ['Light angle', 'Angle de la llum', 'Ángulo de la luz'],
+  reset: ['Reset graph', 'Restableix el graf', 'Restablece el grafo'],
   download: ['Download the Blender file', 'Descarrega el fitxer de Blender', 'Descarga el archivo de Blender'],
-  downloadNote: ['Blender 5.3 · Four wired materials. Select a sample in Shading and press Home to frame its nodes. The wear image is packed.',
-    'Blender 5.3 · Quatre materials connectats. A Shading, selecciona una mostra i prem Home per enquadrar-ne els nodes. La imatge de desgast és dins del fitxer.',
-    'Blender 5.3 · Cuatro materiales conectados. En Shading, selecciona una muestra y pulsa Inicio para encuadrar sus nodos. La imagen de desgaste está dentro del archivo.'],
+  downloadNote: ['Four paint samples and a Displacement | Cycles scene. Select a sample in Shading and press Home to frame its nodes. The wear image is packed.',
+    'Quatre mostres de pintura i una escena Displacement | Cycles. A Shading, selecciona una mostra i prem Home per enquadrar-ne els nodes. La imatge de desgast és dins del fitxer.',
+    'Cuatro muestras de pintura y una escena Displacement | Cycles. En Shading, selecciona una muestra y pulsa Inicio para encuadrar sus nodos. La imagen de desgaste está dentro del archivo.'],
   inputExample: ['Input examples', 'Exemples d’entrades', 'Ejemplos de entradas'],
   downloadMask: ['Download the grayscale mask', 'Descarrega la màscara en grisos', 'Descarga la máscara de grises'],
-  relief: ['Preview bump', 'Mostra el relleu', 'Muestra el relieve'],
+  displacementDocs: ['Blender manual · Displacement', 'Manual de Blender · Displacement', 'Manual de Blender · Displacement'],
   docs: ['Blender manual · Bump', 'Manual de Blender · Bump', 'Manual de Blender · Bump'],
 };
 
@@ -45,23 +59,31 @@ const channels = [
   ['roughness', 2, ['Roughness', 'Rugositat', 'Rugosidad']],
   ['height', 3, ['Height', 'Alçada', 'Altura']],
   ['material', 1, ['Material', 'Material', 'Material']],
+  ['mesh', meshStage, ['Mesh', 'Malla', 'Malla']],
 ];
 
-const controls = [
-  ['scale', 0, 2, 16, 1, ['Noise scale', 'Escala del soroll', 'Escala del ruido']],
-  ['threshold', 0, 0.25, 0.78, 0.01, ['Wear threshold', 'Llindar de desgast', 'Umbral de desgaste']],
-  ['transition', 2, 0.02, 0.30, 0.01, ['Edge transition', 'Transició de la vora', 'Transición del borde']],
-  ['paintRoughness', 2, 0, 1, 0.01, ['Paint roughness', 'Rugositat de la pintura', 'Rugosidad de la pintura']],
-  ['primerRoughness', 2, 0, 1, 0.01, ['Primer roughness', 'Rugositat de la imprimació', 'Rugosidad de la imprimación']],
-  ['grain', 3, 0, 0.30, 0.01, ['Grain', 'Gra', 'Grano']],
-  ['strength', 3, 0, 1, 0.01, ['Bump strength', 'Força del relleu', 'Fuerza del relieve']],
-  ['distance', 3, 0, 0.12, 0.001, ['Bump distance', 'Distància de Bump', 'Distancia de Bump']],
-  ['light', 1, 0, 360, 1, ['Light angle', 'Angle de la llum', 'Ángulo de la luz']],
-];
-
-const state = { stage: 0, view: stages[0].view, variant: 'noise', edge: null, zoom: null, settings: { ...defaults } };
+const state = { stage: 0, view: stages[0].view, variant: 'noise', edge: null, zoom: null,
+  light: defaults.light, divisions: 24, grid: true };
+const work = new Map();
 const activeVariant = () => state.stage === variantsStage ? state.variant : 'noise';
-const currentGraph = () => shaderGraph(state.stage, state.settings, activeVariant());
+const key = () => state.stage + ':' + activeVariant();
+const recipe = () => shaderGraph(state.stage, defaults, activeVariant());
+function edits() {
+  if (!work.has(key())) {
+    work.set(key(), {
+      links: new Map(recipe().edges.map(([from, to]) => [to, from])),
+      values: new Map(),
+    });
+  }
+  return work.get(key());
+}
+function currentGraph() {
+  const graph = recipe();
+  const phases = new Map(graph.edges.map(([from, to, stage]) => [from + '>' + to, stage]));
+  graph.edges = [...edits().links].map(([to, from]) => [from, to, phases.get(from + '>' + to) ?? state.stage]);
+  return graph;
+}
+let layoutPorts = new Map();
 const wireColors = { float: '#b8c2cc', vector: '#a89afc', shader: '#8cdda1', color: '#f6ca68' };
 const nodeRoles = {
   noise: ['wear', 'desgast', 'desgaste'],
@@ -79,7 +101,7 @@ const optionHeight = 24;
 
 $('lab').innerHTML = `
   <section class="lead">
-    <p class="eyebrow">Blender 4.5 LTS · Shader Editor</p>
+    <p class="eyebrow">Blender · Shader Editor</p>
     <h1 id="title"></h1>
     <p id="intro"></p>
     <div class="download-panel">
@@ -103,6 +125,7 @@ $('lab').innerHTML = `
       <button type="button" id="next"></button>
     </div>
   </section>
+  <div class="interaction-grid">
   <section class="editor" aria-labelledby="editor-title">
     <div class="editor-bar">
       <h2 id="editor-title">Shader Editor</h2>
@@ -111,51 +134,75 @@ $('lab').innerHTML = `
         <output id="zoom-level"></output>
         <button type="button" id="zoom-in">+</button>
         <button type="button" id="fit"></button>
+        <button type="button" id="reset"></button>
       </div>
     </div>
+    <p class="wire-help" id="wire-help"></p>
     <div id="graph-scroll" class="graph-scroll" tabindex="0" aria-labelledby="editor-title">
       <div id="graph"></div>
     </div>
+    <p id="wire-status" class="wire-status" role="status"></p>
     <div class="link-guide">
       <h3 id="link-title"></h3>
-      <p id="wire-help"></p>
       <div id="connections"></div>
     </div>
   </section>
-  <section class="experiment-grid">
+  <aside class="preview-dock">
     <figure class="material-preview">
       <figcaption id="preview-title"></figcaption>
       <div class="channel-list" id="channel-list" role="group">
         ${channels.map(([id]) => `<button type="button" data-view="${id}"></button>`).join('')}
       </div>
-      <canvas id="sample" width="420" height="236" aria-labelledby="preview-title"></canvas>
-      <p id="note"></p>
-    </figure>
-    <section class="material-controls" aria-labelledby="settings-title">
-      <h2 id="settings-title"></h2>
-      <div class="setting-fields">
-        ${controls.map(([id, , min, max, step]) => `<label id="${id}-field">
-          <span id="${id}-label"></span>
-          <input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${defaults[id]}">
-        </label>`).join('')}
+      <canvas id="sample" width="360" height="216" aria-labelledby="preview-title"></canvas>
+      <p id="surface-status" hidden></p>
+      <label class="preview-control" id="light-field"><span id="light-label"></span><input id="light" type="range" min="0" max="360" value="${defaults.light}"></label>
+      <div class="mesh-controls" id="mesh-controls" hidden>
+        <label><span id="divisions-label"></span>
+          <select id="divisions"><option value="4">4</option><option value="12">12</option><option selected value="24">24</option><option value="48">48</option></select>
+        </label>
+        <label class="check"><input id="mesh-grid" type="checkbox" checked><span id="grid-label"></span></label>
       </div>
-      <label class="check" id="relief-field"><input type="checkbox" id="relief" checked><span id="relief-label"></span></label>
-      <button type="button" id="reset"></button>
-    </section>
-  </section>
+      <p class="preview-note" id="note"></p>
+    </figure>
+  </aside>
+  </div>
   <footer>
-    <a id="docs" href="https://docs.blender.org/manual/en/4.5/render/shader_nodes/vector/bump.html"></a>
+    <a id="docs" href="https://docs.blender.org/manual/en/latest/render/shader_nodes/vector/bump.html"></a>
+    <a id="displacement-docs" href="https://docs.blender.org/manual/en/latest/render/shader_nodes/displacement/displacement.html" hidden></a>
     <a href="../blender-math/">Math Lab</a><a href="../blender-mix-color/">Mix Color Lab</a>
   </footer>`;
 
 function renderOption(option) {
   if (option.image) return '<div class="node-option node-image"><span></span>Wear Mask.png</div>';
   if (option.ramp) {
-    const [[left, start], [right, end]] = option.ramp;
+    const [[left, start], [right, end]] = editedStops().sort((a, b) => a[1] - b[1]);
     return `<div class="node-option ramp-option"><div class="node-ramp" style="--ramp-left:${left};--ramp-right:${right};--ramp-start:${start * 100}%;--ramp-end:${end * 100}%">
       <i></i><i></i></div></div>`;
   }
-  return `<div class="node-option"><span>${option}</span><span class="node-chevron" aria-hidden="true"></span></div>`;
+  if (option.stop !== undefined) {
+    const i = option.stop;
+    const [color, position] = editedStops()[i];
+    return `<div class="node-option ramp-fields">
+      <span>${i + 1}</span>${control('ramp.color' + i, 'Color Ramp · ' + (i + 1) + ' · Color', 'color', color)}
+      ${control('ramp.stop' + i, 'Color Ramp · ' + (i + 1) + ' · Position', 'float', position)}</div>`;
+  }
+  if (option === 'Invert ☐') {
+    return `<label class="node-option invert-option"><span>Invert</span><input type="checkbox" data-value="bump.invert" ${edits().values.get('bump.invert') ? 'checked' : ''}></label>`;
+  }
+  return `<div class="node-option"><span>${option}</span></div>`;
+}
+
+function editedStops() {
+  return rampStops.map(([hex, position], i) => [
+    edits().values.get('ramp.color' + i) ?? hex,
+    edits().values.get('ramp.stop' + i) ?? position,
+  ]);
+}
+
+function control(key, label, type, value) {
+  if (type === 'color') return `<input type="color" class="socket-color" data-value="${key}" aria-label="${label}" value="${value}">`;
+  const [min, max, step] = fieldBounds(key);
+  return `<input type="number" class="socket-number" data-value="${key}" aria-label="${label}" value="${value}" min="${min}" max="${max}" step="${step}">`;
 }
 
 function graphDetails({ nodes, edges }) {
@@ -170,12 +217,12 @@ function graphDetails({ nodes, edges }) {
         + (output ? 0 : node.outputs.length * portHeight + node.options.length * optionHeight);
       const x = node.x + (output ? nodeWidth : 0);
       const duplicateLabel = entries.filter(([, name]) => name === label).length > 1;
-      ports.set(key, { x, y, type, label: title + ' · ' + label + (duplicateLabel ? ' ' + (index + 1) : '') });
-      const showValue = value !== undefined && value !== '' && !linked.has(key);
-      const display = showValue ? type === 'color'
-        ? `<span class="swatch" style="--swatch:${value}">${value}</span>`
-        : `<span class="socket-value">${value}</span>` : '';
-      return `<div class="socket ${output ? 'socket-out' : 'socket-in'}" style="--socket:${wireColors[type]}"><i></i>
+      const name = title + ' · ' + label + (duplicateLabel ? ' ' + (index + 1) : '');
+      ports.set(key, { x, y, type, output, label: name });
+      const showValue = !output && value !== undefined && value !== '' && !linked.has(key);
+      const display = showValue ? control(key, name, type, edits().values.get(key) ?? value) : '';
+      return `<div class="socket ${output ? 'socket-out' : 'socket-in'}" style="--socket:${wireColors[type]}">
+        <button type="button" class="port" data-port="${key}" aria-label="${name}"></button>
         <div class="socket-content${showValue ? ' socket-field' : ''}"><span>${label}</span>${display}</div></div>`;
     }).join('');
     return `<div class="shader-node family-${node.family}${endpoints.includes(node.id) ? ' node-highlight' : ''}" title="${title}" style="left:${node.x}px;top:${node.y}px">
@@ -189,7 +236,7 @@ function graphDetails({ nodes, edges }) {
 }
 
 function wirePath(a, b, to) {
-  if (to === 'depth.mask') {
+  if (to === 'depth.mask' && a.x === 567) {
     // Loop through the space between the two Math columns.
     const right = a.x + 21, left = b.x - 18, lane = activeVariant() === 'ramp' ? 530 : 378;
     return `M${a.x} ${a.y} C${right} ${a.y} ${right} ${a.y} ${right} ${a.y + 18} V${lane - 12} Q${right} ${lane} ${right - 12} ${lane} H${left + 12} Q${left} ${lane} ${left} ${lane + 12} V${b.y - 12} Q${left} ${b.y} ${b.x} ${b.y}`;
@@ -208,6 +255,7 @@ function updateZoom(modelWidth) {
 function renderGraph() {
   const graph = currentGraph();
   const { html, ports } = graphDetails(graph);
+  layoutPorts = ports;
   const wires = graph.edges.map(([from, to, stage], index) => {
     const a = ports.get(from), b = ports.get(to);
     const active = state.edge === index;
@@ -217,7 +265,7 @@ function renderGraph() {
   });
   $('graph').style.width = graph.width + 'px';
   $('graph').style.height = graph.height + 'px';
-  $('graph').innerHTML = `<svg class="wires" width="${graph.width}" height="${graph.height}" aria-hidden="true">${wires.join('')}</svg>${html}`;
+  $('graph').innerHTML = `<svg class="wires" width="${graph.width}" height="${graph.height}" aria-hidden="true">${wires.join('')}<path class="drag-wire" fill="none" stroke="#ffaf63" stroke-width="3"></path></svg>${html}`;
   updateZoom(graph.width);
 }
 
@@ -233,12 +281,10 @@ function renderConnections() {
 }
 
 function renderControls() {
-  for (const [id, phase, , , , label] of controls) {
-    const angle = id === 'light';
-    $(id + '-field').hidden = phase > state.stage || (id === 'scale' && activeVariant() === 'image');
-    text(id + '-label', say(label) + ' · ' + format(state.settings[id]) + (angle ? '°' : ''));
-  }
-  $('relief-field').hidden = state.stage < 3;
+  $('mesh-controls').hidden = state.view !== 'mesh';
+  $('light-field').hidden = state.view !== 'material';
+  text('light-label', say(copy.light) + ' · ' + format(state.light) + '°');
+  $('surface-status').hidden = state.view !== 'material' || edits().links.has('output.surface');
   $('fit').setAttribute('aria-label', say(copy.fit));
   $('zoom-out').setAttribute('aria-label', say(copy.zoomOut));
   $('zoom-in').setAttribute('aria-label', say(copy.zoomIn));
@@ -253,7 +299,11 @@ function renderControls() {
 }
 
 let imageSource;
-const redraw = schedule(() => paint($('sample'), materialSampler(state.settings, state.stage, state.view, activeVariant(), imageSource)));
+const redraw = schedule(() => {
+  const model = compileStudy(recipe(), edits().links, edits().values, { light: state.light, image: imageSource });
+  if (state.view === 'mesh') paintMesh($('sample'), model, state.divisions, state.grid);
+  else paint($('sample'), model[state.view]);
+});
 
 async function loadMaskImage() {
   const image = new Image();
@@ -278,10 +328,12 @@ function renderLesson() {
   const exploring = state.stage === variantsStage;
   const demo = exploring ? variants[state.variant] : lesson;
   for (const [id, key] of [['title', 'title'], ['intro', 'intro'], ['previous', 'previous'], ['next', 'next'], ['wire-help', 'focus'],
-    ['preview-title', 'view'], ['note', 'note'], ['settings-title', 'controls'], ['reset', 'reset'], ['relief-label', 'relief'],
+    ['preview-title', 'view'], ['note', 'note'], ['reset', 'reset'], ['divisions-label', 'divisions'],
+    ['grid-label', 'grid'], ['surface-status', 'noSurface'], ['displacement-docs', 'displacementDocs'],
     ['docs', 'docs'], ['fit', 'fit'], ['download', 'download'], ['download-note', 'downloadNote'],
     ['download-mask', 'downloadMask']]) text(id, say(copy[key]));
   $('variant-list').hidden = !exploring;
+  $('displacement-docs').hidden = state.stage !== meshStage;
   $('variant-list').setAttribute('aria-label', say(copy.inputExample));
   $('mask-file').hidden = activeVariant() !== 'image';
   document.querySelectorAll('[data-variant]').forEach(button => {
@@ -306,6 +358,8 @@ function renderLesson() {
 }
 
 function changeStage(stage) {
+  cancelWiring();
+  message(null);
   state.stage = stage;
   state.view = stages[stage].view;
   state.edge = null;
@@ -323,6 +377,8 @@ $('next').addEventListener('click', () => changeStage(state.stage + 1));
 $('variant-list').addEventListener('click', event => {
   const button = event.target.closest('[data-variant]');
   if (!button) return;
+  cancelWiring();
+  message(null);
   state.variant = button.dataset.variant;
   state.edge = null;
   state.zoom = null;
@@ -349,28 +405,80 @@ $('connections').addEventListener('click', event => {
     const [from, to] = graph.edges[index];
     const zoom = Number($('graph').style.zoom);
     const x = (ports.get(from).x + ports.get(to).x) * zoom / 2;
-    $('graph-scroll').scrollLeft = x - $('graph-scroll').clientWidth / 2;
+    const y = (ports.get(from).y + ports.get(to).y) * zoom / 2;
+    $('graph-scroll').scrollTo(x - $('graph-scroll').clientWidth / 2, y - $('graph-scroll').clientHeight / 2);
   }
 });
-for (const [id] of controls) {
-  $(id).addEventListener('input', () => {
-    state.settings[id] = number(id);
-    renderControls();
-    renderGraph();
-    redraw();
-  });
+function message(id) {
+  text('wire-status', id ? say(copy[id]) : '');
 }
-$('relief').addEventListener('change', () => {
-  state.settings.relief = $('relief').checked;
+
+function updateGraph() {
+  state.edge = null;
+  renderGraph();
+  renderConnections();
+  renderControls();
+  redraw();
+}
+
+const cancelWiring = enableWiring($('graph-scroll'), $('graph'), {
+  layout: () => layoutPorts,
+  links: () => edits().links,
+  model: () => graphPorts(recipe()),
+  apply: (links, feedback) => {
+    edits().links = links;
+    updateGraph();
+    message(feedback);
+  },
+  message,
+  path: wirePath,
+});
+
+$('graph').addEventListener('input', event => {
+  const target = event.target;
+  const id = target.dataset.value;
+  if (!id) return;
+  let value = target.value;
+  if (target.type === 'number') {
+    if (!Number.isFinite(target.valueAsNumber)) return;
+    const [min, max] = fieldBounds(id);
+    value = clamp(target.valueAsNumber, min, max);
+  } else if (target.type === 'checkbox') {
+    value = target.checked;
+  }
+  edits().values.set(id, value);
+  if (id.startsWith('ramp.')) {
+    const [[a, lo], [b, hi]] = editedStops().sort((first, second) => first[1] - second[1]);
+    const ramp = $('graph').querySelector('.node-ramp');
+    for (const [name, value] of [['left', a], ['right', b], ['start', lo * 100 + '%'], ['end', hi * 100 + '%']]) {
+      ramp.style.setProperty('--ramp-' + name, value);
+    }
+  }
+  redraw();
+});
+$('graph').addEventListener('focusout', event => {
+  if (event.target.type !== 'number' || !event.target.dataset.value) return;
+  const field = event.target;
+  field.value = edits().values.get(field.dataset.value) ?? field.defaultValue;
+});
+$('light').addEventListener('input', () => {
+  state.light = number('light');
+  renderControls();
+  redraw();
+});
+$('divisions').addEventListener('change', () => {
+  state.divisions = Number($('divisions').value);
+  redraw();
+});
+$('mesh-grid').addEventListener('change', () => {
+  state.grid = $('mesh-grid').checked;
   redraw();
 });
 $('reset').addEventListener('click', () => {
-  state.settings = { ...defaults };
-  for (const [id] of controls) $(id).value = defaults[id];
-  $('relief').checked = defaults.relief;
-  renderControls();
-  renderGraph();
-  redraw();
+  cancelWiring();
+  work.delete(key());
+  message(null);
+  updateGraph();
 });
 
 function changeZoom(delta) {
@@ -385,7 +493,7 @@ $('zoom-in').addEventListener('click', () => changeZoom(0.1));
 $('zoom-out').addEventListener('click', () => changeZoom(-0.1));
 new ResizeObserver(() => updateZoom(currentGraph().width)).observe($('graph-scroll'));
 
-onLangChange(renderLesson);
+onLangChange(() => { cancelWiring(); message(null); renderLesson(); });
 initI18n({ mount: '#language' });
 renderLesson();
 loadMaskImage();

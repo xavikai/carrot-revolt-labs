@@ -5,6 +5,7 @@ export function shaderGraph(stage, settings, variant = 'noise') {
   const image = variant === 'image';
   const procedural = variant === 'voronoi';
   const ramp = variant === 'ramp';
+  const displacement = stage === 6;
   const sourceSocket = procedural ? 'distance' : image ? 'color' : 'fac';
   const early = stage < 2;
   const number = value => String(Number(value.toFixed(3)));
@@ -33,10 +34,10 @@ export function shaderGraph(stage, settings, variant = 'noise') {
           float('roughness', 'Roughness', 0.5),
         ], [float('fac', 'Fac')], ['3D · fBM', 'Normalize ✓']),
     early
-      ? node('limit', 'Math', 'math', 405, y, [float('noise', 'Value'), float('threshold', 'Value', settings.threshold)],
-        [float('mask', 'Value')], ['Greater Than'])
+      ? node('limit', 'Math', 'math', 405, y, [float('noise', 'Value', 0.5), float('threshold', 'Value', settings.threshold)],
+        [float('mask', 'Value', 0.5)], ['Greater Than'])
       : node('limit', 'Map Range', 'math', 405, y, [
-        float('noise', 'Value'), float('min', 'From Min', min), float('max', 'From Max', max),
+        float('noise', 'Value', 0.5), float('min', 'From Min', min), float('max', 'From Max', max),
         float('to-min', 'To Min', 0), float('to-max', 'To Max', 1),
       ], [float('mask', 'Result')], ['Float · Smooth Step', 'Clamp ✓']),
   ];
@@ -49,13 +50,13 @@ export function shaderGraph(stage, settings, variant = 'noise') {
   if (stage === 0) edges.push(['limit.mask', 'bsdf.color', 0]);
   if (stage >= 1) {
     nodes.push(node('mix', 'Mix Color', 'color', 600, 22, [
-      float('factor', 'Factor'), color('paint', 'A', colors.paint), color('primer', 'B', colors.primer),
+      float('factor', 'Factor', 0.5), color('paint', 'A', colors.paint), color('primer', 'B', colors.primer),
     ], [color('result', 'Result')], ['Color · Mix', 'Clamp Factor ✓']));
     edges.push(['limit.mask', 'mix.factor', early ? 1 : 2], ['mix.result', 'bsdf.color', 1]);
   }
   if (stage >= 2) {
     nodes.push(node('rough', 'Map Range', 'math', 600, ramp ? 375 : 260, [
-      float('factor', 'Value'), float('min', 'From Min', 0), float('max', 'From Max', 1),
+      float('factor', 'Value', 0), float('min', 'From Min', 0), float('max', 'From Max', 1),
       float('paint', 'To Min', settings.paintRoughness), float('primer', 'To Max', settings.primerRoughness),
     ], [float('result', 'Result')], ['Float · Linear', 'Clamp ✓']));
     edges.push(['limit.mask', 'rough.factor', 2], ['rough.result', 'bsdf.rough', 2]);
@@ -67,14 +68,14 @@ export function shaderGraph(stage, settings, variant = 'noise') {
         float('roughness', 'Roughness', 0.5),
       ], [float('fac', 'Fac')], ['3D · fBM', 'Normalize ✓']),
       node('depth', 'Math', 'math', 405, ramp ? 558 : 402, [
-        float('mask', 'Value'), float('multiplier', 'Multiplier', -0.55), float('offset', 'Addend', 0.65),
+        float('mask', 'Value', 0.5), float('multiplier', 'Multiplier', -0.55), float('offset', 'Addend', 0.65),
       ], [float('height', 'Value')], ['Multiply Add']),
       node('sum', 'Math', 'math', 600, ramp ? 639 : 520, [
-        float('grain', 'Value'), float('multiplier', 'Multiplier', settings.grain), float('layer', 'Addend'),
+        float('grain', 'Value', 0.5), float('multiplier', 'Multiplier', settings.grain), float('layer', 'Addend', 0.5),
       ], [float('height', 'Value')], ['Multiply Add']),
       node('bump', 'Bump', 'vector', 790, ramp ? 603 : 464, [
         float('strength', 'Strength', settings.strength), float('distance', 'Distance', settings.distance),
-        float('height', 'Height'), vector('normal-in', 'Normal'),
+        float('height', 'Height', 0), vector('normal-in', 'Normal'),
       ], [vector('normal', 'Normal')], ['Invert ☐']),
     );
     edges.push(
@@ -89,20 +90,29 @@ export function shaderGraph(stage, settings, variant = 'noise') {
   if (ramp) {
     nodes.push(
       node('pigment', 'Noise Texture', 'texture', 210, 20, [
-        vector('vector', 'Vector'), float('scale', 'Scale', 18), float('detail', 'Detail', 2),
+        vector('vector', 'Vector'), float('scale', 'Scale', 18), float('detail', 'Detail', 2), float('roughness', 'Roughness', 0.5),
       ], [float('fac', 'Fac')], ['3D · fBM', 'Normalize ✓']),
-      node('ramp', 'Color Ramp', 'color', 405, 20, [float('fac', 'Fac')], [color('color', 'Color')],
-        ['RGB · Linear', { ramp: rampStops }]),
+      node('ramp', 'Color Ramp', 'color', 405, 20, [float('fac', 'Fac', 0.5)], [color('color', 'Color')],
+        ['RGB · Linear', { ramp: rampStops }, { stop: 0 }, { stop: 1 }]),
     );
     edges.push(['coord.generated', 'pigment.vector', 5], ['pigment.fac', 'ramp.fac', 5], ['ramp.color', 'mix.paint', 5]);
   }
   nodes.push(
     node('bsdf', 'Principled BSDF', 'shader', shaderX, shaderY, [
-      color('color', 'Base Color'), float('metallic', 'Metallic', 0), float('rough', 'Roughness', 0.45),
+      color('color', 'Base Color', '#e7e7e7'), float('metallic', 'Metallic', 0), float('rough', 'Roughness', 0.45),
       vector('normal', 'Normal'),
     ], [shader('bsdf', 'BSDF')]),
-    node('output', 'Material Output', 'output', shaderX + 196, shaderY, [shader('surface', 'Surface')], []),
+    node('output', 'Material Output', 'output', shaderX + 196, shaderY, [
+      shader('surface', 'Surface'), ...(displacement ? [vector('displacement', 'Displacement')] : []),
+    ], []),
   );
   edges.push(['bsdf.bsdf', 'output.surface', 0]);
+  if (displacement) {
+    nodes.push(node('displacement', 'Displacement', 'vector', 988, 610, [
+      float('height', 'Height', 0), float('midlevel', 'Midlevel', 0.5), float('scale', 'Scale', 0.32),
+      vector('normal', 'Normal'),
+    ], [vector('result', 'Displacement')], ['Object Space']));
+    edges.push(['sum.height', 'displacement.height', 6], ['displacement.result', 'output.displacement', 6]);
+  }
   return { nodes, edges, width: shaderX + 385, height: ramp ? 923 : stage >= 3 ? 787 : stage >= 2 ? 505 : 245 };
 }

@@ -5,6 +5,7 @@ import {
   shell, sampleView, paint, moveProbe, mark, schedule,
 } from '../_procedural/ui.js';
 import { groups, recipes } from './content.js';
+import { mixDiagram, renderMixDiagram } from './diagram.js';
 
 const ui = {
   intro: ['Build a procedural material from two color layers and a Factor field. Inspect each input and the linear RGB result at the same point.',
@@ -17,6 +18,9 @@ const ui = {
   strength: ['Factor multiplier', 'Multiplicador del factor', 'Multiplicador del factor'],
   threshold: ['Threshold', 'Llindar', 'Umbral'],
   swap: ['Swap A and B', 'Intercanvia A i B', 'Intercambia A y B'],
+  graphNote: ['Change A, B or Factor above to see the graph rewire. A solid color or constant factor is entered directly on Mix Color.',
+    'Canvia A, B o Factor als controls de dalt per veure com canvien els cables. Els colors uniformes i el factor constant s’introdueixen directament a Mix Color.',
+    'Cambia A, B o Factor en los controles de arriba para ver cómo cambian los cables. Los colores uniformes y el factor constante se introducen directamente en Mix Color.'],
   applied: ['Effective factor', 'Factor aplicat', 'Factor aplicado'],
   input: ['Input factor', 'Factor d’entrada', 'Factor de entrada'],
   result: ['Result', 'Resultat', 'Resultado'],
@@ -73,9 +77,10 @@ shell({
     ${sampleView('view-result', '')}
   </div>`,
   readout: '<output id="value" for="mode a b layerA layerB mask threshold factor u v clamp-factor clamp-result"></output><p id="note"></p>',
-  docs: 'https://docs.blender.org/manual/en/4.5/render/shader_nodes/color/mix.html',
+  docs: 'https://docs.blender.org/manual/en/latest/render/shader_nodes/color/mix.html',
   next: ['blender-math', 'Math Lab'],
   followUp: true,
+  diagram: '<section id="mix-diagram"><h2 id="mix-editor">Shader Editor</h2><div id="mix-graph" tabindex="0" aria-labelledby="mix-editor"></div><p id="mix-graph-note"></p></section>',
 });
 
 function refreshLanguage() {
@@ -89,6 +94,7 @@ function refreshLanguage() {
   text('swap', say(ui.swap));
   text('view-result-caption', say(ui.result));
   text('note', say(ui.note));
+  text('mix-graph-note', say(ui.graphNote));
   redraw();
 }
 
@@ -123,6 +129,7 @@ function factorField(source, amount, threshold) {
 }
 
 const rgb = values => values.map(format).join(', ');
+let previousDiagram;
 function draw() {
   const mode = $('mode').value;
   const mask = $('mask').value;
@@ -130,6 +137,13 @@ function draw() {
   const threshold = number('threshold');
   const clipFactor = $('clamp-factor').checked;
   const clipResult = $('clamp-result').checked;
+  const diagram = { mode, mask, amount, threshold, clipFactor, clipResult,
+    layerA: $('layerA').value, layerB: $('layerB').value, a: $('a').value, b: $('b').value };
+  const signature = JSON.stringify(diagram);
+  if (signature !== previousDiagram) {
+    renderMixDiagram($('mix-graph'), mixDiagram(diagram));
+    previousDiagram = signature;
+  }
   text('factor-label', (mask === 'Constant' ? 'Factor' : say(ui.strength)) + ' · ' + format(amount));
   text('threshold-label', say(ui.threshold) + ' · ' + format(threshold));
   $('threshold-field').hidden = mask !== 'Hard Noise' && mask !== 'Soft Noise';

@@ -1,7 +1,7 @@
 #lab { --edge: #3b4951; --mint: #a5dccc; }
 .lesson-nav {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.55rem;
   margin-bottom: 0.9rem;
 }
@@ -72,7 +72,8 @@ button:disabled:hover { border-color: #53616a; }
   scrollbar-width: auto;
 }
 .graph-scroll:focus-visible { outline-offset: -2px; }
-#graph { position: relative; min-width: 0; }
+#graph { position: relative; min-width: 0; user-select: none; }
+#graph input { user-select: text; }
 .wires { position: absolute; inset: 0; pointer-events: none; }
 .shader-node {
   position: absolute;
@@ -102,7 +103,7 @@ button:disabled:hover { border-color: #53616a; }
 .family-color .node-title { background: #765a29; }
 .family-vector .node-title { background: #514783; }
 .family-shader .node-title { background: #365d4b; }
-.node-disclosure, .node-chevron {
+.node-disclosure {
   width: 6px;
   height: 6px;
   flex: none;
@@ -175,24 +176,55 @@ button:disabled:hover { border-color: #53616a; }
   min-height: 21px;
   font-size: 12px;
 }
-.socket i {
+.socket .port {
   position: absolute;
-  left: -5px;
+  z-index: 1;
+  left: -12px;
+  width: 24px;
+  height: 24px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: crosshair;
+  touch-action: none;
+}
+.socket-out .port { left: auto; right: -12px; }
+.port::before {
+  content: '';
   width: 10px;
   height: 10px;
   border-radius: 50%;
   border: 1px solid #182029;
   background: var(--socket);
 }
-.socket-out i { left: auto; right: -5px; }
-.socket-value { color: #f0f2f5; font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
-.swatch {
-  border: 1px solid #92a0a8;
-  border-radius: 3px;
-  background: linear-gradient(90deg, var(--swatch) 13px, #181e25 13px);
-  padding: 0 4px 0 18px;
-  font: 12px/1.4 ui-monospace, Consolas, monospace;
+.port:hover::before, .port-active::before, .port-drop::before {
+  outline: 2px solid var(--lab-accent);
 }
+.socket-field { padding-right: 0; overflow: hidden; }
+.socket-content .socket-number, .ramp-fields .socket-number {
+  width: 61px;
+  height: 21px;
+  min-height: 0;
+  border: 0;
+  color: var(--ink);
+  font: 12px ui-monospace, Consolas, monospace;
+  text-align: right;
+  padding: 0 2px;
+}
+.socket-content .socket-color, .ramp-fields .socket-color {
+  width: 56px;
+  height: 21px;
+  min-height: 0;
+  padding: 0 2px;
+  border: 0;
+  cursor: pointer;
+}
+.socket-field :focus-visible, .node-option :focus-visible { outline-offset: -2px; }
+.invert-option { cursor: pointer; }
 .link-guide { padding: 0.85rem 1rem 1rem; }
 .link-guide h3 { font-size: 1rem; margin: 0; }
 .link-guide p { color: var(--muted); margin: 0.25rem 0 0.65rem; font-size: 0.9rem; }
@@ -200,26 +232,48 @@ button:disabled:hover { border-color: #53616a; }
 #connections button { text-align: left; }
 #connections span { color: var(--lab-accent); padding-inline: 0.15rem; }
 #connections [aria-pressed="true"] { border-color: var(--lab-accent); color: #ffcb9c; background: #453123; }
-.experiment-grid {
+.interaction-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-  gap: 1rem;
-  margin-top: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.41fr);
+  gap: 0.8rem;
   align-items: start;
 }
-.material-preview, .material-controls { padding: 1rem; }
+.preview-dock { position: sticky; top: 0.5rem; min-width: 0; }
+.material-preview { padding: 0.75rem; }
+.editor { min-width: 0; }
+.editor-bar { flex-wrap: wrap; }
+.graph-scroll { max-height: 66vh; }
+.wire-help { margin: 0; padding: 0.65rem 1rem; color: var(--muted); font-size: 0.875rem; }
+.wire-status {
+  min-height: 1.5rem;
+  margin: 0;
+  padding-inline: 1rem;
+  color: var(--mint);
+  font-size: 0.875rem;
+}
+.preview-control, .mesh-controls { margin-top: 0.55rem; }
+.mesh-controls { display: grid; gap: 0.45rem; }
+.mesh-controls label:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.mesh-controls select { width: auto; min-height: 2rem; }
 .material-preview figcaption { font-size: 1rem; padding: 0; font-weight: 700; color: var(--ink); }
 .channel-list { margin: 0.65rem 0; }
 .channel-list button { min-height: 2rem; }
 .material-preview p { margin: 0.6rem 0 0; font-size: 0.9rem; color: var(--muted); }
-.setting-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; margin-block: 0.7rem; }
-#reset { margin-top: 0.7rem; }
+
 @media (max-width: 62rem) {
   .lesson-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 43rem) {
   .lesson-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .experiment-grid, #connections { grid-template-columns: minmax(0, 1fr); }
+  .interaction-grid, #connections { grid-template-columns: minmax(0, 1fr); }
+  .preview-dock { order: -1; top: 0; z-index: 3; }
+  .preview-dock canvas { max-height: 22vh; object-fit: contain; }
+  .preview-note { display: none; }
+  .graph-scroll { max-height: 55vh; }
 }
 @media (max-width: 23rem) {
   .editor-bar { padding-inline: 0.55rem; }
