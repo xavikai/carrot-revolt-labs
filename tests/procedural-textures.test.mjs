@@ -9,6 +9,9 @@ import { shaderGraph } from '../labs/blender-worn-paint/recipe.js';
 import { compileStudy } from '../labs/blender-worn-paint/editor-model.js';
 import { graphPorts, replaceWire } from '../labs/_procedural/node-links.js';
 import { mixDiagram, compileMix } from '../labs/blender-mix-color/diagram.js';
+import { mathGraph, compileMath } from '../labs/blender-math/graph.js';
+import { plain as mathPlain } from '../labs/blender-math/plain.js';
+import { plain as mixPlain } from '../labs/blender-mix-color/plain.js';
 
 test('Math covers every selectable operation and recipe', () => {
   const modes = Object.keys(Object.assign({}, ...Object.values(mathGroups)));
@@ -231,4 +234,32 @@ test('Mix Color reevaluates rewired sockets, preserves fallbacks and follows Mat
   rewire.delete('out.surface');
   const detached = compileMix(graph, rewire, values);
   assert.notDeepEqual(detached.surface(0.7, 0.3), detached.result(0.7, 0.3));
+});
+
+test('Math recalculates operands and texture from the live graph', () => {
+  const graph = mathGraph('U', 'Multiply', 'AB', { gain: 2, offset: 0, b: 0.5, c: 0 });
+  const links = new Map(graph.edges.map(([from, to]) => [to, from]));
+  const values = new Map();
+  let live = compileMath(graph, links, values, 'U', 'Multiply');
+  assert.equal(live.a(0.25, 0.75), 0.5);
+  assert.deepEqual(live.texture(0.25, 0.75), [0.25, 0.25, 0.25]);
+  values.set('scale.gain', 1);
+  values.set('math.b', 1);
+  live = compileMath(graph, links, values, 'U', 'Multiply');
+  assert.equal(live.a(0.25, 0.75), 0.25);
+  const rewired = replaceWire(graphPorts(graph), links, 'source.y', 'math.a');
+  live = compileMath(graph, rewired, values, 'U', 'Multiply');
+  assert.equal(live.a(0.25, 0.75), 0.75);
+  assert.deepEqual(live.texture(0.25, 0.75), [0.75, 0.75, 0.75]);
+  rewired.delete('preview.color');
+  assert.deepEqual(compileMath(graph, rewired, values, 'U', 'Multiply').texture(0.25, 0.75), [0, 0, 0]);
+});
+
+test('both operation catalogs provide a plain-language explanation in all three languages', () => {
+  for (const [groups, explanations] of [[mathGroups, mathPlain], [mixGroups, mixPlain]]) {
+    for (const mode of Object.keys(Object.assign({}, ...Object.values(groups)))) {
+      assert.equal(explanations[mode]?.length, 3, mode);
+      assert.ok(explanations[mode].every(text => text.length > 0));
+    }
+  }
 });

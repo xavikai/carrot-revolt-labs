@@ -11,7 +11,9 @@ export const format = n => Math.abs(n) > 9999 || (n !== 0 && Math.abs(n) < 0.000
 export const labels = {
   recipe: ['Experiment', 'Experiment', 'Experimento'],
   reset: ['Reset experiment', 'Reinicia l’experiment', 'Reinicia el experimento'],
-  formula: ['Formula and texture use', 'Fórmula i ús en textures', 'Fórmula y uso en texturas'],
+  formula: ['Formula and technical notes', 'Fórmula i detalls tècnics', 'Fórmula y detalles técnicos'],
+  what: ['What it does', 'Què fa', 'Qué hace'],
+  try: ['Try it', 'Prova-ho', 'Pruébalo'],
   rebuild: ['Rebuild in Blender', 'Reprodueix-ho a Blender', 'Reprodúcelo en Blender'],
   probe: ['Sample a point', 'Mostreja un punt', 'Muestrea un punto'],
   docs: ['Blender manual', 'Manual de Blender', 'Manual de Blender'],
@@ -74,16 +76,18 @@ export function shell({ title, intro, controls, visuals, readout, next, docs, fo
           <button type="button" id="reset">${say(labels.reset)}</button>
         </div>
         ${controls}
+        <p class="quick-task"><strong id="try-title"></strong> <span id="task"></span></p>
       </section>
       <section class="results">
+        <h2 id="what-title"></h2><p class="plain-explanation" id="use"></p>
         ${visuals}
         ${coordinates()}
         <div class="readout">${readout}</div>
       </section>
       ${diagram}
       <section class="explanation">
-        <div><h2 id="formula-title"></h2><code id="formula"></code><p id="use"></p></div>
-        <div><h2 id="rebuild-title"></h2><code id="chain"></code><p id="task"></p>${followUp ? `<a id="follow-up" class="follow-up" href="../blender-worn-paint/" hidden></a>` : ''}</div>
+        <div><details><summary id="formula-title"></summary><code id="formula"></code><p id="technical"></p></details></div>
+        <div><details><summary id="rebuild-title"></summary><code id="chain"></code></details>${followUp ? `<a id="follow-up" class="follow-up" href="../blender-worn-paint/" hidden></a>` : ''}</div>
       </section>
     </form>
     <footer data-no-i18n><a id="docs" href="${docs}"></a><a id="next" href="../${next[0]}/">${next[1]}</a></footer>`;
@@ -93,6 +97,8 @@ export function shell({ title, intro, controls, visuals, readout, next, docs, fo
     text('recipe-label', say(labels.recipe));
     text('reset', say(labels.reset));
     text('formula-title', say(labels.formula));
+    text('what-title', say(labels.what));
+    text('try-title', say(labels.try));
     text('rebuild-title', say(labels.rebuild));
     text('probe-title', say(labels.probe));
     text('docs', say(labels.docs));

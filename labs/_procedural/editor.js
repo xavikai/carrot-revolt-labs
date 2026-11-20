@@ -3,7 +3,7 @@ const width = 162, header = 32, row = 26, settingHeight = 24;
 const escape = str => String(str).replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[char]);
 
 function field(key, label, type, value, bounds) {
-  const attributes = `data-mix-value="${key}" aria-label="${escape(label)}" value="${value}"`;
+  const attributes = `data-node-value="${key}" aria-label="${escape(label)}" value="${value}"`;
   if (type === 'color') return `<input type="color" class="socket-color" ${attributes}>`;
   const [min, max, step] = bounds;
   return `<input type="number" class="socket-number" ${attributes} min="${min}" max="${max}" step="${step}">`;
@@ -29,7 +29,7 @@ export function cablePath(a, b) {
   return `M${a.x} ${a.y} C${a.x + span} ${a.y} ${b.x - span} ${b.y} ${b.x} ${b.y}`;
 }
 
-export function renderMixEditor(host, graph, links, values, modeLabel) {
+export function renderNodeEditor(host, graph, links, values, modeLabel) {
   const ports = new Map();
   let height = 238;
   const ramps = [];
@@ -37,10 +37,14 @@ export function renderMixEditor(host, graph, links, values, modeLabel) {
     const { id, title, family, x, y, outputs, inputs, settings } = node;
     const options = settings.flatMap(setting => {
       if (typeof setting === 'string') return `<div class="node-option">${escape(setting)}</div>`;
-      if (setting.mode) return `<div class="node-option mode-option"><select id="mode" aria-label="${escape(modeLabel)}" data-mix-value="mix.mode"></select></div>`;
+      if (setting.mode) return `<div class="node-option mode-option"><select id="mode" aria-label="${escape(modeLabel)}" data-node-value="${id}.mode"></select></div>`;
+      if (setting.value && !setting.toggle) {
+        const key = id + '.' + setting.value;
+        return `<div class="node-option ramp-fields">${setting.label}${field(key, title + ' · ' + setting.label, 'float', values.get(key) ?? setting.initial, [-100, 100, 0.01])}</div>`;
+      }
       if (setting.toggle) {
         const key = id + '.' + setting.toggle;
-        return `<label class="node-option invert-option">${setting.label}<input type="checkbox" data-mix-value="${key}" ${(values.get(key) ?? setting.value) ? 'checked' : ''}></label>`;
+        return `<label class="node-option invert-option">${setting.label}<input type="checkbox" data-node-value="${key}" ${(values.get(key) ?? setting.value) ? 'checked' : ''}></label>`;
       }
       ramps.push([id, setting]);
       return [

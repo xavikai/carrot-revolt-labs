@@ -5,15 +5,16 @@ import {
   shell, sampleView, paint, moveProbe, mark, schedule,
 } from '../_procedural/ui.js';
 import { groups, recipes } from './content.js';
+import { plain } from './plain.js';
 import { mixDiagram, compileMix } from './diagram.js';
-import { cablePath, refreshRamp, renderMixEditor } from './editor.js';
+import { cablePath, refreshRamp, renderNodeEditor } from '../_procedural/editor.js';
 import { graphPorts } from '../_procedural/node-links.js';
 import { enableWiring } from '../_procedural/wire-ui.js';
 
 const ui = {
-  intro: ['Build a procedural material from two color layers and a Factor field. Inspect each input and the linear RGB result at the same point.',
-    'Construeix un material procedural amb dues capes de color i un camp connectat a Factor. Inspecciona cada entrada i el resultat RGB lineal al mateix punt.',
-    'Construye un material procedural con dos capas de color y un campo conectado a Factor. Inspecciona cada entrada y el resultado RGB lineal en el mismo punto.'],
+  intro: ['Mix two layers and see which parts of each layer show through.',
+    'Barreja dues capes i mira quines parts de cadascuna queden a la vista.',
+    'Mezcla dos capas y mira qué partes de cada una quedan a la vista.'],
   mode: ['Blend mode', 'Mode de mescla', 'Modo de mezcla'],
   layerA: ['A pattern', 'Patró d’A', 'Patrón de A'],
   layerB: ['B pattern', 'Patró de B', 'Patrón de B'],
@@ -27,6 +28,7 @@ const ui = {
   disconnected: ['Cable disconnected.', 'Cable desconnectat.', 'Cable desconectado.'],
   invalidWire: ['These sockets cannot be connected.', 'Aquests connectors no es poden unir.', 'Estos conectores no se pueden unir.'],
   surface: ['Surface', 'Superfície', 'Superficie'],
+  probeDetails: ['Color values at this point', 'Valors de color d’aquest punt', 'Valores de color de este punto'],
   noSurface: ['Connect Surface on Material Output to see the material.', 'Connecta Surface de Material Output per veure el material.', 'Conecta Surface de Material Output para ver el material.'],
   fit: ['Fit', 'Enquadra', 'Encuadrar'],
   zoomIn: ['Zoom in', 'Apropa', 'Acercar'],
@@ -76,7 +78,7 @@ shell({
     ${sampleView('view-mask', 'Factor')}
     ${sampleView('view-result', '')}
   </div><p id="mix-surface-status" hidden></p>`,
-  readout: '<output id="value"></output><p id="note"></p>',
+  readout: '<details><summary id="probe-details"></summary><output id="value"></output><p id="note"></p></details>',
   docs: 'https://docs.blender.org/manual/en/latest/render/shader_nodes/color/mix.html',
   next: ['blender-math', 'Math Lab'],
   followUp: true,
@@ -112,7 +114,7 @@ function updateZoom() {
 }
 
 function refreshGraph() {
-  layout = renderMixEditor(host, graph, links, values, say(ui.mode));
+  layout = renderNodeEditor(host, graph, links, values, say(ui.mode));
   modeOptions(groups, groupNames, modeValue());
   updateZoom();
 }
@@ -127,7 +129,7 @@ function reflectSources() {
 function refreshLanguage() {
   options('recipe', recipes.map((entry, i) => [i, say(entry.title)]), $('recipe').value || '0');
   for (const [id, key] of [['swap', 'swap'], ['view-result-caption', 'surface'],
-    ['note', 'note'], ['mix-graph-note', 'graphNote'], ['mix-surface-status', 'noSurface'], ['mix-fit', 'fit']]) {
+    ['note', 'note'], ['probe-details','probeDetails'], ['mix-graph-note', 'graphNote'], ['mix-surface-status', 'noSurface'], ['mix-fit', 'fit']]) {
     text(id, say(ui[key]));
   }
   $('mix-out').setAttribute('aria-label', say(ui.zoomOut));
@@ -239,7 +241,8 @@ function draw() {
   ].join(' · '));
   const [formula, ...use] = modes[modeValue()];
   text('formula', formula);
-  text('use', say(use) + ' ' + say(ui.explanation));
+  text('use', say(plain[modeValue()]));
+  text('technical', say(use) + ' ' + say(ui.explanation));
   const recipe = recipes[Number($('recipe').value)];
   text('chain', recipe.chain);
   text('task', say(recipe.task));
@@ -263,7 +266,7 @@ const cancelWiring = enableWiring(viewport, host, {
 
 host.addEventListener('input', event => {
   const field = event.target;
-  const key = field.dataset.mixValue;
+  const key = field.dataset.nodeValue;
   if (!key) return;
   let value = field.value;
   if (field.type === 'number') {
@@ -279,8 +282,8 @@ host.addEventListener('input', event => {
 });
 host.addEventListener('focusout', event => {
   const field = event.target;
-  if (field.type === 'number' && field.dataset.mixValue) {
-    field.value = values.get(field.dataset.mixValue) ?? field.defaultValue;
+  if (field.type === 'number' && field.dataset.nodeValue) {
+    field.value = values.get(field.dataset.nodeValue) ?? field.defaultValue;
   }
 });
 for (const [id] of sourceLists) $(id).addEventListener('change', event => changeSource(id, event.target.value));
