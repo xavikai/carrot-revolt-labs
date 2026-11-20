@@ -13,6 +13,10 @@ import { mathGraph, compileMath } from '../labs/blender-math/graph.js';
 import { plain as mathPlain } from '../labs/blender-math/plain.js';
 import { plain as mixPlain } from '../labs/blender-mix-color/plain.js';
 
+import { matchesStep } from '../labs/_procedural/guided.js';
+import { guideSteps as mathGuide } from '../labs/blender-math/guide.js';
+import { guideSteps as mixGuide } from '../labs/blender-mix-color/guide.js';
+
 test('Math covers every selectable operation and recipe', () => {
   const modes = Object.keys(Object.assign({}, ...Object.values(mathGroups)));
   assert.equal(modes.length, 41);
@@ -261,5 +265,53 @@ test('both operation catalogs provide a plain-language explanation in all three 
       assert.equal(explanations[mode]?.length, 3, mode);
       assert.ok(explanations[mode].every(text => text.length > 0));
     }
+  }
+});
+
+test('guided Math checkpoints follow the live input and the resulting texture', () => {
+  const graph = mathGraph('U', 'Fraction', 'A', { gain: 6, offset: -2 });
+  const links = new Map(graph.edges.map(([from, to]) => [to, from]));
+  const values = new Map();
+  const model = () => compileMath(graph, links, values, 'U', 'Fraction');
+  const advance = [
+    () => values.set('scale.gain', 3),
+    () => links.delete('math.a'),
+    () => links.set('math.a', 'source.y'),
+    () => links.set('math.a', 'scale.value'),
+    () => values.set('scale.offset', -1.5),
+  ];
+  for (const [index, action] of advance.entries()) {
+    assert.equal(matchesStep(mathGuide[index], { links, values }), false, 'before step ' + index);
+    action();
+    assert.equal(matchesStep(mathGuide[index], { links, values }), true, 'after step ' + index);
+    if (index === 1) assert.deepEqual(model().texture(0.1, 0.2), model().texture(0.8, 0.9));
+    if (index === 2) assert.ok(model().texture(0.4, 0.9)[0] > model().texture(0.4, 0.1)[0]);
+  }
+});
+
+test('guided Mix checkpoints distinguish both solid colors from the two masks', () => {
+  const graph = mixDiagram({ mask: 'Hard Noise', mode: 'Mix', amount: 1, threshold: 0.58,
+    layerA: 'Solid', layerB: 'Solid', a: '#2c8294', b: '#ad6638', clipFactor: true, clipResult: false });
+  const links = new Map(graph.edges.map(([from, to]) => [to, from]));
+  const values = new Map();
+  const model = () => compileMix(graph, links, values);
+  const advance = [
+    () => links.delete('mix.factor'),
+    () => values.set('mix.factor', 0),
+    () => values.set('mix.factor', 1),
+    () => links.set('mix.factor', 'multiply.value'),
+    () => values.set('mask.threshold', 0.68),
+    () => links.set('mix.factor', 'noise.fac'),
+  ];
+  for (const [index, action] of advance.entries()) {
+    assert.equal(matchesStep(mixGuide[index], { links, values }), false, 'before step ' + index);
+    action();
+    assert.equal(matchesStep(mixGuide[index], { links, values }), true, 'after step ' + index);
+    const view = model();
+    if (index === 0) assert.equal(view.factor(0.4, 0.6), 0.5);
+    if (index === 1) assert.deepEqual(view.surface(0.4, 0.6), view.a(0.4, 0.6));
+    if (index === 2) assert.ok(view.surface(0.4, 0.6).every((channel, i) => Math.abs(channel - view.b(0.4, 0.6)[i]) < 1e-12));
+    if (index === 3 || index === 4) assert.ok([0, 1].includes(view.factor(0.4, 0.6)));
+    if (index === 5) assert.ok(view.factor(0.4, 0.6) > 0 && view.factor(0.4, 0.6) < 1);
   }
 });

@@ -138,6 +138,18 @@ output, code { color: #ffbd85; font: 0.93rem/1.5 ui-monospace, Consolas, monospa
 .quick-task, .plain-explanation { margin: 0.55rem 0; color: var(--muted); }
 .quick-task strong { color: var(--lab-accent); }
 .explanation summary { cursor: pointer; font-weight: 650; }
+.guided-exercise { padding: 0.65rem 0.8rem; border-bottom: 1px solid var(--line); }
+.guide-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.65rem; }
+.guide-bar strong, .guide-bar [data-guide="feedback"] { flex: 1 1 10rem; }
+.guided-exercise p { margin: 0.5rem 0; }
+.guided-exercise [data-guide="expected"] { color: var(--muted); }
+.guided-exercise [role="status"] { color: #a5dccc; }
+.guided-exercise button:disabled { opacity: 0.5; cursor: default; }
+.shader-graph .guide-target {
+  outline: 2px solid #a5dccc;
+  outline-offset: 1px;
+}
+.shader-graph .port.guide-target { outline-offset: -3px; }
 .explanation code { display: block; margin-top: 0.4rem; overflow-wrap: anywhere; }
 footer { display: flex; flex-wrap: wrap; gap: 1.2rem; padding-block: 1.6rem; }
 .follow-up { display: inline-block; margin-top: 0.65rem; }

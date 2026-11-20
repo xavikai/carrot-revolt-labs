@@ -6,6 +6,8 @@ import {
 } from '../_procedural/ui.js';
 import { groups, recipes } from './content.js';
 import { plain } from './plain.js';
+import { guidedExercise } from '../_procedural/guided.js';
+import { guideName, guideSteps } from './guide.js';
 import { mixDiagram, compileMix } from './diagram.js';
 import { cablePath, refreshRamp, renderNodeEditor } from '../_procedural/editor.js';
 import { graphPorts } from '../_procedural/node-links.js';
@@ -89,6 +91,7 @@ shell({
         <button id="mix-in" type="button">+</button><button id="mix-fit" type="button"></button>
       </div>
     </div>
+    <section class="guided-exercise" id="mix-guide"></section>
     <p id="mix-graph-note"></p>
     <div class="mix-mobile-preview"><canvas id="live-result" width="224" height="144" aria-labelledby="view-result-caption"></canvas></div>
     <div id="mix-graph-scroll" class="graph-scroll" tabindex="0" aria-labelledby="mix-editor">
@@ -127,6 +130,7 @@ function reflectSources() {
 }
 
 function refreshLanguage() {
+  guide.render();
   options('recipe', recipes.map((entry, i) => [i, say(entry.title)]), $('recipe').value || '0');
   for (const [id, key] of [['swap', 'swap'], ['view-result-caption', 'surface'],
     ['note', 'note'], ['probe-details','probeDetails'], ['mix-graph-note', 'graphNote'], ['mix-surface-status', 'noSurface'], ['mix-fit', 'fit']]) {
@@ -179,6 +183,7 @@ const affectsLane = {
 };
 
 function changeSource(id, selection) {
+  guide.leave();
   cancelWiring();
   const match = affectsLane[id];
   config[id] = selection;
@@ -201,6 +206,7 @@ function changeSource(id, selection) {
 }
 
 function swapLayers() {
+  guide.leave();
   cancelWiring();
   [config.a, config.b] = [config.b, config.a];
   [config.layerA, config.layerB] = [config.layerB, config.layerA];
@@ -247,6 +253,7 @@ function draw() {
   text('chain', recipe.chain);
   text('task', say(recipe.task));
   $('follow-up').hidden = recipe.mode !== 'Mix';
+  guide.update();
 }
 
 const redraw = schedule(draw);
@@ -262,6 +269,16 @@ const cancelWiring = enableWiring(viewport, host, {
   },
   message,
   path: cablePath,
+});
+
+const guide = guidedExercise($('mix-guide'), viewport, {
+  name: guideName, steps: guideSteps,
+  start: () => { $('recipe').value = '0'; applyRecipe(); },
+  state: () => ({ links, values }),
+  allowed: () => config.mask === 'Hard Noise' && modeValue() === 'Mix'
+    && links.get('bsdf.base') === 'mix.result' && links.get('out.surface') === 'bsdf.bsdf'
+    && !links.has('mix.a') && !links.has('mix.b')
+    && (values.get('mix.a') ?? config.a) === recipes[0].a && (values.get('mix.b') ?? config.b) === recipes[0].b,
 });
 
 host.addEventListener('input', event => {
@@ -287,8 +304,11 @@ host.addEventListener('focusout', event => {
   }
 });
 for (const [id] of sourceLists) $(id).addEventListener('change', event => changeSource(id, event.target.value));
-$('recipe').addEventListener('change', applyRecipe);
-$('reset').addEventListener('click', applyRecipe);
+$('recipe').addEventListener('change', () => { guide.leave(); applyRecipe(); });
+$('reset').addEventListener('click', () => {
+  if (guide.isActive()) guide.begin();
+  else { guide.leave(); applyRecipe(); }
+});
 $('swap').addEventListener('click', swapLayers);
 for (const id of ['u', 'v']) $(id).addEventListener('input', redraw);
 for (const [id, delta] of [['mix-out', -0.12], ['mix-in', 0.12], ['mix-fit', 0]]) {

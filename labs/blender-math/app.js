@@ -7,6 +7,8 @@ import { $, text, say, number, format, select, options, modeOptions, shell, samp
 import { groups, recipes } from './content.js';
 import { compileMath, mathGraph } from './graph.js';
 import { plain } from './plain.js';
+import { guidedExercise } from '../_procedural/guided.js';
+import { guideName, guideSteps } from './guide.js';
 
 const ui = {
   intro: ['Change a number in a node and watch what happens to the curve and the texture.',
@@ -66,6 +68,7 @@ shell({
     <div class="editor-toolbar"><h2 id="math-editor-title">Shader Editor</h2>
       <div class="editor-zoom"><button id="math-out" type="button">−</button><output id="math-scale"></output>
         <button id="math-in" type="button">+</button><button id="math-fit" type="button"></button></div></div>
+    <section class="guided-exercise" id="math-guide"></section>
     <p id="math-help"></p>
     <div class="math-mobile"><canvas id="plot-small" width="210" height="135" aria-labelledby="plot-caption"></canvas>
       <canvas id="pattern-small" width="224" height="144" aria-labelledby="pattern-caption"></canvas></div>
@@ -104,6 +107,7 @@ function setupGraph() {
 }
 
 function refreshLanguage() {
+  guide.render();
   options('recipe', recipes.map((entry, i) => [i, say(entry.title)]), $('recipe').value || '0');
   options('source', Object.entries(sources).map(([id, label]) => [id, say(label)]), source ?? recipes[0].source);
   for (const [id, key] of [['source-label','source'],['plot-caption','plot'],['pattern-caption','pattern'],
@@ -236,6 +240,7 @@ function draw() {
   text('chain', preset.chain);
   text('task', say(preset.task));
   $('follow-up').hidden = preset.mode !== 'Greater Than';
+  guide.update();
 }
 
 const redraw = schedule(draw);
@@ -243,6 +248,14 @@ const cancelWiring = enableWiring(viewport, host, {
   layout: () => layout, links: () => links, model: () => graphPorts(graph),
   apply: (next, feedback) => { links = next; render(); message(feedback); redraw(); },
   message, path: cablePath,
+});
+
+const guide = guidedExercise($('math-guide'), viewport, {
+  name: guideName, steps: guideSteps,
+  start: () => { $('recipe').value = '0'; applyRecipe(); },
+  state: () => ({ links, values }),
+  allowed: () => source === 'U' && mode === 'Fraction' && links.get('preview.color') === 'math.value'
+    && links.get('scale.a') === 'source.x' && links.get('source.vector') === 'coord.uv',
 });
 
 host.addEventListener('input', event => {
@@ -271,6 +284,7 @@ host.addEventListener('focusout', event => {
   }
 });
 $('source').addEventListener('change', event => {
+  guide.leave();
   cancelWiring();
   const previous = links;
   source = event.target.value;
@@ -288,8 +302,11 @@ $('source').addEventListener('change', event => {
   message(null);
   redraw();
 });
-$('recipe').addEventListener('change', applyRecipe);
-$('reset').addEventListener('click', applyRecipe);
+$('recipe').addEventListener('change', () => { guide.leave(); applyRecipe(); });
+$('reset').addEventListener('click', () => {
+  if (guide.isActive()) guide.begin();
+  else { guide.leave(); applyRecipe(); }
+});
 for (const id of ['u', 'v']) $(id).addEventListener('input', redraw);
 for (const [id, delta] of [['math-out', -0.12], ['math-in', 0.12], ['math-fit', 0]]) {
   $(id).addEventListener('click', () => {
