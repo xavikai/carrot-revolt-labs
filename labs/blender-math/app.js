@@ -4,11 +4,13 @@ import { graphPorts, replaceWire } from '../_procedural/node-links.js';
 import { cablePath, renderNodeEditor } from '../_procedural/editor.js';
 import { enableWiring } from '../_procedural/wire-ui.js';
 import { $, text, say, number, format, select, options, modeOptions, shell, sampleView, paint, moveProbe, mark, schedule } from '../_procedural/ui.js';
-import { groups, recipes } from './content.js';
+import { groups, recipes, reliefRecipe } from './content.js';
 import { compileMath, mathGraph } from './graph.js';
 import { plain } from './plain.js';
 import { guidedExercise } from '../_procedural/guided.js';
 import { guideName, guideSteps } from './guide.js';
+import { reliefGuideName, reliefGuideSteps, reliefBlender } from './relief-guide.js';
+import { paintMesh } from '../_procedural/mesh.js';
 
 const ui = {
   intro: ['Change a number in a node and watch what happens to the curve and the texture.',
@@ -59,7 +61,11 @@ shell({
   visuals: `<div class="views math-views">
     <figure><canvas id="plot" width="420" height="270" aria-labelledby="plot-caption"></canvas><figcaption id="plot-caption"></figcaption></figure>
     ${sampleView('pattern', '', 144)}
-  </div>`,
+  </div>
+  <figure id="relief-view" hidden>
+    <canvas id="relief-mesh" width="480" height="220" aria-labelledby="relief-caption"></canvas>
+    <figcaption id="relief-caption"></figcaption>
+  </figure>`,
   readout: '<output id="value"></output><p id="note"></p><p id="held-note" hidden></p><p id="texture-status" hidden></p>',
   docs: 'https://docs.blender.org/manual/en/latest/render/shader_nodes/utilities/math/math.html',
   next: ['blender-mix-color', 'Mix Color Lab'],
@@ -69,12 +75,18 @@ shell({
       <div class="editor-zoom"><button id="math-out" type="button">−</button><output id="math-scale"></output>
         <button id="math-in" type="button">+</button><button id="math-fit" type="button"></button></div></div>
     <section class="guided-exercise" id="math-guide"></section>
+    <section class="guided-exercise" id="relief-guide"></section>
     <p id="math-help"></p>
     <div class="math-mobile"><canvas id="plot-small" width="210" height="135" aria-labelledby="plot-caption"></canvas>
       <canvas id="pattern-small" width="224" height="144" aria-labelledby="pattern-caption"></canvas></div>
+    <div class="relief-mobile" id="relief-mobile" hidden>
+      <canvas id="relief-small" width="480" height="220" aria-labelledby="relief-caption"></canvas>
+    </div>
     <div id="math-graph-scroll" class="graph-scroll" tabindex="0" aria-labelledby="math-editor-title">
       <div id="math-graph" class="shader-graph"></div>
     </div><p id="math-status" role="status"></p>
+    <details id="relief-blender" hidden><summary id="relief-blender-title"></summary><ol id="relief-blender-steps"></ol>
+      <a id="relief-blender-docs" href="https://docs.blender.org/manual/en/latest/render/materials/components/displacement.html"></a></details>
   </section>`,
 });
 $('workspace').classList.add('math-workspace');
@@ -107,7 +119,15 @@ function setupGraph() {
 }
 
 function refreshLanguage() {
-  guide.render();
+  guides.forEach(guide => guide.render());
+  for (const [id, key] of [['relief-caption', 'caption'], ['relief-blender-title', 'title'], ['relief-blender-docs', 'docs']]) {
+    text(id, say(reliefBlender[key]));
+  }
+  $('relief-blender-steps').replaceChildren(...reliefBlender.steps.map(step => {
+    const li = document.createElement('li');
+    li.textContent = say(step);
+    return li;
+  }));
   options('recipe', recipes.map((entry, i) => [i, say(entry.title)]), $('recipe').value || '0');
   options('source', Object.entries(sources).map(([id, label]) => [id, say(label)]), source ?? recipes[0].source);
   for (const [id, key] of [['source-label','source'],['plot-caption','plot'],['pattern-caption','pattern'],
@@ -121,7 +141,7 @@ function refreshLanguage() {
   }
 }
 
-function applyRecipe() {
+function applyRecipe(unplugDisplacement = false) {
   cancelWiring();
   preset = recipes[Number($('recipe').value)];
   source = preset.source;
@@ -131,6 +151,12 @@ function applyRecipe() {
   zoom = null;
   for (const id of ['u', 'v']) $(id).value = $(id).defaultValue;
   setupGraph();
+  if (unplugDisplacement) {
+    links.delete('displacement.height');
+    links.delete('output.displacement');
+  }
+  $('relief-view').hidden = $('relief-mobile').hidden = !preset.displacement;
+  $('relief-blender').hidden = !preset.displacement;
   render();
   centerMath();
   message(null);
@@ -225,6 +251,10 @@ function draw() {
   }
   plot(mode, at, low, high, Number.isFinite(a) ? a : low);
   paint($('pattern'), study.texture);
+  if (preset.displacement) {
+    paintMesh($('relief-mesh'), { displacement: study.displacement, color: () => [0.34, 0.49, 0.54] }, 32, true);
+    $('relief-small').getContext('2d').drawImage($('relief-mesh'), 0, 0);
+  }
   $('plot-small').getContext('2d').drawImage($('plot'), 0, 0, 210, 135);
   $('pattern-small').getContext('2d').drawImage($('pattern'), 0, 0);
   mark(['pattern']);
@@ -240,7 +270,7 @@ function draw() {
   text('chain', preset.chain);
   text('task', say(preset.task));
   $('follow-up').hidden = preset.mode !== 'Greater Than';
-  guide.update();
+  guides.forEach(guide => guide.update());
 }
 
 const redraw = schedule(draw);
@@ -252,11 +282,26 @@ const cancelWiring = enableWiring(viewport, host, {
 
 const guide = guidedExercise($('math-guide'), viewport, {
   name: guideName, steps: guideSteps,
-  start: () => { $('recipe').value = '0'; applyRecipe(); },
+  start: () => { reliefGuide.leave(); $('recipe').value = '0'; applyRecipe(); },
   state: () => ({ links, values }),
   allowed: () => source === 'U' && mode === 'Fraction' && links.get('preview.color') === 'math.value'
     && links.get('scale.a') === 'source.x' && links.get('source.vector') === 'coord.uv',
 });
+
+const reliefGuide = guidedExercise($('relief-guide'), viewport, {
+  name: reliefGuideName, steps: reliefGuideSteps,
+  start: () => {
+    guide.leave();
+    $('recipe').value = String(recipes.indexOf(reliefRecipe));
+    applyRecipe(true);
+  },
+  state: () => ({ links, values }),
+  allowed: () => preset === reliefRecipe && source === 'Noise' && mode === 'Greater Than'
+    && links.get('preview.color') === 'math.value' && links.get('math.a') === 'scale.value'
+    && links.get('scale.a') === 'source.fac' && links.get('source.vector') === 'coord.uv',
+});
+const guides = [guide, reliefGuide];
+const leaveGuides = () => guides.forEach(guide => guide.leave());
 
 host.addEventListener('input', event => {
   const field = event.target;
@@ -284,7 +329,7 @@ host.addEventListener('focusout', event => {
   }
 });
 $('source').addEventListener('change', event => {
-  guide.leave();
+  leaveGuides();
   cancelWiring();
   const previous = links;
   source = event.target.value;
@@ -296,16 +341,19 @@ $('source').addEventListener('change', event => {
     if (to === 'math.a' || isSource(to) || isSource(from)) continue;
     links = replaceWire(ports, links, from, to) ?? links;
   }
-  if (!previous.has('preview.color')) links.delete('preview.color');
+  for (const input of ['preview.color', 'displacement.height', 'output.displacement']) {
+    if (!previous.has(input)) links.delete(input);
+  }
   render();
   centerMath();
   message(null);
   redraw();
 });
-$('recipe').addEventListener('change', () => { guide.leave(); applyRecipe(); });
+$('recipe').addEventListener('change', () => { leaveGuides(); applyRecipe(); });
 $('reset').addEventListener('click', () => {
-  if (guide.isActive()) guide.begin();
-  else { guide.leave(); applyRecipe(); }
+  const active = guides.find(guide => guide.isActive());
+  if (active) active.begin();
+  else { leaveGuides(); applyRecipe(); }
 });
 for (const id of ['u', 'v']) $(id).addEventListener('input', redraw);
 for (const [id, delta] of [['math-out', -0.12], ['math-in', 0.12], ['math-fit', 0]]) {

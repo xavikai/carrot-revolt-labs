@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { displayByte, hexToLinear, mathValue, mixColor } from '../labs/_procedural/core.js';
-import { groups as mathGroups, recipes as mathRecipes } from '../labs/blender-math/content.js';
+import { groups as mathGroups, recipes as mathRecipes, reliefRecipe } from '../labs/blender-math/content.js';
 import { groups as mixGroups, recipes as mixRecipes } from '../labs/blender-mix-color/content.js';
 import { defaults, grayscaleSampler, imageMask, maskBounds, materialSampler, surfaceHeight, wearMask } from '../labs/blender-worn-paint/material.js';
 import { shaderGraph } from '../labs/blender-worn-paint/recipe.js';
@@ -15,6 +15,7 @@ import { plain as mixPlain } from '../labs/blender-mix-color/plain.js';
 
 import { matchesStep } from '../labs/_procedural/guided.js';
 import { guideSteps as mathGuide } from '../labs/blender-math/guide.js';
+import { reliefGuideSteps } from '../labs/blender-math/relief-guide.js';
 import { guideSteps as mixGuide } from '../labs/blender-mix-color/guide.js';
 
 test('Math covers every selectable operation and recipe', () => {
@@ -286,6 +287,44 @@ test('guided Math checkpoints follow the live input and the resulting texture', 
     assert.equal(matchesStep(mathGuide[index], { links, values }), true, 'after step ' + index);
     if (index === 1) assert.deepEqual(model().texture(0.1, 0.2), model().texture(0.8, 0.9));
     if (index === 2) assert.ok(model().texture(0.4, 0.9)[0] > model().texture(0.4, 0.1)[0]);
+  }
+});
+
+test('guided displacement checkpoints move the plane using the live black and white texture', () => {
+  const { source, mode } = reliefRecipe;
+  const graph = mathGraph(source, mode, 'AB', reliefRecipe);
+  const ports = graphPorts(graph);
+  let links = new Map(graph.edges.map(([from, to]) => [to, from]));
+  links.delete('displacement.height');
+  links.delete('output.displacement');
+  const values = new Map();
+  const model = () => compileMath(graph, links, values, source, mode);
+  const points = Array.from({ length: 81 }, (_, i) => [i % 9 / 8, Math.floor(i / 9) / 8]);
+  const initial = model();
+  const pattern = points.map(point => initial.texture(...point)[0]);
+  const black = points[pattern.indexOf(0)], white = points[pattern.indexOf(1)];
+  assert.ok(black && white);
+  const changes = [
+    () => { links = replaceWire(ports, links, 'math.value', 'displacement.height'); },
+    () => { links = replaceWire(ports, links, 'displacement.result', 'output.displacement'); },
+    () => values.set('displacement.scale', 0.35),
+    () => values.set('displacement.midlevel', 0),
+    () => values.set('math.b', 0.6),
+  ];
+  for (const [index, change] of changes.entries()) {
+    assert.equal(matchesStep(reliefGuideSteps[index], { links, values }), false);
+    change();
+    assert.equal(matchesStep(reliefGuideSteps[index], { links, values }), true);
+    const view = model();
+    if (index < 4) {
+      assert.deepEqual(points.map(point => view.texture(...point)[0]), pattern);
+      assert.equal(view.displacement(...black)[2], [0, -0.1, -0.175, 0][index]);
+      assert.equal(view.displacement(...white)[2], [0, 0.1, 0.175, 0.35][index]);
+    } else {
+      const lifted = points.filter(point => view.displacement(...point)[2] > 0).length;
+      assert.ok(lifted > 0 && lifted < pattern.filter(Boolean).length);
+      assert.equal(view.compare(0.55, view.b(...white), 0), 0);
+    }
   }
 });
 

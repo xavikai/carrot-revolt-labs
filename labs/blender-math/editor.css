@@ -23,9 +23,15 @@
 #math-status { min-height: 2.2rem; color: #a5dccc; }
 #texture-status { color: #ffbd85; }
 .math-mobile { display: none; }
+#relief-view { margin-top: 0.65rem; }
+.relief-mobile { display: none; }
+#relief-blender { margin: 0.7rem 0.8rem; }
+#relief-blender li { margin-block: 0.35rem; }
+#relief-blender a { color: var(--lab-accent); }
 @media (max-width: 44rem) {
   #workspace.math-workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
   .math-workspace .results { grid-column: 1; grid-row: 3; position: static; }
+  .relief-mobile:not([hidden]) { display: block; max-width: 19rem; padding: 0 0.8rem 0.6rem; }
   .math-mobile { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; padding: 0.2rem 0.8rem 0.6rem; max-width: 19rem; }
   #math-graph-scroll { max-height: 50vh; }
 }

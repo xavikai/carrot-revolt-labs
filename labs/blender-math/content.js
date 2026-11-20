@@ -53,6 +53,15 @@ export const groups = {
   },
 };
 
+export const reliefRecipe = {
+  title: ['Black and white relief', 'Relleu en blanc i negre', 'Relieve en blanco y negro'],
+  mode: 'Greater Than', source: 'Noise', gain: 1, offset: 0, b: 0.5, c: 0.1, displacement: true,
+  chain: 'Noise Texture: Fac → Math: Greater Than → Displacement: Height → Material Output: Displacement',
+  task: ['Try the guided displacement exercise to turn this mask into a relief on a plane.',
+    'Segueix l’exercici guiat de Displacement per convertir aquesta màscara en relleu sobre un pla.',
+    'Sigue el ejercicio guiado de Displacement para convertir esta máscara en relieve sobre un plano.'],
+};
+
 export const recipes = [
   {
     title: ['Repeating bands', 'Bandes repetides', 'Bandas repetidas'],
@@ -86,4 +95,5 @@ export const recipes = [
       'Canvia Increment de 0,2 a 0,1. Mira si apareixen més grisos i més graons a la gràfica.',
       'Cambia Increment de 0,2 a 0,1. Mira si aparecen más grises y más escalones en la gráfica.'],
   },
+  reliefRecipe,
 ];

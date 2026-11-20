@@ -3,7 +3,7 @@ import { $, format, number, paint, say, schedule, text } from '../_procedural/ui
 import { clamp } from '../_procedural/core.js';
 import { defaults, grayscaleSampler, rampStops } from './material.js';
 import { compileStudy, fieldBounds } from './editor-model.js';
-import { paintMesh } from './mesh.js';
+import { paintMesh } from '../_procedural/mesh.js';
 import { graphPorts } from '../_procedural/node-links.js';
 import { enableWiring } from '../_procedural/wire-ui.js';
 import { shaderGraph } from './recipe.js';

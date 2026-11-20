@@ -41,14 +41,17 @@ export function guidedExercise(panel, viewport, { name, steps, start, state, all
   const el = key => panel.querySelector('[data-guide="' + key + '"]');
   const isActive = () => index >= 0;
 
+  let highlighted = [];
   function targets(step) {
-    viewport.querySelectorAll('.guide-target').forEach(element => element.classList.remove('guide-target'));
+    highlighted.forEach(element => element.classList.remove('guide-target'));
+    highlighted = [];
     if (!step) return [];
-    return (step.focus ?? []).map(([kind, key]) => {
+    highlighted = (step.focus ?? []).map(([kind, key]) => {
       const element = viewport.querySelector('[data-' + kind + '="' + key + '"]');
       element?.classList.add('guide-target');
       return element;
     }).filter(Boolean);
+    return highlighted;
   }
 
   function reveal() {

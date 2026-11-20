@@ -1,4 +1,4 @@
-import { displayByte } from '../_procedural/core.js';
+import { displayByte } from './core.js';
 
 export function paintMesh(canvas, sample, divisions, wireframe) {
   const ctx = canvas.getContext('2d');

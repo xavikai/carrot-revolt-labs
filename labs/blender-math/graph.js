@@ -46,7 +46,15 @@ export function mathGraph(source, mode, sockets, preset) {
   [{ mode }, { toggle: 'clamp', label: 'Clamp', value: false }]);
   node('preview', 'Emission', 'shader', mathX + 183, 30, [], [['color', 'Color', 'color', '#000000']]);
   edges.push(['math.value', 'preview.color']);
-  return { nodes, edges, width: mathX + 364 };
+  if (preset.displacement) {
+    node('displacement', 'Displacement', 'vector', mathX + 183, 134, [vector('result', 'Displacement')], [
+      numeric('height', 'Height', 0.5), numeric('midlevel', 'Midlevel', 0.5, [0, 1, 0.01]),
+      numeric('scale', 'Scale', 0.2, [-0.45, 0.45, 0.01]),
+    ], ['Object Space']);
+    node('output', 'Material Output', 'output', mathX + 366, 134, [], [vector('displacement', 'Displacement')]);
+    edges.push(['math.value', 'displacement.height'], ['displacement.result', 'output.displacement']);
+  }
+  return { nodes, edges, width: mathX + (preset.displacement ? 548 : 364) };
 }
 
 export function compileMath(graph, links, values, source, mode) {
@@ -75,6 +83,10 @@ export function compileMath(graph, links, values, source, mode) {
       const a = input('scale.a'), gain = input('scale.gain'), offset = input('scale.offset');
       return (u, v) => a(u, v) * gain(u, v) + offset(u, v);
     }
+    if (key === 'displacement.result') {
+      const height = input('displacement.height'), middle = input('displacement.midlevel'), scale = input('displacement.scale');
+      return (u, v) => [0, 0, (height(u, v) - middle(u, v)) * scale(u, v)];
+    }
     const a = input('math.a'), b = input('math.b'), c = input('math.c');
     return (u, v) => compare(a(u, v), b(u, v), c(u, v));
   }
@@ -84,5 +96,6 @@ export function compileMath(graph, links, values, source, mode) {
     a, b, c, compare, limited,
     result: output('math.value'),
     texture: input('preview.color'),
+    displacement: input('output.displacement'),
   };
 }
